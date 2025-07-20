@@ -1,0 +1,358 @@
+
+{
+  "appName": "Dynamic Wallet View",
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "team": "Team Insights",
+    "node": "Node Analysis",
+    "chat": "Team Chat",
+    "settings": "Settings",
+    "logout": "Logout",
+    "adPlaceholder": "Your Ad Here",
+    "help": "Help",
+    "transactions": "Transactions",
+    "donate": "Donate",
+    "chatRedirect": {
+      "title": "Open Team Chat?",
+      "description": "You are about to be redirected to the official Pi Team Chat in a new tab. Do you want to continue?",
+      "confirmButton": "Open Chat",
+      "cancelButton": "Cancel"
+    },
+    "logoutConfirm": {
+      "title": "Confirm Logout",
+      "description": "Are you sure you want to log out? You will need to re-authenticate with your Pi Network account to log back in.",
+      "confirmButton": "Logout",
+      "cancelButton": "Cancel"
+    }
+  },
+  "login": {
+    "welcome": "Welcome to Dynamic Wallet View",
+    "button": "Login with Pi",
+    "error": "Login failed. Please try again.",
+    "piAuthInfo": "This will authenticate you using your Pi Network account."
+  },
+  "legal": {
+    "termsTitle": "Terms of Service",
+    "termsSections": [
+      {
+        "title": "Terms of Service - Introduction",
+        "content": "Effective Date: October 26, 2023\n\nWelcome to Dynamic Wallet View! These Terms of Service ('Terms') govern your use of the Dynamic Wallet View application and any related services (collectively, the 'Service'). By accessing or using our Service, you agree to be bound by these Terms."
+      },
+      {
+        "title": "1. Acceptance of Terms",
+        "content": "By using Dynamic Wallet View, you confirm that you have read, understood, and agree to these Terms. If you do not agree with any part of these Terms, you must not use the Service."
+      },
+      {
+        "title": "2. Description of Service",
+        "content": "Dynamic Wallet View is a third-party application designed to provide users with a dashboard to view their Pi Network related metrics, including Pi balance, mining rate, team member information, and node performance. Dynamic Wallet View is not an official Pi Network application and is not a functional wallet. It does not store your private keys. The Service may, however, initiate payment requests through the official Pi App SDK for features such as donations."
+      },
+      {
+        "title": "3. User-Generated Content",
+        "content": "You may have the ability to provide information, such as a display name, biography, or profile picture ('User Content'). You are solely responsible for your User Content and assume all risks associated with use of your User Content. You represent that your User Content will not violate any applicable laws or third-party rights."
+      },
+      {
+        "title": "4. Use of Service",
+        "content": "You agree to use the Service only for its intended purposes and in accordance with all applicable laws and regulations. You are responsible for maintaining the confidentiality of any account information related to your use of the Pi Network when interfacing with any third-party application."
+      },
+      {
+        "title": "5. Data Accuracy and Mock Data",
+        "content": "Currently, Dynamic Wallet View utilizes mock data for demonstration and development purposes. In a live environment connected to the Pi Network, the accuracy of the data displayed would depend on the information made available by the Pi Network APIs and the data you authorize for access. Dynamic Wallet View does not guarantee the absolute accuracy or timeliness of data that originates from the Pi Network."
+      },
+      {
+        "title": "6. Disclaimer of Warranties",
+        "content": "The Service is provided 'as is' and 'as available' without any warranties of any kind, express or implied. Dynamic Wallet View does not warrant that the Service will be uninterrupted, error-free, or completely secure. Dynamic Wallet View is not affiliated with the Pi Core Team or the Pi Network."
+      },
+      {
+        "title": "7. Limitation of Liability",
+        "content": "To the fullest extent permitted by law, Dynamic Wallet View shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from (a) your access to or use of or inability to access or use the Service; (b) any conduct or content of any third party on the Service; or (c) unauthorized access, use, or alteration of your transmissions or content, even if Dynamic Wallet View has been advised of the possibility of such damages."
+      },
+      {
+        "title": "8. Intellectual Property",
+        "content": "The Dynamic Wallet View name, logo, and all related names, logos, product and service names, designs, and slogans are trademarks of Dynamic Wallet View or its licensors. Pi Network and the Pi logo are trademarks of the Pi Community Company. This Service is not endorsed by or affiliated with the Pi Network."
+      },
+      {
+        "title": "9. Changes to Terms",
+        "content": "We reserve the right to modify these Terms at any time. We will endeavor to provide notice of any significant changes. Your continued use of the Service after such changes constitutes your acceptance of the new Terms."
+      },
+      {
+        "title": "10. Contact Us",
+        "content": "If you have any questions about these Terms, please contact us at legal@example.com."
+      }
+    ],
+    "privacyTitle": "Privacy Policy",
+    "privacySections": [
+      {
+        "title": "Privacy Policy - Introduction",
+        "content": "Effective Date: October 26, 2023\n\nDynamic Wallet View ('we', 'us', or 'our') is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use our Dynamic Wallet View application (the 'Service')."
+      },
+      {
+        "title": "1. Our Relationship with Pi Network",
+        "content": "Dynamic Wallet View is an independent, third-party application. It is NOT an official application of the Pi Network or the Pi Core Team. This policy describes data handling by Dynamic Wallet View, not by the Pi Network itself. For Pi Network's privacy practices, please refer to their official privacy policy."
+      },
+      {
+        "title": "2. Information We Handle",
+        "content": "When you use Dynamic Wallet View, the application is designed to display information related to your Pi Network account, which may include:\n- Your Pi balance and its breakdown (e.g., transferable, unverified, lockups).\n- Your current Pi mining rate.\n- Information about your team members (e.g., name, status, contribution), as potentially made available by Pi Network APIs.\n- Node performance data (if you are a node operator and this data is accessible).\n- Profile information you might provide directly within Dynamic Wallet View (e.g., display name, bio).\n\n**Important Note on Current Version:** The current version of Dynamic Wallet View uses MOCK (simulated) DATA for all features. No actual connection to your Pi Network account is made, and no real Pi Network data is fetched or stored by Dynamic Wallet View."
+      },
+      {
+        "title": "3. How We Would Use Information (If Connected to Live Data)",
+        "content": "If Dynamic Wallet View were connected to live Pi Network data (which it currently is not), the information would be used solely to:\n- Provide you with the dashboard features: displaying your Pi-related metrics, team insights, and node analysis.\n- Allow you to customize your application experience (e.g., theme, language).\nWe would not sell your personal information. Access to your Pi Network data would require your explicit authorization through Pi Network's official mechanisms."
+      },
+      {
+        "title": "4. Data Storage and Security",
+        "content": "Dynamic Wallet View is designed as a viewer or interface. It would not store sensitive Pi Network data like private keys. Application preferences (theme, language) are stored locally on your device. If handling real data, we would implement reasonable security measures to protect the information displayed."
+      },
+      {
+        "title": "5. Third-Party Services and Advertisements",
+        "content": "Dynamic Wallet View does not share your Pi Network specific data with third-party advertisers. The application may contain placeholder elements for advertisements which are not functional in the current mock version and do not track you."
+      },
+      {
+        "title": "6. Your Choices and Rights",
+        "content": "Control over your Pi Network data resides with your Pi Network account and its official platform. Dynamic Wallet View, as a third-party viewer, would only display data based on permissions you grant via the Pi Network. Profile information entered directly into Dynamic Wallet View can be managed by you within the app."
+      },
+      {
+        "title": "7. Children's Privacy",
+        "content": "Dynamic Wallet View is not intended for use by children under the age of 13 (or the relevant age in your jurisdiction). We do not knowingly collect personal information from children."
+      },
+      {
+        "title": "8. Changes to This Privacy Policy",
+        "content": "We may update this Privacy Policy from time to time. We will notify you of any significant changes by posting the new Privacy Policy within the application or on our website."
+      },
+      {
+        "title": "9. Contact Us",
+        "content": "If you have any questions about this Privacy Policy, please contact us at privacy@example.com."
+      }
+    ],
+    "returnToLogin": "Return to Login",
+    "returnAction": "Return",
+    "helpTitle": "Help & Support",
+    "helpSections": [
+      {
+        "title": "Welcome to Help & Support!",
+        "content": "**What is Dynamic Wallet View?**\nDynamic Wallet View is a third-party application designed to offer a dynamic and user-friendly interface for viewing your Pi Network related metrics. This includes your Pi balance, current mining rate, insights into your team's activity, and performance data if you operate a Pi Node."
+      },
+      {
+        "title": "Is Dynamic Wallet View an official Pi Network App?",
+        "content": "No, Dynamic Wallet View is an independent application developed by enthusiasts. It is not officially affiliated with, endorsed, or sponsored by the Pi Core Team or the Pi Network."
+      },
+      {
+        "title": "How accurate is the data shown in Dynamic Wallet View?",
+        "content": "Currently, Dynamic Wallet View uses MOCK (SIMULATED) DATA for all its features. This is for demonstration and development purposes. In a future version intended for live use, data accuracy would depend on the information provided by the official Pi Network APIs and the permissions you grant."
+      },
+      {
+        "title": "Key Features Overview",
+        "content": "*   **Dashboard:** At-a-glance view of your total Pi balance, mining rate, and active team members.\n*   **Balance Breakdown:** Detailed view of your Pi balance, including transferable, unverified, and locked-up amounts.\n*   **Balance Fluctuation Chart:** Visual representation of your balance changes over time.\n*   **Badge Showcase:** Display of earned badges within the Pi Network ecosystem (mocked).\n*   **Team Insights:** Information about your team members, their status, and contributions (mocked).\n*   **Node Analysis:** For node operators, metrics like uptime and performance score (mocked).\n*   **Transaction History:** A complete ledger of your sent, received, and reward transactions.\n*   **Lockup & Bonus Calculator:** An interactive tool to estimate mining boosts from locking up Pi.\n*   **Team Management Tools:** Engage with your team by pinging inactive members or sending broadcast messages.\n*   **Donation Page:** Support the ongoing development of the app.\n*   **Settings:** Customize your profile, theme, and notification preferences."
+      },
+      {
+        "title": "Troubleshooting Common Issues",
+        "content": "*   **App not loading or showing errors:** As Dynamic Wallet View currently uses mock data, persistent errors might indicate a problem with the application itself. Please try refreshing. If issues continue, contact support.\n*   **Data seems incorrect:** Remember, all data in this version is simulated. It does not reflect your actual Pi Network account."
+      },
+      {
+        "title": "Contacting Support",
+        "content": "If you have any questions specific to the Dynamic Wallet View application, encounter bugs, or have feedback, please email us at support@example.com.\n\nFor any questions or issues regarding your actual Pi Network account, mining, KYC, or official Pi Network policies, please refer to the support channels provided by the Pi Network (e.g., in-app support in the official Pi app, official Pi Network website and community channels)."
+      }
+    ],
+    "piosLicenseTitle": "PiOS License",
+    "piosLicenseContent": "The Pi Open Source (PiOS) License allows Pi Community Developers to create Pi Apps and tools for the Pi Ecosystem. Developers are free to use the license to build on top of others’ work, and to get their creations used and built upon by others within the Pi Ecosystem.\n\nThe PiOS license grants unrestricted use of the software only within the Pi Ecosystem. Selling the software, or any software that incorporates PiOS-licensed software or its derivatives, for fiat currency is prohibited. Selling for Pi cryptocurrency is permitted. The license also explicitly prohibits use of the software to create any product that might be deemed to compete with Pi Network. \n\nRead the full license [here](https://github.com/pi-apps/PiOS/blob/main/LICENSE.md).",
+    "acceptTerms": {
+      "title": "Review Our Terms",
+      "description": "Before you continue, please review and accept our Terms of Service and Privacy Policy.",
+      "message": "By clicking 'I Accept & Continue', you acknowledge that you have read, understood, and agree to be bound by our Terms of Service and Privacy Policy. You can review these documents by clicking the links below.",
+      "acceptButton": "I Accept & Continue",
+      "logoutButton": "Logout"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "kpi_balance": "Total Pi Balance",
+    "kpi_rate": "Current Mining Rate",
+    "kpi_team": "Active Team Members",
+    "kpi_node_uptime": "Node Uptime",
+    "balanceBreakdown": {
+      "title": "Balance Breakdown",
+      "transferableToMainnet": "Transferable to Mainnet",
+      "totalUnverifiedPi": "Total Unverified Pi",
+      "currentlyInLockups": "Currently in Lockups",
+      "disclaimer": "Note: Unverified Pi requires associated members to complete KYC to become transferable."
+    },
+    "unverifiedPiDetail": {
+      "title": "Unverified Pi Sources",
+      "fromReferralTeam": "From Referral Team",
+      "fromSecurityCircle": "From Security Circle",
+      "fromNodeRewards": "From Node Rewards",
+      "fromOtherBonuses": "From Other Bonuses",
+      "disclaimer": "These amounts become transferable as your connections complete KYC or other conditions are met."
+    },
+    "unverifiedBalanceChart": {
+      "title": "Balance Fluctuation",
+      "yAxisLabel": "Pi Amount",
+      "tooltipLabel": "Amount",
+      "tooltipLabelTransferable": "Transferable",
+      "tooltipLabelUnverified": "Unverified",
+      "periods": {
+        "threeMonths": "3M",
+        "sixMonths": "6M",
+        "twelveMonths": "12M"
+      }
+    },
+    "myBadges": {
+      "title": "My Badges",
+      "earnedOn": "Earned on"
+    },
+    "miningFocus": {
+      "title": "Mining Focus",
+      "description": "Track your personal mining goals and stay motivated!",
+      "weeklyGoal": "Weekly Goal (Days)",
+      "monthlyGoal": "Monthly Goal (Days)",
+      "daysSuffix": "days",
+      "goalAchieved": "Goal Achieved!",
+      "keepGoing": "Keep up the great work!",
+      "greatProgress": "Making great progress!",
+      "teamEncouragement": "Encourage your team to stay active! Their contributions help the network grow."
+    },
+    "teamActivity": {
+      "title": "Team Mining Rally",
+      "yourActivity": "Your Activity",
+      "lastWeek": "Last Week",
+      "lastMonth": "Last Month",
+      "hoursSuffix": "hrs",
+      "teamRallyWeekly": "Weekly Team Rally",
+      "teamRallyTop10": "Weekly Team Rally (Top 10)",
+      "rank": "Rank",
+      "member": "Member",
+      "hours": "Hours",
+      "yourRank": "Your Rank: #{{rank}} ({{hours}} hrs)",
+      "viewFullTeamReport": "View Full Team Report",
+      "newlyEarnedBadges": "Recent Achievements",
+      "noTeamMembers": "No team members to display activity for yet.",
+      "noActivity": "No activity data to display for the team."
+    },
+    "miningRateRedirect": {
+      "title": "Redirect to Pi App?",
+      "description": "You will be redirected to the Pi Network app to manage your mining session. Continue?",
+      "confirmButton": "Continue to Pi App",
+      "cancelButton": "Cancel"
+    }
+  },
+  "teamInsights": {
+    "title": "Team Insights",
+    "description": "Engage with your team, monitor their activity, and understand the importance of your Security Circle—a group of 3-5 trusted people from your Earning Team who boost your mining rate and network security.",
+    "tableTitle": "Your Earning Team",
+    "tableDescription": "View insights about your team members. Members marked inactive can be pinged using the tools above.",
+    "loading": "Loading team members...",
+    "error": "Failed to load team members. Please try again.",
+    "empty": "You have not invited any team members yet.",
+    "columns": {
+      "member": "Member",
+      "joinDate": "Join Date",
+      "status": "Status",
+      "contribution": "Contribution",
+      "activityLastWeek": "Activity (wk)",
+      "activityLastMonth": "Activity (Last Month)",
+      "kycStatus": "KYC Status"
+    },
+    "statusValues": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending"
+    },
+    "kycStatusValues": {
+      "completed": "Completed",
+      "pending": "Pending",
+      "not_completed": "Not Completed"
+    },
+    "contributionTooltip": "Unverified Pi contributed by this team member to your balance. Becomes transferable after they complete KYC verification.",
+    "managementTools": {
+      "title": "Team Management Tools",
+      "description": "Engage with your team to boost overall activity and cooperation.",
+      "pingInactive": {
+        "title": "Ping Inactive Members",
+        "description": "Gently remind your {{count}} inactive team member(s) to start their mining session.",
+        "button": "Ping {{count}} Members",
+        "buttonPinging": "Pinging..."
+      },
+      "broadcast": {
+        "title": "Send a Broadcast",
+        "placeholder": "Type your message to the team...",
+        "button": "Send Broadcast",
+        "buttonSending": "Sending..."
+      }
+    },
+    "pingSuccessTitle": "Inactive Members Pinged",
+    "pingSuccessDesc": "A reminder notification has been sent to {{count}} inactive members.",
+    "broadcastSuccessTitle": "Broadcast Sent",
+    "broadcastSuccessDesc": "Your message has been sent to all team members.",
+    "broadcastErrorTitle": "Broadcast Failed",
+    "broadcastErrorDesc": "Could not send the broadcast. Please try again.",
+    "broadcastEmptyTitle": "Message is empty",
+    "teamMembers": {
+      "title": "Team Members",
+      "description": "View insights about your team members. Members marked inactive can be pinged using the tools above.",
+      "columns": {
+        "name": "Name",
+        "joinDate": "Join Date",
+        "contribution": "Pi Contribution",
+        "kycStatus": "KYC Status"
+      },
+      "empty": "You have not invited any team members yet."
+    }
+  },
+  "nodeAnalysis": {
+    "title": "Node Analysis",
+    "isOperator": {
+      "uptime": "Node Uptime (90d)",
+      "performanceScore": "Performance Score",
+      "performanceHistory": "Performance History",
+      "yAxisLabel": "Score"
+    },
+    "isNotOperator": {
+      "title": "Become a Node Operator",
+      "description": "Help secure the Pi Network and earn rewards by running a node. Click below to learn more and get started.",
+      "button": "Learn More on Pi Network Official Site"
+    }
+  },
+  "settings": {
+    "title": "Settings & Profile",
+    "profile": {
+      "title": "Profile Information",
+      "description": "Update your personal information and avatar.",
+      "displayName": "Display Name",
+      "bio": "Bio",
+      "avatar": "Profile Picture",
+      "saveButton": "Save Profile",
+      "saving": "Saving Profile...",
+      "successToast": "Profile Saved!",
+      "errorToast": "Profile save failed!"
+    },
+    "display": {
+        "title": "Display Preferences",
+        "description": "Manage your application theme to suit your style."
+    },
+    "theme": {
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "notifications": {
+        "title": "Notifications",
+        "description": "Control how you receive important updates."
+    },
+    "reminders": {
+        "label": "Mining Session Reminders",
+        "description": "Get a notification before your session expires.",
+        "timeLabel": "Remind Me Before Session End"
+    },
+    "saveButton": "Save Notification Settings",
+    "saving": "Saving..."
+  },
+  "shared": {
+    "loading": "Loading...",
+    "error": "An error occurred"
+  },
+  "dashboardError": {
+    "title": "Something Went Wrong",
+    "description": "We encountered an issue while loading this part of the dashboard. Please try again.",
+    "detailsLabel": "Error details",
+    "retryButton": "Try Again"
+  }
+}

@@ -1,0 +1,128 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply min-h-screen bg-background text-foreground;
+    background-image: radial-gradient(circle at top left, hsl(var(--primary) / 0.05), transparent 30%),
+                      radial-gradient(circle at bottom right, hsl(var(--accent) / 0.05), transparent 40%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
+  }
+
+  /* Improved mobile fluidity */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent horizontal scrolling on mobile */
+  body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Fluid typography for better mobile scaling */
+  .fluid-text {
+    font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+  }
+
+  .fluid-text-lg {
+    font-size: clamp(1.125rem, 3vw, 1.5rem);
+  }
+
+  .fluid-text-xl {
+    font-size: clamp(1.25rem, 4vw, 1.875rem);
+  }
+
+  .fluid-text-2xl {
+    font-size: clamp(1.5rem, 5vw, 2.25rem);
+  }
+}
+
+@layer base {
+  :root {
+    /* Updated Light Theme based on PRD */
+    --background: 250 67% 97%; /* #f2f0fc - Very light purple */
+    --foreground: 250 20% 25%; /* Dark desaturated purple for contrast */
+    --card: 0 0% 100%; /* White cards on light purple bg */
+    --card-foreground: 250 20% 25%; /* Same as main foreground */
+    --popover: 0 0% 100%;
+    --popover-foreground: 250 20% 25%;
+    --primary: 250 60% 60%; /* #735cd6 - Moderate purple */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 250 50% 92%; /* Lighter purple, harmonious */
+    --secondary-foreground: 250 40% 40%; /* Darker purple for secondary text */
+    --muted: 250 50% 95%; /* Even lighter purple */
+    --muted-foreground: 250 30% 55%; /* Muted purple text */
+    --accent: 317 54% 64%; /* #d673b8 - Muted Pink (Correct from PRD) */
+    --accent-foreground: 0 0% 100%; /* White */
+    --destructive: 0 84.2% 60.2%; /* #EF4444 */
+    --destructive-foreground: 0 0% 98%;
+    --border: 250 30% 85%; /* Soft purple border */
+    --input: 250 30% 90%; /* Soft purple input background */
+    --ring: 250 60% 60%; /* Primary color for rings */
+    
+    --chart-1: 250 60% 65%; /* Shades of primary and accent */
+    --chart-2: 317 50% 70%;
+    --chart-3: 250 40% 50%;
+    --chart-4: 317 40% 60%;
+    --chart-5: 250 50% 55%;
+    
+    --radius: 0.5rem;
+
+    /* Sidebar - NEW variables for distinction */
+    --sidebar-background: 250 20% 99%; /* Almost white, slightly cooler than page background */
+    --sidebar-foreground: 250 20% 30%;
+    --sidebar-accent: 250 60% 95%;
+    --sidebar-accent-foreground: var(--primary);
+    --sidebar-border: 250 30% 90%;
+    --sidebar-ring: 250 60% 60%;
+  }
+
+  .dark {
+    /* Updated Dark Theme based on PRD */
+    --background: 250 10% 18%; /* Dark desaturated purple */
+    --foreground: 250 30% 90%; /* Light desaturated purple/gray for text */
+    --card: 250 12% 22%; /* Slightly lighter dark purple for cards */
+    --card-foreground: 250 30% 90%;
+    --popover: 250 12% 22%;
+    --popover-foreground: 250 30% 90%;
+    --primary: 250 60% 60%; /* #735cd6 - Moderate purple (consistent) */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 250 15% 30%; /* Darker harmonious purple */
+    --secondary-foreground: 250 25% 80%; /* Lighter purple for secondary text */
+    --muted: 250 10% 25%; /* Even darker purple for muted backgrounds */
+    --muted-foreground: 250 20% 65%; /* Muted light purple text */
+    --accent: 317 54% 64%; /* #d673b8 - Muted Pink (Correct from PRD) */
+    --accent-foreground: 0 0% 100%; /* White */
+    --destructive: 0 72.2% 50.6%; /* Keeping a distinct destructive color */
+    --destructive-foreground: 0 0% 98%;
+    --border: 250 15% 35%; /* Dark purple border */
+    --input: 250 15% 32%; /* Dark purple input background */
+    --ring: 250 60% 60%; /* Primary color for rings */
+
+    --chart-1: 250 60% 70%;
+    --chart-2: 317 50% 75%;
+    --chart-3: 250 40% 60%;
+    --chart-4: 317 40% 65%;
+    --chart-5: 250 50% 65%;
+
+    /* Sidebar Dark Theme */
+    --sidebar-background: 250 10% 15%; /* Darker than page background */
+    --sidebar-foreground: 250 30% 85%;
+    --sidebar-accent: 250 15% 25%;
+    --sidebar-accent-foreground: var(--primary);
+    --sidebar-border: 250 10% 25%;
+    --sidebar-ring: 250 60% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}

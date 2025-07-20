@@ -97,17 +97,18 @@ export default function NativeFeaturesCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <span>Pi Browser Features</span>
           <Button
             variant="outline"
             size="sm"
             onClick={detectFeatures}
             disabled={loading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
+            <span className="sm:hidden">Refresh</span>
           </Button>
         </CardTitle>
       </CardHeader>
@@ -129,18 +130,20 @@ export default function NativeFeaturesCard() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 rounded-lg border"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border gap-2"
               >
                 <div className="flex items-center gap-3">
                   {getFeatureIcon(feature.available)}
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="font-medium text-sm">{feature.name}</div>
                     <div className="text-xs text-muted-foreground">
                       {feature.description}
                     </div>
                   </div>
                 </div>
-                {getFeatureBadge(feature.available)}
+                <div className="flex-shrink-0">
+                  {getFeatureBadge(feature.available)}
+                </div>
               </div>
             ))}
           </div>

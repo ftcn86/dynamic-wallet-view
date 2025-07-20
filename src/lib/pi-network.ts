@@ -553,13 +553,39 @@ export function getPiPlatformAPIClient(): PiPlatformAPIClient {
 export async function authenticateWithPi(): Promise<User | null> {
   try {
     const sdk = getPiSDKInstance();
-    const authResult = await sdk.authenticate(['username', 'payments', 'wallet_address'], handleIncompletePayment);
+    
+    // Ensure we request wallet_address scope explicitly
+    const requiredScopes = ['username', 'payments', 'wallet_address'];
+    console.log('🔍 Authenticating with scopes:', requiredScopes);
+    
+    const authResult = await sdk.authenticate(requiredScopes, handleIncompletePayment);
+    
+    // Check if wallet_address was granted
+    if (!authResult.user.wallet_address) {
+      console.warn('⚠️ Wallet address not available - user may not have granted wallet_address scope');
+      
+      // Try to re-authenticate with explicit wallet_address request
+      try {
+        console.log('🔄 Re-authenticating with explicit wallet_address scope...');
+        const retryAuthResult = await sdk.authenticate(['wallet_address'], handleIncompletePayment);
+        
+        if (retryAuthResult.user.wallet_address) {
+          console.log('✅ Wallet address obtained on retry');
+          authResult.user.wallet_address = retryAuthResult.user.wallet_address;
+        } else {
+          console.warn('⚠️ Wallet address still not available after retry');
+        }
+      } catch (retryError) {
+        console.error('❌ Retry authentication failed:', retryError);
+      }
+    }
     
     // Convert Pi user to our app's User format
     const user = convertPiUserToAppUser(authResult.user, authResult);
     
     console.log('✅ Pi Network authentication successful');
     console.log('🔧 User data:', user);
+    console.log('💰 Wallet address:', user.walletAddress ? 'Available' : 'Not available');
     
     return user;
   } catch (error) {

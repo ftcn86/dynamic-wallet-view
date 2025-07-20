@@ -178,10 +178,12 @@ export default function RewardedAdsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Gift className="h-5 w-5" />
-          <span>Watch Ads for Pi</span>
-          <Badge variant="secondary" className="text-xs">
+        <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Gift className="h-5 w-5" />
+            <span>Watch Ads for Pi</span>
+          </div>
+          <Badge variant="secondary" className="text-xs w-fit">
             {dailyWatches}/{MAX_DAILY_WATCHES} today
           </Badge>
         </CardTitle>
@@ -216,12 +218,12 @@ export default function RewardedAdsCard() {
         )}
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted rounded-lg gap-2">
+            <div className="min-w-0 flex-1">
               <div className="font-medium">Reward per ad</div>
               <div className="text-sm text-muted-foreground">Watch a short video</div>
             </div>
-            <div className="text-right">
+            <div className="text-right flex-shrink-0">
               <div className="font-bold text-lg">{REWARD_AMOUNT} π</div>
               <div className="text-xs text-muted-foreground">Pi Network</div>
             </div>

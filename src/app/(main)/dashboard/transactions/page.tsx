@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { SortableTableHead } from '@/components/shared/SortableTableHead';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import PaymentCancellationCard from '@/components/dashboard/PaymentCancellationCard';
 import { 
     ArrowDownLeftIcon,
     ArrowUpRightIcon,
@@ -194,6 +195,10 @@ export default function TransactionsPage() {
   return (
     <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline break-words">Transaction History</h1>
+      
+      {/* Payment Cancellation Card */}
+      <PaymentCancellationCard />
+      
       <Card className="shadow-lg w-full max-w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">

@@ -77,17 +77,18 @@ export default function WalletAddressCard({ user }: WalletAddressCardProps) {
           <label className="text-sm font-medium text-muted-foreground">
             Your Pi Network Wallet Address
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               value={user.walletAddress}
               readOnly
-              className="font-mono text-sm"
+              className="font-mono text-xs sm:text-sm flex-1 min-w-0"
             />
             <Button
               variant="outline"
               size="icon"
               onClick={handleCopyAddress}
               disabled={copied}
+              className="flex-shrink-0 h-10 w-10 sm:h-10 sm:w-10"
             >
               {copied ? (
                 <Check className="h-4 w-4 text-green-600" />
@@ -98,15 +99,16 @@ export default function WalletAddressCard({ user }: WalletAddressCardProps) {
           </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleViewOnExplorer}
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <ExternalLink className="h-4 w-4" />
-            View on Explorer
+            <span className="hidden sm:inline">View on Explorer</span>
+            <span className="sm:hidden">Explorer</span>
           </Button>
         </div>
         

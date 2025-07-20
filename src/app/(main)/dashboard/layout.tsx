@@ -39,8 +39,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   <SidebarContent />
                 </MobileSidebar>
             </Header>
-            <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 w-full max-w-full">
-              <div className="w-full max-w-full min-w-0">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8 w-full max-w-full">
+              <div className="w-full max-w-full min-w-0 mx-auto">
                 {children}
               </div>
             </main>

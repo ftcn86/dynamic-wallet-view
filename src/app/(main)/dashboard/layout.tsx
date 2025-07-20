@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-        <Sidebar>
+        <Sidebar className="hidden md:flex">
           <SidebarContent />
         </Sidebar>
         <SidebarInset>

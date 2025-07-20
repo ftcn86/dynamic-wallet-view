@@ -28,8 +28,8 @@ export function MobileSidebar({
   return (
     <Sheet open={openMobile} onOpenChange={setOpenMobile}>
       <SheetTrigger asChild className="md:hidden">
-        <Button variant="ghost" size="icon">
-          <MenuIcon className="h-6 w-6" />
+        <Button variant="ghost" size="icon" className="h-10 w-10">
+          <MenuIcon className="h-5 w-5" />
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </SheetTrigger>

@@ -93,35 +93,35 @@ class PiNetworkSDK {
     this.initializeSDK();
   }
 
+  /**
+   * Initialize Pi Network SDK
+   */
   private initializeSDK(): void {
-    if (typeof window !== 'undefined') {
-      // Wait for Pi SDK to be available
-      const checkForPiSDK = () => {
-        if ((window as any).Pi) {
-          this.pi = (window as any).Pi;
+    if (typeof window === 'undefined') return;
+
+    const checkForPiSDK = () => {
+      if ((window as any).Pi) {
+        this.pi = (window as any).Pi;
+        console.log('✅ Pi Network SDK loaded successfully');
+        
+        // Initialize with proper app configuration
+        if (this.pi.init) {
+          // Get app ID from environment variable or use default
+          const appId = process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view';
           
-          // Debug: Log available methods
-          console.log('Available Pi SDK methods:', Object.keys(this.pi));
-          
-          // Initialize SDK
-          if (this.pi.init) {
-            try {
-              this.pi.init({ 
-                version: "2.0"
-              });
-              console.log('✅ Pi Network SDK initialized successfully');
-            } catch (error) {
-              console.error('Failed to initialize Pi SDK:', error);
-            }
-          }
-        } else {
-          // Retry after a short delay
-          setTimeout(checkForPiSDK, 100);
+          this.pi.init({
+            version: '2.0',
+            appId: appId,
+          });
+          console.log('✅ Pi Network SDK initialized with app ID:', appId);
         }
-      };
-      
-      checkForPiSDK();
-    }
+      } else {
+        console.log('⏳ Pi Network SDK not yet available, retrying...');
+        setTimeout(checkForPiSDK, 100);
+      }
+    };
+
+    checkForPiSDK();
   }
 
   /**
@@ -554,31 +554,11 @@ export async function authenticateWithPi(): Promise<User | null> {
   try {
     const sdk = getPiSDKInstance();
     
-    // Ensure we request wallet_address scope explicitly
+    // Standardize scopes - always request the same set
     const requiredScopes = ['username', 'payments', 'wallet_address'];
     console.log('🔍 Authenticating with scopes:', requiredScopes);
     
     const authResult = await sdk.authenticate(requiredScopes, handleIncompletePayment);
-    
-    // Check if wallet_address was granted
-    if (!authResult.user.wallet_address) {
-      console.warn('⚠️ Wallet address not available - user may not have granted wallet_address scope');
-      
-      // Try to re-authenticate with explicit wallet_address request
-      try {
-        console.log('🔄 Re-authenticating with explicit wallet_address scope...');
-        const retryAuthResult = await sdk.authenticate(['wallet_address'], handleIncompletePayment);
-        
-        if (retryAuthResult.user.wallet_address) {
-          console.log('✅ Wallet address obtained on retry');
-          authResult.user.wallet_address = retryAuthResult.user.wallet_address;
-        } else {
-          console.warn('⚠️ Wallet address still not available after retry');
-        }
-      } catch (retryError) {
-        console.error('❌ Retry authentication failed:', retryError);
-      }
-    }
     
     // Convert Pi user to our app's User format
     const user = convertPiUserToAppUser(authResult.user, authResult);

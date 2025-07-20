@@ -8,9 +8,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { getPiSDKInstance } from '@/lib/pi-network';
-import { createAppToUserPayment } from '@/services/piService';
+import { createAppToUserPayment, canMakeA2UPayment } from '@/services/piService';
 import { useAuth } from '@/contexts/AuthContext';
-import { Play, Gift, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Play, Gift, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { notifyAdRewardEarned, notifyDailyAdLimitReached, notifyAdNotAvailable } from '@/services/notificationService';
 
 export default function RewardedAdsCard() {
@@ -22,6 +22,7 @@ export default function RewardedAdsCard() {
   const [rewardProgress, setRewardProgress] = useState(0);
   const [dailyWatches, setDailyWatches] = useState(0);
   const [lastRewardTime, setLastRewardTime] = useState<Date | null>(null);
+  const [canPayReward, setCanPayReward] = useState<{ canPay: boolean; reason?: string }>({ canPay: false });
 
   const MAX_DAILY_WATCHES = 5;
   const REWARD_AMOUNT = 0.1; // 0.1 Pi per ad
@@ -29,6 +30,7 @@ export default function RewardedAdsCard() {
   useEffect(() => {
     checkAdReadiness();
     loadDailyStats();
+    checkAppPaymentCapability();
   }, []);
 
   const checkAdReadiness = async () => {
@@ -166,6 +168,16 @@ export default function RewardedAdsCard() {
     }
   };
 
+  const checkAppPaymentCapability = async () => {
+    try {
+      const paymentCheck = await canMakeA2UPayment(REWARD_AMOUNT);
+      setCanPayReward(paymentCheck);
+    } catch (error) {
+      console.error('Failed to check app payment capability:', error);
+      setCanPayReward({ canPay: false, reason: 'Unable to check payment capability' });
+    }
+  };
+
   const canWatchAd = isAdReady && !isLoading && dailyWatches < MAX_DAILY_WATCHES;
   const timeUntilReset = () => {
     const now = new Date();
@@ -203,6 +215,15 @@ export default function RewardedAdsCard() {
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
               You've reached your daily limit. Come back tomorrow for more rewards!
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!canPayReward.canPay && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              {canPayReward.reason || 'App currently cannot pay rewards. This is normal for development/testing.'}
             </AlertDescription>
           </Alert>
         )}

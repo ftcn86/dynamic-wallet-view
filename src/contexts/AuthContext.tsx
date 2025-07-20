@@ -5,6 +5,42 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 import type { User, UserSettings } from '@/data/schemas';
 import { authenticateWithPi, getPiSDKInstance } from '@/lib/pi-network';
 
+// Import the conversion function
+function convertPiUserToAppUser(piUser: any, authResult?: any): User {
+  const name = piUser.profile 
+    ? `${piUser.profile.firstname || ''} ${piUser.profile.lastname || ''}`.trim() || piUser.username
+    : piUser.username;
+
+  return {
+    id: piUser.uid,
+    username: piUser.username,
+    name: name,
+    email: piUser.profile?.email || '',
+    walletAddress: piUser.wallet_address || '',
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${piUser.username}`,
+    balance: 0, // Will be fetched separately
+    miningRate: 0, // Will be fetched separately
+    teamSize: 0, // Will be fetched separately
+    isNodeOperator: piUser.roles?.some((role: string) => 
+      ['node_operator', 'validator', 'super_node', 'node'].includes(role)
+    ) || false,
+    kycStatus: 'verified', // Default for Pi Network users
+    joinDate: new Date().toISOString(),
+    lastActive: new Date().toISOString(),
+    settings: {
+      theme: 'system',
+      language: 'en',
+      notifications: true,
+      emailNotifications: false,
+    },
+    // Activity metrics (will be calculated by backend)
+    userActiveMiningHours_LastWeek: 0,
+    userActiveMiningHours_LastMonth: 0,
+    activeMiningDays_LastWeek: 0,
+    activeMiningDays_LastMonth: 0,
+  };
+}
+
 interface AuthContextType {
   user: User | null;
   setUser: Dispatch<SetStateAction<User | null>>;
@@ -159,6 +195,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isSDKAvailable) {
         // Use real Pi Network authentication
         console.log('Pi SDK available: Using real Pi Network authentication');
+        
+        const sdk = getPiSDKInstance();
+        
+        // Check if user is already authenticated
+        if (sdk.isAuthenticated()) {
+          console.log('✅ User already authenticated, getting current user data');
+          const currentUser = sdk.currentUser();
+          if (currentUser) {
+            const appUser = convertPiUserToAppUser(currentUser);
+            const userWithTermsAccepted = { ...appUser, termsAccepted: true };
+            setUserInternal(userWithTermsAccepted);
+            return userWithTermsAccepted;
+          }
+        }
+        
+        // Only authenticate if not already authenticated
+        console.log('🔍 User not authenticated, starting authentication...');
         const authenticatedUser = await authenticateWithPi();
         
         if (!authenticatedUser) {

@@ -87,6 +87,8 @@ export default function DonatePage() {
             if (!sdk.isAuthenticated()) {
                 console.log('🔍 User not authenticated, authenticating...');
                 await sdk.authenticate(['username', 'payments', 'wallet_address']);
+            } else {
+                console.log('✅ User already authenticated, proceeding with payment');
             }
             
             const payment = await (window as any).Pi.createPayment(paymentData, {

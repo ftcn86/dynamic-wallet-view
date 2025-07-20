@@ -219,15 +219,6 @@ export default function RewardedAdsCard() {
           </Alert>
         )}
 
-        {!canPayReward.canPay && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              {canPayReward.reason || 'App currently cannot pay rewards. This is normal for development/testing.'}
-            </AlertDescription>
-          </Alert>
-        )}
-
         {isWatchingAd && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">

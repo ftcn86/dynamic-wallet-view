@@ -536,18 +536,31 @@ export async function canMakeA2UPayment(amount: number): Promise<{
   availableBalance: number;
   reason?: string;
 }> {
-  const appBalance = await getAppPiBalance();
+  console.log('🔍 Checking if app can make A2U payment of', amount, 'Pi...');
   
-  if (appBalance.availableBalance >= amount) {
-    return {
-      canPay: true,
-      availableBalance: appBalance.availableBalance
-    };
-  } else {
+  try {
+    const appBalance = await getAppPiBalance();
+    
+    if (appBalance.availableBalance >= amount) {
+      console.log('✅ App can make A2U payment');
+      return {
+        canPay: true,
+        availableBalance: appBalance.availableBalance
+      };
+    } else {
+      console.log('❌ App cannot make A2U payment - insufficient balance');
+      return {
+        canPay: false,
+        availableBalance: appBalance.availableBalance,
+        reason: 'App currently cannot pay rewards. This is normal for development/testing.'
+      };
+    }
+  } catch (error) {
+    console.error('❌ Error checking A2U payment capability:', error);
     return {
       canPay: false,
-      availableBalance: appBalance.availableBalance,
-      reason: `Insufficient app balance. Need ${amount} Pi, have ${appBalance.availableBalance} Pi`
+      availableBalance: 0,
+      reason: 'Unable to check payment capability'
     };
   }
 }

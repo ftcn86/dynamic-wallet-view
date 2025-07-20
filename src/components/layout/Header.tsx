@@ -42,6 +42,7 @@ import {
     CheckCheck,
 } from '@/components/shared/icons';
 import { RefreshCwIcon } from 'lucide-react';
+import ShareButton from '@/components/dashboard/ShareButton';
 
 
 const notificationIcons: Record<NotificationType, React.ElementType> = {
@@ -219,6 +220,13 @@ export function Header({children}: {children?: React.ReactNode}) {
       ) : (
         <div className="flex items-center gap-2">
             <NotificationsDropdown />
+            <ShareButton
+              title="Dynamic Wallet View"
+              message="Check out this amazing Pi Network dashboard! 🚀"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-full"
+            />
             <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={handleRefresh}>
             <RefreshCwIcon className="h-5 w-5" />
             <span className="sr-only">Refresh Data</span>
@@ -229,7 +237,7 @@ export function Header({children}: {children?: React.ReactNode}) {
               <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="person face"/>
+                      <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="person face"/>
                       <AvatarFallback>{avatarFallback}</AvatarFallback>
                   </Avatar>
                   </Button>

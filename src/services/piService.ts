@@ -10,6 +10,7 @@ import { mockUser, mockTeam, mockTransactions, mockNotifications } from '@/data/
 import type { User, TeamMember, Transaction, Notification } from '@/data/schemas';
 import { isPiSDKAvailable, getPiSDKInstance } from '@/lib/pi-network';
 import type { PiPayment, PiPaymentData } from '@/lib/pi-network';
+import { notifyA2UPaymentSent, notifyA2UPaymentFailed } from '@/services/notificationService';
 
 // Payment callbacks interface
 export interface PaymentCallbacks {
@@ -126,7 +127,7 @@ export async function getAuthenticatedUser(): Promise<User> {
   if (isPiBrowser()) {
     try {
       const piSDK = getPiSDK();
-      const authResult = await piSDK.authenticate(['username', 'payments']);
+      const authResult = await piSDK.authenticate(['username', 'payments', 'wallet_address']);
       return convertPiUserToAppUser(authResult.user, authResult);
     } catch (error) {
       console.error("Pi Network authentication failed, falling back to mock data:", error);
@@ -252,6 +253,57 @@ export async function createPiPayment(
     } else {
       throw new Error(`Payment creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+}
+
+/**
+ * Create an App-to-User payment
+ */
+export async function createAppToUserPayment(
+  amount: number,
+  memo: string,
+  userId: string,
+  metadata?: Record<string, any>
+): Promise<any> {
+  try {
+    console.log('🔍 Creating App-to-User payment...');
+    console.log(`🔧 Amount: ${amount} Pi`);
+    console.log(`🔧 Memo: ${memo}`);
+    console.log(`🔧 User ID: ${userId}`);
+
+    const response = await fetch('/api/payments/a2u', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount,
+        memo,
+        metadata: metadata || {},
+        uid: userId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create App-to-User payment');
+    }
+
+    const result = await response.json();
+    console.log('✅ App-to-User payment created successfully');
+    
+    // Notify success
+    notifyA2UPaymentSent(amount, userId);
+    
+    return result;
+  } catch (error) {
+    console.error('❌ App-to-User payment creation failed:', error);
+    
+    // Notify failure
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    notifyA2UPaymentFailed(amount, userId, errorMessage);
+    
+    throw error;
   }
 }
 
@@ -482,23 +534,27 @@ export async function getTransactions(): Promise<Transaction[]> {
  * Get notifications
  */
 export async function getNotifications(): Promise<Notification[]> {
-  return mockApiCall({ data: mockNotifications });
+  // Import here to avoid circular dependencies
+  const { getNotifications: getNotificationService } = await import('@/services/notificationService');
+  return getNotificationService();
 }
 
 /**
  * Mark notification as read
  */
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
-  // In a real app, this would update the notification in the database
-  console.log('Marking notification as read:', notificationId);
+  // Import here to avoid circular dependencies
+  const { markNotificationAsRead: markRead } = await import('@/services/notificationService');
+  markRead(notificationId);
 }
 
 /**
  * Mark all notifications as read
  */
 export async function markAllNotificationsAsRead(): Promise<void> {
-  // In a real app, this would update all notifications in the database
-  console.log('Marking all notifications as read');
+  // Import here to avoid circular dependencies
+  const { markAllNotificationsAsRead: markAllRead } = await import('@/services/notificationService');
+  markAllRead();
 }
 
 /**

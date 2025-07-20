@@ -27,6 +27,9 @@ import { BalanceFluctuationChartCard } from '@/components/dashboard/BalanceFluct
 import { MyBadgesCard } from '@/components/dashboard/MyBadgesCard';
 import { LockupCalculatorCard } from '@/components/dashboard/LockupCalculatorCard';
 import { AIFeatureFeedbackCard } from '@/components/dashboard/AIFeatureFeedbackCard';
+import WalletAddressCard from '@/components/dashboard/WalletAddressCard';
+import NativeFeaturesCard from '@/components/dashboard/NativeFeaturesCard';
+import RewardedAdsCard from '@/components/dashboard/RewardedAdsCard';
 import { mockTeam } from '@/data/mocks';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -191,14 +194,24 @@ export default function DashboardPage() {
         </TabsContent>
         
         <TabsContent value="portfolio" className="mt-4 sm:mt-6 w-full max-w-full">
-          <div className="w-full max-w-full">
-            <BalanceFluctuationChartCard />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
+            <div className="w-full">
+              <BalanceFluctuationChartCard />
+            </div>
+            <div className="w-full">
+              <WalletAddressCard user={user} />
+            </div>
           </div>
         </TabsContent>
         
         <TabsContent value="achievements" className="mt-4 sm:mt-6 w-full max-w-full">
-          <div className="w-full max-w-full">
-            <MyBadgesCard />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
+            <div className="w-full">
+              <MyBadgesCard />
+            </div>
+            <div className="w-full">
+              <RewardedAdsCard />
+            </div>
           </div>
         </TabsContent>
         
@@ -210,6 +223,9 @@ export default function DashboardPage() {
             <div className="w-full">
               <AIFeatureFeedbackCard />
             </div>
+          </div>
+          <div className="mt-4 sm:mt-6 w-full">
+            <NativeFeaturesCard />
           </div>
         </TabsContent>
       </Tabs>

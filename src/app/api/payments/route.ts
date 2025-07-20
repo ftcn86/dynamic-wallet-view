@@ -42,6 +42,35 @@ export async function POST(request: NextRequest) {
           );
         }
 
+      case 'cancel':
+        if (!paymentId) {
+          return NextResponse.json(
+            { error: 'Payment ID is required for cancellation' },
+            { status: 400 }
+          );
+        }
+
+        try {
+          console.log(`🔍 Cancelling payment: ${paymentId}`);
+          const result = await piPlatformClient.cancelPayment(paymentId);
+          console.log('✅ Payment cancellation successful');
+          
+          return NextResponse.json({
+            success: true,
+            message: `Payment ${paymentId} cancelled successfully`,
+            result,
+            environment: {
+              platformApiUrl: config.piNetwork.platformApiUrl,
+            }
+          });
+        } catch (error) {
+          console.error('❌ Payment cancellation failed:', error);
+          return NextResponse.json(
+            { error: 'Payment cancellation failed' },
+            { status: 500 }
+          );
+        }
+
       case 'complete':
         if (!paymentId || !txid) {
           return NextResponse.json(

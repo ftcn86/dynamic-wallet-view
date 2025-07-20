@@ -28,6 +28,7 @@ export interface PiAuthResult {
 export interface PiUser {
   uid: string;
   username: string;
+  wallet_address?: string;
   profile?: {
     firstname?: string;
     lastname?: string;
@@ -158,7 +159,7 @@ class PiNetworkSDK {
    * Authenticate user with Pi Network
    */
   async authenticate(
-    scopes: string[] = ['username', 'payments'],
+    scopes: string[] = ['username', 'payments', 'wallet_address'],
     onIncompletePaymentFound?: (payment: PiPayment) => void
   ): Promise<PiAuthResult> {
     if (!this.pi) {
@@ -237,6 +238,127 @@ class PiNetworkSDK {
       throw new Error(`Payment cancellation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
+
+  /**
+   * Get list of available native features
+   */
+  async getNativeFeatures(): Promise<string[]> {
+    if (!this.pi) {
+      throw new Error('Pi Network SDK not available');
+    }
+
+    try {
+      if (typeof this.pi.nativeFeaturesList === 'function') {
+        const features = await this.pi.nativeFeaturesList();
+        console.log('✅ Native features detected:', features);
+        return features;
+      } else {
+        console.log('⚠️ Native features detection not available');
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Native features detection failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Open native share dialog
+   */
+  async openShareDialog(title: string, message: string): Promise<void> {
+    if (!this.pi) {
+      throw new Error('Pi Network SDK not available');
+    }
+
+    try {
+      if (typeof this.pi.openShareDialog === 'function') {
+        await this.pi.openShareDialog(title, message);
+        console.log('✅ Share dialog opened successfully');
+      } else {
+        console.log('⚠️ Share dialog not available');
+        // Fallback to browser share API
+        if (navigator.share) {
+          await navigator.share({
+            title,
+            text: message,
+            url: window.location.href
+          });
+        } else {
+          throw new Error('Share functionality not available');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Share dialog failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Show rewarded ad
+   */
+  async showRewardedAd(): Promise<{ result: string; adId?: string }> {
+    if (!this.pi) {
+      throw new Error('Pi Network SDK not available');
+    }
+
+    try {
+      if (this.pi.Ads && typeof this.pi.Ads.showAd === 'function') {
+        const result = await this.pi.Ads.showAd('rewarded');
+        console.log('✅ Rewarded ad result:', result);
+        return result;
+      } else {
+        console.log('⚠️ Ads module not available');
+        throw new Error('Ads functionality not available');
+      }
+    } catch (error) {
+      console.error('❌ Rewarded ad failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if rewarded ad is ready
+   */
+  async isRewardedAdReady(): Promise<boolean> {
+    if (!this.pi) {
+      throw new Error('Pi Network SDK not available');
+    }
+
+    try {
+      if (this.pi.Ads && typeof this.pi.Ads.isAdReady === 'function') {
+        const result = await this.pi.Ads.isAdReady('rewarded');
+        return result.ready;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Ad readiness check failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get user balance from Pi Network SDK
+   */
+  async getBalance(): Promise<any> {
+    if (!this.pi) {
+      throw new Error('Pi Network SDK not available');
+    }
+
+    try {
+      if (typeof this.pi.getBalance === 'function') {
+        const balance = await this.pi.getBalance();
+        console.log('✅ Balance fetched from Pi Network SDK:', balance);
+        return balance;
+      } else {
+        console.log('⚠️ Pi Network SDK getBalance method not available');
+        throw new Error('Balance method not available in Pi Network SDK');
+      }
+    } catch (error) {
+      console.error('❌ Pi Network SDK balance fetch failed:', error);
+      throw error;
+    }
+  }
 }
 
 // Global SDK instance
@@ -268,6 +390,7 @@ function convertPiUserToAppUser(piUser: PiUser, authResult?: PiAuthResult): User
     username: piUser.username,
     name: name,
     email: piUser.profile?.email || '',
+    walletAddress: piUser.wallet_address || '',
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${piUser.username}`,
     balance: 0, // Will be fetched separately
     miningRate: 0, // Will be fetched separately
@@ -341,13 +464,28 @@ class PiPlatformAPIClient {
 
   /**
    * Get user balance information
+   * Note: Pi Network doesn't provide balance via Platform API
+   * This would need to be implemented via blockchain API or other means
    */
   async getUserBalance(accessToken: string): Promise<any> {
-    return this.request('/v2/me', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
+    // Pi Network Platform API doesn't provide balance information
+    // This would need to be implemented via:
+    // 1. Blockchain API calls to get wallet balance
+    // 2. Pi Network's internal APIs (if available)
+    // 3. Third-party services that track Pi balances
+    
+    console.log('⚠️ Balance fetching not available via Platform API');
+    console.log('💡 Consider implementing via blockchain API or Pi Network internal APIs');
+    
+    // Return mock data for now
+    return {
+      balance: 0,
+      totalBalance: 0,
+      transferableBalance: 0,
+      unverifiedBalance: 0,
+      lockedBalance: 0,
+      message: 'Balance fetching requires blockchain API integration'
+    };
   }
 
   /**
@@ -366,6 +504,32 @@ class PiPlatformAPIClient {
     return this.request(`/v2/payments/${paymentId}/complete`, {
       method: 'POST',
       body: JSON.stringify({ txid }),
+    });
+  }
+
+  /**
+   * Cancel payment
+   */
+  async cancelPayment(paymentId: string): Promise<any> {
+    return this.request(`/v2/payments/${paymentId}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Create App-to-User payment
+   */
+  async createAppToUserPayment(paymentData: {
+    amount: number;
+    memo: string;
+    metadata?: Record<string, any>;
+    uid: string;
+  }): Promise<any> {
+    return this.request('/v2/payments', {
+      method: 'POST',
+      body: JSON.stringify({
+        payment: paymentData
+      }),
     });
   }
 }
@@ -389,7 +553,7 @@ export function getPiPlatformAPIClient(): PiPlatformAPIClient {
 export async function authenticateWithPi(): Promise<User | null> {
   try {
     const sdk = getPiSDKInstance();
-    const authResult = await sdk.authenticate(['username', 'payments'], handleIncompletePayment);
+    const authResult = await sdk.authenticate(['username', 'payments', 'wallet_address'], handleIncompletePayment);
     
     // Convert Pi user to our app's User format
     const user = convertPiUserToAppUser(authResult.user, authResult);

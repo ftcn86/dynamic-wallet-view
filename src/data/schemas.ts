@@ -13,6 +13,7 @@ export interface User {
   username: string;
   name: string;
   email?: string; // Pi Network user email
+  walletAddress?: string; // Pi Network wallet address
   avatar: string; // Updated to match our implementation
   bio?: string; // Made optional
   balance: number; // Updated from totalBalance

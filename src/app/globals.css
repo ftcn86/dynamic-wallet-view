@@ -17,44 +17,12 @@
   /* Improved mobile fluidity */
   html {
     scroll-behavior: smooth;
-    /* Prevent zoom on input focus on iOS */
-    -webkit-text-size-adjust: 100%;
   }
 
   /* Prevent horizontal scrolling on mobile */
   body {
     overflow-x: hidden;
     width: 100%;
-    /* Better touch handling */
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-
-  /* Allow text selection where needed */
-  p, span, div, h1, h2, h3, h4, h5, h6 {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-
-  /* Better mobile viewport handling */
-  @media (max-width: 768px) {
-    body {
-      font-size: 16px; /* Prevent zoom on iOS */
-    }
-    
-    /* Ensure proper touch targets */
-    button, a, input, select, textarea {
-      min-height: 44px;
-      min-width: 44px;
-    }
-    
-    /* Better mobile spacing */
-    .container {
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
   }
 
   /* Fluid typography for better mobile scaling */
@@ -72,25 +40,6 @@
 
   .fluid-text-2xl {
     font-size: clamp(1.5rem, 5vw, 2.25rem);
-  }
-
-  /* Mobile-specific utilities */
-  .mobile-only {
-    display: block;
-  }
-  
-  .desktop-only {
-    display: none;
-  }
-  
-  @media (min-width: 768px) {
-    .mobile-only {
-      display: none;
-    }
-    
-    .desktop-only {
-      display: block;
-    }
   }
 }
 

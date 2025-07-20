@@ -223,7 +223,7 @@ export default function RewardedAdsCard() {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              Rewards are temporarily unavailable. Please try again later.
+              {canPayReward.reason || 'App currently cannot pay rewards. This is normal for development/testing.'}
             </AlertDescription>
           </Alert>
         )}

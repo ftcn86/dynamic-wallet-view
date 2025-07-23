@@ -14,11 +14,17 @@ export function PiSDKInitializer() {
     const initializePiSDK = () => {
       if (typeof window !== 'undefined' && (window as any).Pi) {
         try {
-          // Initialize Pi SDK - let Pi Browser determine environment automatically
+          // Detect if we're in sandbox environment
+          const isSandbox = window.location.hostname.includes('sandbox.minepi.com');
+          
+          // Initialize Pi SDK with environment specification
           (window as any).Pi.init({ 
-            version: "2.0"
+            version: "2.0",
+            appId: process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view',
+            environment: isSandbox ? 'sandbox' : 'mainnet'
           });
           console.log('✅ Pi Network SDK initialized successfully');
+          console.log('🌍 Environment:', isSandbox ? 'sandbox' : 'mainnet');
           
 
           

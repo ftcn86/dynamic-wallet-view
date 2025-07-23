@@ -13,6 +13,7 @@ export interface AppConfig {
   isDevelopment: boolean;
   isProduction: boolean;
   isTest: boolean;
+  piEnvironment: 'sandbox' | 'testnet' | 'mainnet';
   
   // Pi Network Configuration
   piNetwork: {
@@ -63,6 +64,22 @@ function isPiBrowser(): boolean {
   return !!(window as any).Pi;
 }
 
+/**
+ * Detect Pi Network environment
+ */
+function getPiEnvironment(): 'sandbox' | 'testnet' | 'mainnet' {
+  if (typeof window === 'undefined') return 'mainnet';
+  
+  const hostname = window.location.hostname;
+  
+  if (hostname.includes('sandbox.minepi.com')) {
+    return 'sandbox';
+  } else if (hostname.includes('testnet.minepi.com')) {
+    return 'testnet';
+  } else {
+    return 'mainnet';
+  }
+}
 
 
 /**
@@ -100,6 +117,7 @@ export const config: AppConfig = {
   isDevelopment: getEnvVar('NODE_ENV') === 'development',
   isProduction: getEnvVar('NODE_ENV') === 'production',
   isTest: getEnvVar('NODE_ENV') === 'test',
+  piEnvironment: getPiEnvironment(),
   
   // Pi Network configuration
   piNetwork: {
@@ -167,6 +185,7 @@ export function getEnvironmentSettings() {
     isPiBrowser: isPiBrowser(),
     isDevelopment: config.isDevelopment,
     isProduction: config.isProduction,
+    piEnvironment: config.piEnvironment,
     features: config.features,
     piNetwork: {
       appId: config.piNetwork.appId,

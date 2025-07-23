@@ -56,9 +56,36 @@ export default function WalletAddressCard({ user }: WalletAddressCardProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Wallet address not available. This may be due to insufficient permissions or the user not being authenticated with the wallet_address scope.
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Wallet address not available. This may be due to insufficient permissions or the user not being authenticated with the wallet_address scope.
+            </p>
+            
+            {/* Debug information */}
+            <div className="bg-muted p-3 rounded-md">
+              <p className="text-xs font-mono text-muted-foreground">
+                Debug Info:
+              </p>
+              <p className="text-xs text-muted-foreground">
+                User ID: {user.id}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Username: {user.username}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Has Wallet Address: {user.walletAddress ? 'Yes' : 'No'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Environment: {typeof window !== 'undefined' && (window as any).Pi ? 'Pi Browser' : 'Regular Browser'}
+              </p>
+            </div>
+            
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>• Make sure you're using Pi Browser</p>
+              <p>• Grant wallet address permission during login</p>
+              <p>• Check browser console for debug information</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );

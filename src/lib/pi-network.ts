@@ -102,21 +102,20 @@ class PiNetworkSDK {
     const checkForPiSDK = () => {
       if ((window as any).Pi) {
         this.pi = (window as any).Pi;
-        console.log('✅ Pi Network SDK loaded successfully');
         
-        // Initialize with proper app configuration
-        if (this.pi.init) {
-          // Get app ID from environment variable or use default
-          const appId = process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view';
-          
+        // Initialize Pi Network SDK
+        try {
           this.pi.init({
             version: '2.0',
-            appId: appId,
+            appId: config.piNetwork.appId
           });
-          console.log('✅ Pi Network SDK initialized with app ID:', appId);
+          console.log('✅ Pi Network SDK initialized');
+          console.log('🔧 App ID:', config.piNetwork.appId);
+        } catch (error) {
+          console.error('❌ Failed to initialize Pi Network SDK:', error);
         }
       } else {
-        console.log('⏳ Pi Network SDK not yet available, retrying...');
+        // Retry after a short delay
         setTimeout(checkForPiSDK, 100);
       }
     };
@@ -385,12 +384,34 @@ function convertPiUserToAppUser(piUser: PiUser, authResult?: PiAuthResult): User
     ? `${piUser.profile.firstname || ''} ${piUser.profile.lastname || ''}`.trim() || piUser.username
     : piUser.username;
 
+  // Debug wallet address access
+  console.log('🔍 Pi User data:', {
+    uid: piUser.uid,
+    username: piUser.username,
+    wallet_address: piUser.wallet_address,
+    hasWalletAddress: !!piUser.wallet_address,
+    roles: piUser.roles,
+    profile: piUser.profile
+  });
+
+  // Check if wallet address is available
+  const walletAddress = piUser.wallet_address;
+  if (!walletAddress) {
+    console.warn('⚠️ Wallet address not available in Pi User data');
+    console.log('💡 This could be due to:');
+    console.log('   - User not granting wallet_address permission');
+    console.log('   - App not properly configured for wallet_address scope');
+    console.log('   - Pi Network SDK not returning wallet address');
+  } else {
+    console.log('✅ Wallet address found:', walletAddress);
+  }
+
   return {
     id: piUser.uid,
     username: piUser.username,
     name: name,
     email: piUser.profile?.email || '',
-    walletAddress: piUser.wallet_address || '',
+    walletAddress: walletAddress || '',
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${piUser.username}`,
     balance: 0, // Will be fetched separately
     miningRate: 0, // Will be fetched separately
@@ -552,24 +573,77 @@ export function getPiPlatformAPIClient(): PiPlatformAPIClient {
  */
 export async function authenticateWithPi(): Promise<User | null> {
   try {
+    console.log('🚀 Starting Pi Network authentication...');
+    
     const sdk = getPiSDKInstance();
     
+    // Check if SDK is available
+    if (!sdk) {
+      console.error('❌ Pi Network SDK not available');
+      return null;
+    }
+
     // Standardize scopes - always request the same set
     const requiredScopes = ['username', 'payments', 'wallet_address'];
     console.log('🔍 Authenticating with scopes:', requiredScopes);
-    
+    console.log('💡 Make sure your Pi Network app is configured with these scopes');
+
     const authResult = await sdk.authenticate(requiredScopes, handleIncompletePayment);
     
-    // Convert Pi user to our app's User format
+    console.log('✅ Authentication successful');
+    console.log('🔍 Auth result:', {
+      hasUser: !!authResult.user,
+      hasAccessToken: !!authResult.accessToken,
+      userUid: authResult.user?.uid,
+      userUsername: authResult.user?.username,
+      hasWalletAddress: !!authResult.user?.wallet_address
+    });
+
+    if (!authResult.user) {
+      console.error('❌ No user data in authentication result');
+      return null;
+    }
+
+    // Convert Pi user to our app user format
     const user = convertPiUserToAppUser(authResult.user, authResult);
     
-    console.log('✅ Pi Network authentication successful');
-    console.log('🔧 User data:', user);
-    console.log('💰 Wallet address:', user.walletAddress ? 'Available' : 'Not available');
+    // If wallet address is not available in auth result, try to get it from current user
+    if (!user.walletAddress) {
+      console.log('🔄 Wallet address not in auth result, trying current user...');
+      try {
+        const currentUser = sdk.currentUser();
+        if (currentUser?.wallet_address) {
+          console.log('✅ Found wallet address in current user:', currentUser.wallet_address);
+          user.walletAddress = currentUser.wallet_address;
+        } else {
+          console.log('⚠️ No wallet address in current user either');
+        }
+      } catch (error) {
+        console.log('⚠️ Could not get current user for wallet address fallback:', error);
+      }
+    }
     
+    console.log('✅ User converted successfully');
+    console.log('🔍 Final user data:', {
+      id: user.id,
+      username: user.username,
+      hasWalletAddress: !!user.walletAddress,
+      walletAddress: user.walletAddress
+    });
+
     return user;
   } catch (error) {
     console.error('❌ Pi Network authentication failed:', error);
+    
+    // Provide helpful error messages
+    if (error instanceof Error) {
+      if (error.message.includes('wallet_address')) {
+        console.log('💡 Wallet address permission issue detected');
+        console.log('   - Make sure your Pi Network app is configured with wallet_address scope');
+        console.log('   - User must grant wallet address permission during authentication');
+      }
+    }
+    
     return null;
   }
 }

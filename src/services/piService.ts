@@ -449,30 +449,29 @@ export async function getUserPiBalance(accessToken: string): Promise<{
     fromNodeRewards: number;
     fromOtherBonuses: number;
   };
+  source: string;
 }> {
-  console.log('🔍 Fetching user Pi balance...');
+  console.log('💰 Starting balance fetch...');
+  console.log('🔍 Access token available:', !!accessToken);
   
   try {
-    // Use the new balance service that prioritizes official Pi Network sources
+    // Try to fetch real balance first
     const balanceData = await fetchUserBalance();
-    
     console.log('✅ Balance fetched successfully from:', balanceData.source);
-    console.log('💰 Total balance:', balanceData.totalBalance);
-    console.log('🔒 Is real data:', balanceData.isRealData);
-    
-    return {
+    console.log('🔍 Balance data:', {
       totalBalance: balanceData.totalBalance,
       transferableBalance: balanceData.transferableBalance,
       unverifiedBalance: balanceData.unverifiedBalance,
-      lockedBalance: balanceData.lockedBalance,
-      balanceBreakdown: balanceData.balanceBreakdown,
-      unverifiedPiDetails: balanceData.unverifiedPiDetails,
-    };
-  } catch (error) {
-    console.error('❌ Failed to fetch user balance:', error);
+      source: balanceData.source
+    });
     
-    // Return mock balance as fallback
-    const mockBalance = 12345.6789;
+    return balanceData;
+  } catch (error) {
+    console.error('❌ Real balance fetch failed:', error);
+    console.log('🔄 Falling back to mock balance data');
+    
+    // Fallback to mock data
+    const mockBalance = 1234.5678;
     return {
       totalBalance: mockBalance,
       transferableBalance: mockBalance * 0.7,
@@ -489,6 +488,7 @@ export async function getUserPiBalance(accessToken: string): Promise<{
         fromNodeRewards: mockBalance * 0.03,
         fromOtherBonuses: mockBalance * 0.015,
       },
+      source: 'mock_fallback'
     };
   }
 }

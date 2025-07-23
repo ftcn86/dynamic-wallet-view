@@ -31,14 +31,14 @@ function ProfileCard() {
 
     const [displayName, setDisplayName] = useState(user?.name || '');
     const [bio, setBio] = useState(user?.bio || '');
-    const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || 'https://placehold.co/128x128.png');
+    const [avatarUrl, setAvatarUrl] = useState(user?.avatar || 'https://placehold.co/128x128.png');
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (user) {
             setDisplayName(user.name);
             setBio(user.bio || '');
-            setAvatarUrl(user.avatarUrl);
+            setAvatarUrl(user.avatar);
         }
     }, [user]);
 
@@ -158,8 +158,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (user?.settings) {
-      setRemindersEnabled(user.settings.remindersEnabled);
-      setReminderHours(user.settings.reminderHoursBefore);
+      setRemindersEnabled(user.settings.remindersEnabled ?? true);
+      setReminderHours(user.settings.reminderHoursBefore ?? 1);
     }
   }, [user?.settings]);
   
@@ -184,10 +184,11 @@ export default function SettingsPage() {
       return {
         ...prevUser,
         settings: {
-          remindersEnabled: remindersEnabled,
+          ...prevUser.settings,
+          remindersEnabled,
           reminderHoursBefore: reminderHours,
         }
-      }
+      };
     });
 
     await new Promise(resolve => setTimeout(resolve, 500));

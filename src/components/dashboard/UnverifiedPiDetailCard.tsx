@@ -15,7 +15,7 @@ import {
 
 
 interface UnverifiedPiSource {
-  key: keyof NonNullable<ReturnType<typeof useAuth>['user']>['unverifiedPiDetails'];
+  key: 'fromReferralTeam' | 'fromSecurityCircle' | 'fromNodeRewards' | 'fromOtherBonuses';
   label: string;
   icon: JSX.Element;
   value: number;

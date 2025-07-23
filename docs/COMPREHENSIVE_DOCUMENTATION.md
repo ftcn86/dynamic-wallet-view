@@ -76,7 +76,7 @@
 - **Rewarded Ads** - Monetization through Pi Developer Ad Network
 - **Comprehensive Notification System** - Smart notifications for all new features
 - **Secure Balance Integration** - Official Pi Network sources only (SDK, Blockchain, Internal APIs)
-- **Removed All Sandbox References** - Cleaned up codebase to remove sandbox mentions
+
 - **Fixed Balance Display** - Real Pi Network balance integration working
 - **Improved Team Page Layout** - Fixed responsive design issues
 - **Enhanced Error Handling** - Better fallback mechanisms
@@ -219,6 +219,7 @@ NEXT_PUBLIC_ENABLE_REAL_AUTH=false
 ### **Testing**
 - **Development**: Use mock data in regular browsers
 - **Pi Browser**: Test real integration in Pi Browser
+- **Sandbox Testing**: Use Pi Network sandbox URL for testing (app works exactly like production)
 - **Production**: Deploy to Vercel with proper environment variables
 
 ---

@@ -44,9 +44,9 @@ export const mockUser: User = {
   id: 'user123',
   username: 'pioneer1',
   name: 'Alex Pioneer',
-  avatarUrl: 'https://placehold.co/128x128.png',
+  avatar: 'https://placehold.co/128x128.png',
   bio: 'Passionate Pi Network enthusiast and node operator. Exploring the future of digital currency.',
-  totalBalance: 12345.6789,
+  balance: 12345.6789,
   miningRate: 0.2512,
   isNodeOperator: true,
   nodeUptimePercentage: mockNodeData.uptimePercentage,
@@ -81,6 +81,10 @@ export const mockUser: User = {
   monthlyMiningDaysTarget: daysInPreviousMonth,
   termsAccepted: true, // Auto-accept terms for all users
   settings: {
+    theme: 'system',
+    language: 'en',
+    notifications: true,
+    emailNotifications: false,
     remindersEnabled: true,
     reminderHoursBefore: 1,
   },
@@ -120,7 +124,7 @@ export const mockChartData: MockChartData = {
   '3M': [
     { date: '2024-04-01', transferable: 5200, unverified: 4500 },
     { date: '2024-05-01', transferable: 5500, unverified: 4300 },
-    { date: '2024-06-01', transferable: mockUser.balanceBreakdown.transferableToMainnet, unverified: mockUser.balanceBreakdown.totalUnverifiedPi },
+    { date: '2024-06-01', transferable: mockUser.balanceBreakdown?.transferableToMainnet || 0, unverified: mockUser.balanceBreakdown?.totalUnverifiedPi || 0 },
   ],
   '6M': [
     { date: '2024-01-01', transferable: 4800, unverified: 4800 },
@@ -128,7 +132,7 @@ export const mockChartData: MockChartData = {
     { date: '2024-03-01', transferable: 5100, unverified: 4600 },
     { date: '2024-04-01', transferable: 5200, unverified: 4500 },
     { date: '2024-05-01', transferable: 5500, unverified: 4300 },
-    { date: '2024-06-01', transferable: mockUser.balanceBreakdown.transferableToMainnet, unverified: mockUser.balanceBreakdown.totalUnverifiedPi },
+    { date: '2024-06-01', transferable: mockUser.balanceBreakdown?.transferableToMainnet || 0, unverified: mockUser.balanceBreakdown?.totalUnverifiedPi || 0 },
   ],
   '12M': [
     { date: '2023-07-01', transferable: 3000, unverified: 5500 },
@@ -142,13 +146,13 @@ export const mockChartData: MockChartData = {
     { date: '2024-03-01', transferable: 5100, unverified: 4600 },
     { date: '2024-04-01', transferable: 5200, unverified: 4500 },
     { date: '2024-05-01', transferable: 5500, unverified: 4300 },
-    { date: '2024-06-01', transferable: mockUser.balanceBreakdown.transferableToMainnet, unverified: mockUser.balanceBreakdown.totalUnverifiedPi },
+    { date: '2024-06-01', transferable: mockUser.balanceBreakdown?.transferableToMainnet || 0, unverified: mockUser.balanceBreakdown?.totalUnverifiedPi || 0 },
   ],
 };
 
 export const GAMIFICATION_BADGE_IDS = gamificationBadges.map(b => b.id);
 export const ALL_MOCK_BADGES = [
-  ...mockUser.badges.filter(b => !GAMIFICATION_BADGE_IDS.includes(b.id)),
+  ...mockUser.badges?.filter(b => !GAMIFICATION_BADGE_IDS.includes(b.id)) || [],
   ...gamificationBadges
 ];
 

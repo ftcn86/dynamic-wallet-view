@@ -1,4 +1,4 @@
-# **App Name**: PiPulse
+# **App Name**: Dynamic Wallet View
 
 ## Core Features:
 

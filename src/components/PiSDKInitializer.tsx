@@ -16,10 +16,13 @@ export function PiSDKInitializer() {
       if (typeof window !== 'undefined' && (window as any).Pi) {
         try {
           // Initialize Pi Network SDK (following official demo pattern)
-          const runSDKInSandboxMode = process.env.NEXT_PUBLIC_ENABLE_SANDBOX_SDK === 'true';
+          // Sandbox is only for testing outside Pi Browser
+          const isPiBrowser = typeof window !== 'undefined' && (window as any).Pi;
+          const runSDKInSandboxMode = !isPiBrowser && process.env.NEXT_PUBLIC_ENABLE_SANDBOX_SDK === 'true';
+          
           (window as any).Pi.init({ 
             version: "2.0",
-            sandbox: runSDKInSandboxMode
+            ...(runSDKInSandboxMode && { sandbox: true })
           });
           console.log('✅ Pi Network SDK initialized successfully');
           console.log('🔧 App ID:', process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view');

@@ -105,10 +105,13 @@ class PiNetworkSDK {
         
         // Initialize Pi Network SDK
         try {
-          const runSDKInSandboxMode = process.env.NEXT_PUBLIC_ENABLE_SANDBOX_SDK === 'true';
+          // Sandbox is only for testing outside Pi Browser
+          const isPiBrowser = typeof window !== 'undefined' && (window as any).Pi;
+          const runSDKInSandboxMode = !isPiBrowser && process.env.NEXT_PUBLIC_ENABLE_SANDBOX_SDK === 'true';
+          
           this.pi.init({
             version: '2.0',
-            sandbox: runSDKInSandboxMode
+            ...(runSDKInSandboxMode && { sandbox: true })
           });
           console.log('✅ Pi Network SDK initialized');
           console.log('🔧 App ID:', config.piNetwork.appId);

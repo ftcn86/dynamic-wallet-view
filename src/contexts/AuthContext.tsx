@@ -76,6 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Check if we're in Pi Browser
       const isPiBrowser = typeof window !== 'undefined' && (window as any).Pi;
+      console.log('🔍 Pi Browser detection:', {
+        hasWindow: typeof window !== 'undefined',
+        hasPi: !!(window as any).Pi,
+        isPiBrowser: isPiBrowser,
+        hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A'
+      });
       
              if (!isPiBrowser) {
          setStatus('Not in Pi Browser, using test mode...');
@@ -152,10 +158,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
        setStatus('Authenticating with Pi Network...');
        console.log('📱 Using Pi Network authentication');
       
-      return new Promise((resolve, reject) => {
-        const Pi = (window as any).Pi;
-        
-                          Pi.authenticate(['payments', 'username'], async (auth: any) => {
+             return new Promise((resolve, reject) => {
+         const Pi = (window as any).Pi;
+         console.log('🔍 Pi SDK object:', {
+           hasPi: !!Pi,
+           hasAuthenticate: !!Pi?.authenticate,
+           authenticateType: typeof Pi?.authenticate
+         });
+         
+         if (!Pi || !Pi.authenticate) {
+           setError('Pi Network SDK not available or authenticate method missing');
+           setIsLoading(false);
+           reject(new Error('Pi Network SDK not available'));
+           return;
+         }
+         
+         console.log('🚀 Calling Pi.authenticate...');
+         Pi.authenticate(['payments', 'username'], async (auth: any) => {
            try {
              setStatus('Pi authentication successful! Loading dashboard...');
              console.log('🔐 Pi authentication successful:', auth);

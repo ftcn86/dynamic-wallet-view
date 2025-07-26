@@ -105,18 +105,13 @@ class PiNetworkSDK {
         
         // Initialize Pi Network SDK
         try {
-          // Detect if we're in sandbox environment
-          const isSandbox = typeof window !== 'undefined' && 
-            window.location.hostname.includes('sandbox.minepi.com');
-          
+          const runSDKInSandboxMode = process.env.NEXT_PUBLIC_ENABLE_SANDBOX_SDK === 'true';
           this.pi.init({
             version: '2.0',
-            appId: config.piNetwork.appId,
-            environment: isSandbox ? 'sandbox' : 'mainnet'
+            sandbox: runSDKInSandboxMode
           });
           console.log('✅ Pi Network SDK initialized');
           console.log('🔧 App ID:', config.piNetwork.appId);
-          console.log('🌍 Environment:', isSandbox ? 'sandbox' : 'mainnet');
         } catch (error) {
           console.error('❌ Failed to initialize Pi Network SDK:', error);
         }

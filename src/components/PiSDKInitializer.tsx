@@ -15,10 +15,11 @@ export function PiSDKInitializer() {
     const initializePiSDK = () => {
       if (typeof window !== 'undefined' && (window as any).Pi) {
         try {
-          // Simple initialization (following official demo pattern)
+          // Initialize Pi Network SDK (following official demo pattern)
+          const runSDKInSandboxMode = process.env.NEXT_PUBLIC_ENABLE_SANDBOX_SDK === 'true';
           (window as any).Pi.init({ 
             version: "2.0",
-            appId: process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view'
+            sandbox: runSDKInSandboxMode
           });
           console.log('✅ Pi Network SDK initialized successfully');
           console.log('🔧 App ID:', process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view');

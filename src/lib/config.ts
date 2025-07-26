@@ -13,7 +13,7 @@ export interface AppConfig {
   isDevelopment: boolean;
   isProduction: boolean;
   isTest: boolean;
-  piEnvironment: 'sandbox' | 'testnet' | 'mainnet';
+  piEnvironment: 'testnet' | 'mainnet';
   
   // Pi Network Configuration
   piNetwork: {
@@ -67,14 +67,12 @@ function isPiBrowser(): boolean {
 /**
  * Detect Pi Network environment
  */
-function getPiEnvironment(): 'sandbox' | 'testnet' | 'mainnet' {
+function getPiEnvironment(): 'testnet' | 'mainnet' {
   if (typeof window === 'undefined') return 'mainnet';
   
   const hostname = window.location.hostname;
   
-  if (hostname.includes('sandbox.minepi.com')) {
-    return 'sandbox';
-  } else if (hostname.includes('testnet.minepi.com')) {
+  if (hostname.includes('testnet.minepi.com')) {
     return 'testnet';
   } else {
     return 'mainnet';
@@ -135,8 +133,8 @@ export const config: AppConfig = {
   
   // Feature flags
   features: {
-    realPayments: isPiBrowser() && getEnvVar('NEXT_PUBLIC_ENABLE_REAL_PAYMENTS', 'false') === 'true',
-    realAuthentication: isPiBrowser() && getEnvVar('NEXT_PUBLIC_ENABLE_REAL_AUTH', 'false') === 'true',
+    realPayments: isPiBrowser(),
+    realAuthentication: isPiBrowser(),
     analytics: getEnvVar('NEXT_PUBLIC_ENABLE_ANALYTICS', 'false') === 'true',
     notifications: getEnvVar('NEXT_PUBLIC_ENABLE_NOTIFICATIONS', 'true') === 'true',
   },

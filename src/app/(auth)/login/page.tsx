@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 export default function LoginPage() {
-  const { user, login, isLoading: isAuthContextLoading } = useAuth();
+  const { user, login, isLoading: isAuthContextLoading, error, status } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -91,6 +91,19 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Status Messages */}
+            {status && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800">{status}</p>
+              </div>
+            )}
+            
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-800">{error}</p>
+              </div>
+            )}
+            
             {/* Authentication will be handled automatically by Pi SDK */}
           </CardContent>
           <CardFooter>

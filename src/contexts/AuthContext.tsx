@@ -80,7 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         hasWindow: typeof window !== 'undefined',
         hasPi: !!(window as any).Pi,
         isPiBrowser: isPiBrowser,
-        hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A'
+        hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'N/A'
       });
       
              if (!isPiBrowser) {
@@ -173,10 +174,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
            return;
          }
          
-         console.log('🚀 Calling Pi.authenticate...');
-         Pi.authenticate(['payments', 'username'], async (auth: any) => {
-           try {
-             setStatus('Pi authentication successful! Loading dashboard...');
+                 console.log('🚀 Calling Pi.authenticate...');
+        console.log('🔧 Authentication scopes:', ['payments', 'username']);
+        
+        // Add timeout for authentication
+        const authTimeout = setTimeout(() => {
+          console.error('❌ Authentication timeout after 30 seconds');
+          setError('Authentication timeout. Please try again.');
+          setIsLoading(false);
+        }, 30000);
+        
+                Pi.authenticate(['payments', 'username'], async (auth: any) => {
+          try {
+            clearTimeout(authTimeout); // Clear timeout on success
+            setStatus('Pi authentication successful! Loading dashboard...');
              console.log('🔐 Pi authentication successful:', auth);
              
              // Convert Pi user to our app user format (no backend registration needed)

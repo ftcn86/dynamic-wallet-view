@@ -20,6 +20,13 @@ export function PiSDKInitializer() {
           const isPiBrowser = typeof window !== 'undefined' && (window as any).Pi;
           const runSDKInSandboxMode = !isPiBrowser && process.env.NEXT_PUBLIC_ENABLE_SANDBOX_SDK === 'true';
           
+          console.log('🔧 SDK Initialization:', {
+            isPiBrowser,
+            runSDKInSandboxMode,
+            hasPi: !!(window as any).Pi,
+            hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A'
+          });
+          
           (window as any).Pi.init({ 
             version: "2.0",
             ...(runSDKInSandboxMode && { sandbox: true })

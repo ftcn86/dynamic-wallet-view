@@ -14,9 +14,12 @@ export function PiSDKInitializer() {
     const initializePiSDK = () => {
       if (typeof window !== 'undefined' && (window as any).Pi) {
         try {
-          // Detect if we're in Pi Browser environment
-          const isPiBrowser = window.location.hostname.includes('minepi.com');
-          const isSandbox = window.location.hostname.includes('sandbox.minepi.com');
+                // Detect if we're in Pi Browser environment
+      const isPiBrowser = window.location.hostname.includes('minepi.com') ||
+        window.location.hostname.includes('sandbox.minepi.com') ||
+        window.navigator.userAgent.includes('PiBrowser') ||
+        window.navigator.userAgent.includes('Pi Network');
+      const isSandbox = window.location.hostname.includes('sandbox.minepi.com');
           
           if (isPiBrowser) {
             // Initialize Pi SDK with environment specification (only in Pi Browser)

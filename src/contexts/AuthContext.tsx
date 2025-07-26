@@ -95,9 +95,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           (window as any).Pi.authenticate && 
           typeof (window as any).Pi.authenticate === 'function';
 
-        // Check if we should use real authentication
-        const shouldUseRealAuth = isPiBrowser && 
-          window.location.hostname.includes('minepi.com');
+            // Check if we should use real authentication
+    // Pi Browser can be detected by checking for Pi SDK availability and user agent
+    const isPiBrowserEnvironment = isPiBrowser && (
+      window.location.hostname.includes('minepi.com') ||
+      window.location.hostname.includes('sandbox.minepi.com') ||
+      window.navigator.userAgent.includes('PiBrowser') ||
+      window.navigator.userAgent.includes('Pi Network')
+    );
+    
+    const shouldUseRealAuth = isPiBrowserEnvironment;
 
         if (shouldUseRealAuth) {
           // Check if user is already authenticated with Pi SDK (only in Pi Browser)
@@ -199,12 +206,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         typeof (window as any).Pi.authenticate === 'function';
 
       // Check if we should use real authentication
-      const shouldUseRealAuth = isPiBrowser && 
-        window.location.hostname.includes('minepi.com');
+      // Pi Browser can be detected by checking for Pi SDK availability and user agent
+      const isPiBrowserEnvironment = isPiBrowser && (
+        window.location.hostname.includes('minepi.com') ||
+        window.location.hostname.includes('sandbox.minepi.com') ||
+        window.navigator.userAgent.includes('PiBrowser') ||
+        window.navigator.userAgent.includes('Pi Network')
+      );
+      
+      const shouldUseRealAuth = isPiBrowserEnvironment;
 
       if (shouldUseRealAuth) {
         // Use real Pi Network authentication (only in Pi Browser)
         console.log('🌐 Pi Browser detected: Using real Pi Network authentication');
+        console.log('🔍 Environment details:', {
+          hostname: window.location.hostname,
+          userAgent: window.navigator.userAgent,
+          isPiBrowser: isPiBrowser,
+          isPiBrowserEnvironment: isPiBrowserEnvironment
+        });
         
         const sdk = getPiSDKInstance();
         

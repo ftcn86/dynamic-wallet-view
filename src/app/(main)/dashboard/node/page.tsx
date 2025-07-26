@@ -74,7 +74,9 @@ function NodeOperatorView() {
     },
   };
 
-  const lastSeenText = formatDistanceToNowStrict(parseISO(nodeData.lastSeen), { addSuffix: true });
+  const lastSeenText = nodeData.lastSeen 
+    ? formatDistanceToNowStrict(parseISO(nodeData.lastSeen), { addSuffix: true })
+    : 'Unknown';
 
   return (
     <div className="w-full max-w-full space-y-4 sm:space-y-6">

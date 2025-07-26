@@ -6,8 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getTeamMembers, sendBroadcastNotification, addNotification } from '@/services/piService';
-import type { TeamMember } from '@/data/schemas';
+import { getTeamMembers, sendBroadcastNotification, addNotification, getTransactions } from '@/services/piService';
+import type { TeamMember, Transaction } from '@/data/schemas';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KycStatusBadge } from '@/components/shared/KycStatusBadge'; 
@@ -24,9 +24,11 @@ import {
     BellIconAccent as BellIcon, 
     MessageSquareIconAccent as MessageSquareIcon, 
     SendIcon, 
-    InfoIcon 
+    InfoIcon,
+    ExternalLinkIcon
 } from '@/components/shared/icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
     const { t } = useTranslation();
@@ -133,6 +135,80 @@ function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
     );
 }
 
+function RecentTransactionsCard({ transactions }: { transactions: Transaction[] }) {
+    const { t } = useTranslation();
+    const router = useRouter();
+    
+    const recentTransactions = transactions.slice(0, 5); // Show last 5 transactions
+    
+    const handleViewOnBlockchain = (url: string) => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleViewAllTransactions = () => {
+        router.push('/dashboard/transactions');
+    };
+
+    return (
+        <Card className="shadow-lg w-full max-w-full">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl break-words">
+                    <ExternalLinkIcon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0"/>
+                    Recent Transactions
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm lg:text-base break-words">
+                    View recent transactions on the Pi blockchain
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                    {recentTransactions.map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium truncate">
+                                        {transaction.description}
+                                    </span>
+                                    <span className={`text-xs px-2 py-1 rounded-full ${
+                                        transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                        transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-red-100 text-red-800'
+                                    }`}>
+                                        {transaction.status}
+                                    </span>
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                    {format(new Date(transaction.date), 'MMM dd, yyyy HH:mm')} • {transaction.amount} π
+                                </div>
+                            </div>
+                            {transaction.blockExplorerUrl && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleViewOnBlockchain(transaction.blockExplorerUrl!)}
+                                    className="ml-2 flex-shrink-0"
+                                >
+                                    <ExternalLinkIcon className="h-3 w-3 mr-1" />
+                                    View
+                                </Button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-4 text-center">
+                    <Button
+                        variant="outline"
+                        onClick={handleViewAllTransactions}
+                        className="w-full"
+                    >
+                        View All Transactions
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 const statusVariantMap = {
   active: 'success',
   pending: 'warning',
@@ -202,25 +278,30 @@ function TeamMembersTableSkeleton() {
 export default function TeamInsightsPage() {
   const { t } = useTranslation();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<React.SortConfig<TeamMember>>({ key: 'name', direction: 'ascending' });
   const { dataVersion } = useAuth(); // Listen to data changes
 
   useEffect(() => {
-    async function fetchTeamMembers() {
+    async function fetchData() {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await getTeamMembers();
-        setTeamMembers(data);
+        const [teamData, transactionsData] = await Promise.all([
+          getTeamMembers(),
+          getTransactions()
+        ]);
+        setTeamMembers(teamData);
+        setTransactions(transactionsData);
       } catch (err) {
-        setError("Failed to load team members. Please try again.");
+        setError("Failed to load data. Please try again.");
       } finally {
         setIsLoading(false);
       }
     }
-    fetchTeamMembers();
+    fetchData();
   }, [dataVersion]); // Re-fetch when dataVersion changes
 
   const requestSort = (key: keyof TeamMember) => {
@@ -280,6 +361,8 @@ export default function TeamInsightsPage() {
       </h1>
       
       <TeamManagementCard teamMembers={teamMembers} />
+      
+      <RecentTransactionsCard transactions={transactions} />
       
       <Card className="shadow-lg w-full max-w-full">
         <CardHeader>

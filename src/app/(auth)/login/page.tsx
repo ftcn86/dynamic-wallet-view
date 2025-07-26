@@ -9,19 +9,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { isPiSDKAvailable } from '@/lib/pi-network';
 
 export default function LoginPage() {
   const { user, login, isLoading: isAuthContextLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isPiBrowserAvailable, setIsPiBrowserAvailable] = useState(false);
-
-  useEffect(() => {
-    // Check if Pi SDK is available
-    setIsPiBrowserAvailable(isPiSDKAvailable());
-  }, []);
 
   useEffect(() => {
     if (!isAuthContextLoading && user) {
@@ -76,6 +69,7 @@ export default function LoginPage() {
               src="/logo.png"
               alt="Dynamic Wallet View Logo"
               fill
+              sizes="64px"
               className="object-contain"
               priority
             />
@@ -97,19 +91,12 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Pi Browser:</span>
-                <span className={`font-medium ${isPiBrowserAvailable ? 'text-green-600' : 'text-red-600'}`}>
-                  {isPiBrowserAvailable ? 'Available' : 'Not Available'}
-                </span>
-              </div>
-            </div>
+            {/* Authentication will be handled automatically by Pi SDK */}
           </CardContent>
           <CardFooter>
             <Button 
               onClick={handleLogin} 
-              disabled={isLoggingIn || !isPiBrowserAvailable}
+              disabled={isLoggingIn}
               className="w-full"
             >
               {isLoggingIn ? (
@@ -127,10 +114,7 @@ export default function LoginPage() {
         {/* Environment Info */}
         <div className="text-center text-xs text-muted-foreground space-y-1">
           <p>
-            {isPiBrowserAvailable 
-              ? "You're in Pi Browser - ready for Pi Network integration"
-              : "Open this app in Pi Browser for full functionality"
-            }
+            Sign in to access your Pi Network dashboard
           </p>
         </div>
 

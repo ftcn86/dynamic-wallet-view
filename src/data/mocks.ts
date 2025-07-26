@@ -105,18 +105,18 @@ export const mockTeam: TeamMember[] = [
 ];
 
 export const mockTransactions: Transaction[] = [
-  { id: 'tx001', date: subDays(today, 2).toISOString(), type: 'received', amount: 150.75, status: 'completed', from: 'Fiona Coin', description: 'Project collaboration', blockExplorerUrl: '#' },
-  { id: 'tx002', date: subDays(today, 3).toISOString(), type: 'sent', amount: 50.00, status: 'completed', to: 'Bob Miner', description: 'Team bonus', blockExplorerUrl: '#' },
-  { id: 'tx003', date: subDays(today, 5).toISOString(), type: 'mining_reward', amount: 6.0288, status: 'completed', description: 'Daily mining reward', blockExplorerUrl: '#' },
-  { id: 'tx004', date: subDays(today, 7).toISOString(), type: 'node_bonus', amount: 12.5, status: 'completed', description: 'Weekly node operation bonus', blockExplorerUrl: '#' },
-  { id: 'tx005', date: subDays(today, 10).toISOString(), type: 'sent', amount: 10.00, status: 'completed', to: 'Support Fund', description: 'Donation', blockExplorerUrl: '#' },
-  { id: 'tx006', date: subDays(today, 12).toISOString(), type: 'received', amount: 200.00, status: 'completed', from: 'Hannah Block', description: 'Marketplace sale', blockExplorerUrl: '#' },
-  { id: 'tx007', date: subDays(today, 15).toISOString(), type: 'mining_reward', amount: 6.0288, status: 'completed', description: 'Daily mining reward', blockExplorerUrl: '#' },
-  { id: 'tx008', date: subDays(today, 18).toISOString(), type: 'sent', amount: 5.00, status: 'failed', to: 'InvalidUser', description: 'Test transaction', blockExplorerUrl: '#' },
-  { id: 'tx009', date: subDays(today, 20).toISOString(), type: 'received', amount: 1.00, status: 'pending', from: 'Charlie User', description: 'Coffee', blockExplorerUrl: '#' },
-  { id: 'tx010', date: subDays(today, 22).toISOString(), type: 'node_bonus', amount: 12.5, status: 'completed', description: 'Weekly node operation bonus', blockExplorerUrl: '#' },
-  { id: 'tx011', date: subDays(today, 25).toISOString(), type: 'mining_reward', amount: 6.0288, status: 'completed', description: 'Daily mining reward', blockExplorerUrl: '#' },
-  { id: 'tx012', date: subDays(today, 30).toISOString(), type: 'sent', amount: 100.00, status: 'completed', to: 'Julia Token', description: 'Pi App purchase', blockExplorerUrl: '#' },
+  { id: 'tx001', date: subDays(today, 2).toISOString(), type: 'received', amount: 150.75, status: 'completed', from: 'Fiona Coin', description: 'Project collaboration', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/7a7ed20d3d72c365b9019baf8dc4c4e3cce4c08114d866e47ae157e3a796e9e7' },
+  { id: 'tx002', date: subDays(today, 3).toISOString(), type: 'sent', amount: 50.00, status: 'completed', to: 'Bob Miner', description: 'Team bonus', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/8b8fe21e4e83d476c0120cbf9ed5d5f4ddf5d19225e977f58bf268f4b8a7fa8' },
+  { id: 'tx003', date: subDays(today, 5).toISOString(), type: 'mining_reward', amount: 6.0288, status: 'completed', description: 'Daily mining reward', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/9c9fg32f5f94e587d1231dcg0fe6e6g5eef6e2a336f088g69cg379g5b9b8gb9' },
+  { id: 'tx004', date: subDays(today, 7).toISOString(), type: 'node_bonus', amount: 12.5, status: 'completed', description: 'Weekly node operation bonus', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/0d0gh43g6g05f698e2342edh1gf7f7h6ffg7f3b447g99h7dh480h6c0c9hc0' },
+  { id: 'tx005', date: subDays(today, 10).toISOString(), type: 'sent', amount: 10.00, status: 'completed', to: 'Support Fund', description: 'Donation', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/1e1hi54h7h16g709f3453fei2hg8g8i7ggh8g4c558h00i8ei591i7d1d0id1' },
+  { id: 'tx006', date: subDays(today, 12).toISOString(), type: 'received', amount: 200.00, status: 'completed', from: 'Hannah Block', description: 'Marketplace sale', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/2f2ij65i8i27h810g4564gfj3ih9h9j8hhi9h5d669i11jfj602j8e2e1je2' },
+  { id: 'tx007', date: subDays(today, 15).toISOString(), type: 'mining_reward', amount: 6.0288, status: 'completed', description: 'Daily mining reward', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/3g3jk76j9j38i921h5675hgk4ji0i0k9iij0i6e770j22kgkg713k9f3f2kf3' },
+  { id: 'tx008', date: subDays(today, 18).toISOString(), type: 'sent', amount: 5.00, status: 'failed', to: 'InvalidUser', description: 'Test transaction', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/4h4kl87k0k49j032i6786ihl5kj1j1l0jjk1j7f881k33lhlh824l0g4g3lg4' },
+  { id: 'tx009', date: subDays(today, 20).toISOString(), type: 'received', amount: 1.00, status: 'pending', from: 'Charlie User', description: 'Coffee', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/5i5lm98l1l50k143j7897jim6lk2k2m1kkl2k8g992l44mimi935m1h5h4mh5' },
+  { id: 'tx010', date: subDays(today, 22).toISOString(), type: 'node_bonus', amount: 12.5, status: 'completed', description: 'Weekly node operation bonus', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/6j6mn09m2m61l254k8908kjn7ml3l3n2llm3l9h003m55njnj046n2i6i5ni6' },
+  { id: 'tx011', date: subDays(today, 25).toISOString(), type: 'mining_reward', amount: 6.0288, status: 'completed', description: 'Daily mining reward', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/7k7no10n3n72m365l9019lko8nm4m4o3mmn4m0i114n66okok157o3j7j6oj7' },
+  { id: 'tx012', date: subDays(today, 30).toISOString(), type: 'sent', amount: 100.00, status: 'completed', to: 'Julia Token', description: 'Pi App purchase', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/8l8op21o4o83n476m0120mlp9on5n5p4nno5n1j225o77plpl268p4k8k7pk8' },
 ];
 
 

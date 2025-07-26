@@ -153,7 +153,7 @@ export async function getAuthenticatedUser(): Promise<User> {
 }
 
 /**
- * Create a Pi Network payment
+ * Create a Pi Network payment with enhanced flow
  */
 export async function createPiPayment(
   paymentData: PiPaymentData,
@@ -177,19 +177,62 @@ export async function createPiPayment(
     };
 
     // Simulate payment flow with delays
-    setTimeout(() => {
-      callbacks.onReadyForServerApproval(mockPayment.identifier);
+    setTimeout(async () => {
+      try {
+        // Call approval endpoint
+        const approvalResponse = await fetch('/api/payments/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentId: mockPayment.identifier,
+            metadata: paymentData.metadata
+          })
+        });
+
+        if (approvalResponse.ok) {
+          console.log('✅ Mock payment approved');
+          callbacks.onReadyForServerApproval(mockPayment.identifier);
+        } else {
+          console.error('❌ Mock payment approval failed');
+          callbacks.onError(new Error('Payment approval failed'), mockPayment);
+        }
+      } catch (error) {
+        console.error('❌ Mock payment approval error:', error);
+        callbacks.onError(error as Error, mockPayment);
+      }
     }, 1000);
 
-    setTimeout(() => {
-      const txid = `mock_tx_${Date.now()}`;
-      mockPayment.status = 'completed';
-      mockPayment.transaction = {
-        txid,
-        verified: true,
-        _link: `https://explorer.minepi.com/tx/${txid}`,
-      };
-      callbacks.onReadyForServerCompletion(mockPayment.identifier, txid);
+    setTimeout(async () => {
+      try {
+        const txid = `mock_tx_${Date.now()}`;
+        mockPayment.status = 'completed';
+        mockPayment.transaction = {
+          txid,
+          verified: true,
+          _link: `https://api.minepi.com/blockchain/transactions/${txid}`,
+        };
+
+        // Call completion endpoint
+        const completionResponse = await fetch('/api/payments/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentId: mockPayment.identifier,
+            txid: txid
+          })
+        });
+
+        if (completionResponse.ok) {
+          console.log('✅ Mock payment completed');
+          callbacks.onReadyForServerCompletion(mockPayment.identifier, txid);
+        } else {
+          console.error('❌ Mock payment completion failed');
+          callbacks.onError(new Error('Payment completion failed'), mockPayment);
+        }
+      } catch (error) {
+        console.error('❌ Mock payment completion error:', error);
+        callbacks.onError(error as Error, mockPayment);
+      }
     }, 3000);
 
     return mockPayment;
@@ -200,7 +243,7 @@ export async function createPiPayment(
     
     // Create payment using Pi Network SDK
     const payment = await sdk.createPayment(paymentData, {
-      onReadyForServerApproval: (paymentId: string) => {
+      onReadyForServerApproval: async (paymentId: string) => {
         console.log('Payment ready for server approval:', paymentId);
         
         // Track payment status
@@ -212,9 +255,31 @@ export async function createPiPayment(
           createdAt: new Date().toISOString(),
         });
         
-        callbacks.onReadyForServerApproval(paymentId);
+        try {
+          // Call our approval endpoint
+          const response = await fetch('/api/payments/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId: paymentId,
+              metadata: paymentData.metadata
+            })
+          });
+
+          if (response.ok) {
+            console.log('✅ Payment approved via API');
+            callbacks.onReadyForServerApproval(paymentId);
+          } else {
+            console.error('❌ Payment approval failed via API');
+            const errorData = await response.json();
+            callbacks.onError(new Error(errorData.error || 'Payment approval failed'), payment);
+          }
+        } catch (apiError) {
+          console.error('❌ Payment approval API error:', apiError);
+          callbacks.onError(apiError as Error, payment);
+        }
       },
-      onReadyForServerCompletion: (paymentId: string, txid: string) => {
+      onReadyForServerCompletion: async (paymentId: string, txid: string) => {
         console.log('Payment ready for server completion:', paymentId, txid);
         
         // Update payment status
@@ -224,9 +289,31 @@ export async function createPiPayment(
           paymentStatus.txid = txid;
         }
         
-        callbacks.onReadyForServerCompletion(paymentId, txid);
+        try {
+          // Call our completion endpoint
+          const response = await fetch('/api/payments/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId: paymentId,
+              txid: txid
+            })
+          });
+
+          if (response.ok) {
+            console.log('✅ Payment completed via API');
+            callbacks.onReadyForServerCompletion(paymentId, txid);
+          } else {
+            console.error('❌ Payment completion failed via API');
+            const errorData = await response.json();
+            callbacks.onError(new Error(errorData.error || 'Payment completion failed'), payment);
+          }
+        } catch (apiError) {
+          console.error('❌ Payment completion API error:', apiError);
+          callbacks.onError(apiError as Error, payment);
+        }
       },
-      onCancel: (paymentId: string) => {
+      onCancel: async (paymentId: string) => {
         console.log('Payment cancelled:', paymentId);
         
         // Update payment status
@@ -235,7 +322,29 @@ export async function createPiPayment(
           paymentStatus.status = 'cancelled';
         }
         
-        callbacks.onCancel(paymentId);
+        try {
+          // Call our cancellation endpoint
+          const response = await fetch('/api/payments/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId: paymentId,
+              reason: 'User cancelled'
+            })
+          });
+
+          if (response.ok) {
+            console.log('✅ Payment cancelled via API');
+            callbacks.onCancel(paymentId);
+          } else {
+            console.error('❌ Payment cancellation failed via API');
+            const errorData = await response.json();
+            callbacks.onError(new Error(errorData.error || 'Payment cancellation failed'), payment);
+          }
+        } catch (apiError) {
+          console.error('❌ Payment cancellation API error:', apiError);
+          callbacks.onError(apiError as Error, payment);
+        }
       },
       onError: (error: Error, payment: PiPayment) => {
         console.error('Payment error:', error, payment);
@@ -252,20 +361,8 @@ export async function createPiPayment(
     
     return payment;
   } catch (error) {
-    console.error('Failed to create Pi payment:', error);
-    
-    // Provide more specific error messages
-    if (error instanceof Error) {
-      if (error.message.includes('SDK not available')) {
-        throw new Error('Pi Network SDK not available. Please ensure you are running in the Pi Browser.');
-      } else if (error.message.includes('not authenticated')) {
-        throw new Error('Please authenticate with Pi Network first.');
-      } else {
-        throw new Error(`Payment creation failed: ${error.message}`);
-      }
-    } else {
-      throw new Error(`Payment creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    console.error('Pi Network payment creation failed:', error);
+    throw new Error(`Payment creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -654,11 +751,52 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'd
 }
 
 /**
- * Add transaction
+ * Add transaction with enhanced payment integration
  */
 export async function addTransaction(transaction: Omit<Transaction, 'id' | 'date'>): Promise<void> {
   // In a real app, this would add to the database
   console.log('Adding transaction:', transaction);
+  
+  // Add blockchain explorer URL if not provided
+  if (!transaction.blockExplorerUrl && transaction.status === 'completed') {
+    // Generate a mock blockchain URL for completed transactions
+    const mockTxId = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    transaction.blockExplorerUrl = `https://api.minepi.com/blockchain/transactions/${mockTxId}`;
+  }
+  
+  // Add notification for significant transactions
+  try {
+    const { addNotification } = await import('@/services/notificationService');
+    
+    if (transaction.amount > 10) {
+      addNotification(
+        'announcement',
+        'Large Transaction Completed',
+        `A transaction of ${transaction.amount}π has been completed successfully.`,
+        '/dashboard/transactions'
+      );
+    }
+    
+    if (transaction.type === 'mining_reward') {
+      addNotification(
+        'badge_earned',
+        'Mining Reward Received',
+        `You received ${transaction.amount}π as a mining reward!`,
+        '/dashboard/transactions'
+      );
+    }
+    
+    if (transaction.type === 'node_bonus') {
+      addNotification(
+        'node_update',
+        'Node Bonus Received',
+        `You received ${transaction.amount}π as a node operation bonus!`,
+        '/dashboard/transactions'
+      );
+    }
+  } catch (notificationError) {
+    console.warn('⚠️ Failed to add transaction notification:', notificationError);
+  }
 }
 
 /**
@@ -668,9 +806,24 @@ export async function getNodeData(): Promise<any> {
   // In a real app, this would fetch from Pi Network API
   return mockApiCall({ 
     data: {
+      nodeId: 'node-12345',
+      status: 'online' as const,
+      lastSeen: new Date().toISOString(),
+      nodeSoftwareVersion: '1.8.2',
+      latestSoftwareVersion: '1.8.3',
+      country: 'United States',
+      countryFlag: '🇺🇸',
       uptimePercentage: 98.5,
-      isOnline: true,
-      lastSync: new Date().toISOString(),
+      performanceScore: 95.2,
+      blocksProcessed: 15420,
+      performanceHistory: [
+        { date: '2024-01-01', score: 92.1 },
+        { date: '2024-01-15', score: 93.5 },
+        { date: '2024-02-01', score: 94.2 },
+        { date: '2024-02-15', score: 95.1 },
+        { date: '2024-03-01', score: 95.8 },
+        { date: '2024-03-15', score: 95.2 },
+      ]
     }
   });
 }

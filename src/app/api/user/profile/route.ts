@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserService } from '@/services/databaseService';
 
-// GET - Retrieve user settings
+// GET - Retrieve user profile
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const username = searchParams.get('username');
 
-    if (!userId) {
+    if (!userId && !username) {
       return NextResponse.json(
-        { success: false, message: 'User ID is required' },
+        { success: false, message: 'User ID or username is required' },
         { status: 400 }
       );
     }
 
-    const user = await UserService.getUserById(userId);
+    let user;
+    if (userId) {
+      user = await UserService.getUserById(userId);
+    } else if (username) {
+      user = await UserService.getUserByUsername(username);
+    }
+
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
@@ -24,15 +31,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      settings: user.settings
+      user
     });
 
   } catch (error) {
-    console.error('Get settings error:', error);
+    console.error('Get profile error:', error);
     return NextResponse.json(
       {
         success: false,
-        message: 'Failed to retrieve settings',
+        message: 'Failed to retrieve profile',
         error: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -40,21 +47,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT - Update user settings
+// PUT - Update user profile
 export async function PUT(request: NextRequest) {
   try {
-    const { userId, settings } = await request.json();
+    const { userId, ...updateData } = await request.json();
 
     if (!userId) {
       return NextResponse.json(
         { success: false, message: 'User ID is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!settings) {
-      return NextResponse.json(
-        { success: false, message: 'Settings data is required' },
         { status: 400 }
       );
     }
@@ -68,21 +68,21 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update user settings
-    const updatedUser = await UserService.updateUser(userId, { settings });
+    // Update user
+    const updatedUser = await UserService.updateUser(userId, updateData);
 
     return NextResponse.json({
       success: true,
-      message: 'Settings updated successfully',
-      settings: updatedUser.settings
+      message: 'Profile updated successfully',
+      user: updatedUser
     });
 
   } catch (error) {
-    console.error('Update settings error:', error);
+    console.error('Update profile error:', error);
     return NextResponse.json(
       {
         success: false,
-        message: 'Failed to update settings',
+        message: 'Failed to update profile',
         error: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

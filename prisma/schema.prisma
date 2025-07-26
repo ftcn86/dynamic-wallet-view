@@ -1,0 +1,283 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  name      String
+  email     String?  @unique
+  walletAddress String? @unique
+  avatar    String
+  bio       String?
+  balance   Float    @default(0)
+  miningRate Float   @default(0)
+  teamSize  Int?     @default(0)
+  isNodeOperator Boolean @default(false)
+  nodeUptimePercentage Float?
+  kycStatus KycStatus? @default(NOT_COMPLETED)
+  joinDate  DateTime?
+  lastActive DateTime? @default(now())
+  termsAccepted Boolean @default(false)
+  accessToken String?
+  refreshToken String?
+  tokenExpiresAt Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  settings UserSettings?
+  balanceBreakdown BalanceBreakdown?
+  unverifiedPiDetails UnverifiedPiDetails?
+  badges UserBadge[]
+  transactions Transaction[]
+  notifications Notification[]
+  teamMembers TeamMember[]
+  nodeData NodeData?
+  balanceHistory BalanceHistory[]
+
+  @@map("users")
+}
+
+model UserSettings {
+  id String @id @default(cuid())
+  userId String @unique
+  theme String @default("system") // light, dark, system
+  language String @default("en")
+  notifications Boolean @default(true)
+  emailNotifications Boolean @default(false)
+  remindersEnabled Boolean @default(false)
+  reminderHoursBefore Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model BalanceBreakdown {
+  id String @id @default(cuid())
+  userId String @unique
+  transferableToMainnet Float @default(0)
+  totalUnverifiedPi Float @default(0)
+  currentlyInLockups Float @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("balance_breakdowns")
+}
+
+model UnverifiedPiDetails {
+  id String @id @default(cuid())
+  userId String @unique
+  fromReferralTeam Float @default(0)
+  fromSecurityCircle Float @default(0)
+  fromNodeRewards Float @default(0)
+  fromOtherBonuses Float @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("unverified_pi_details")
+}
+
+model Badge {
+  id String @id @default(cuid())
+  name String
+  description String
+  iconUrl String
+  dataAiHint String?
+  createdAt DateTime @default(now())
+
+  // Relationships
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id String @id @default(cuid())
+  userId String
+  badgeId String
+  earned Boolean @default(false)
+  earnedDate DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model TeamMember {
+  id String @id @default(cuid())
+  userId String
+  name String
+  avatarUrl String
+  joinDate DateTime
+  status TeamMemberStatus @default(PENDING)
+  unverifiedPiContribution Float @default(0)
+  teamMemberActiveMiningHours_LastWeek Float @default(0)
+  teamMemberActiveMiningHours_LastMonth Float @default(0)
+  kycStatus KycStatus @default(NOT_COMPLETED)
+  dataAiHint String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
+}
+
+model NodeData {
+  id String @id @default(cuid())
+  userId String @unique
+  nodeId String
+  status NodeStatus @default(OFFLINE)
+  lastSeen DateTime
+  nodeSoftwareVersion String
+  latestSoftwareVersion String
+  country String
+  countryFlag String
+  uptimePercentage Float @default(0)
+  performanceScore Float @default(0)
+  blocksProcessed Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  performanceHistory NodePerformanceHistory[]
+
+  @@map("node_data")
+}
+
+model NodePerformanceHistory {
+  id String @id @default(cuid())
+  nodeDataId String
+  date DateTime
+  score Float
+  createdAt DateTime @default(now())
+
+  // Relationships
+  nodeData NodeData @relation(fields: [nodeDataId], references: [id], onDelete: Cascade)
+
+  @@map("node_performance_history")
+}
+
+model Transaction {
+  id String @id @default(cuid())
+  userId String
+  date DateTime
+  type TransactionType
+  amount Float
+  status TransactionStatus @default(PENDING)
+  from String?
+  to String?
+  description String
+  blockExplorerUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@map("transactions")
+}
+
+model Notification {
+  id String @id @default(cuid())
+  userId String
+  type NotificationType
+  title String
+  description String
+  date DateTime @default(now())
+  read Boolean @default(false)
+  link String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, date])
+  @@map("notifications")
+}
+
+model BalanceHistory {
+  id String @id @default(cuid())
+  userId String
+  date DateTime
+  transferable Float @default(0)
+  unverified Float @default(0)
+  createdAt DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("balance_history")
+}
+
+// Enums
+enum KycStatus {
+  COMPLETED
+  PENDING
+  NOT_COMPLETED
+}
+
+enum TeamMemberStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum NodeStatus {
+  ONLINE
+  OFFLINE
+  SYNCHRONIZING
+}
+
+enum TransactionType {
+  SENT
+  RECEIVED
+  MINING_REWARD
+  NODE_BONUS
+}
+
+enum TransactionStatus {
+  COMPLETED
+  PENDING
+  FAILED
+}
+
+enum NotificationType {
+  BADGE_EARNED
+  TEAM_UPDATE
+  NODE_UPDATE
+  ANNOUNCEMENT
+  TEAM_MESSAGE
+}

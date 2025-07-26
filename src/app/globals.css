@@ -19,10 +19,38 @@
     scroll-behavior: smooth;
   }
 
-  /* Prevent horizontal scrolling on mobile */
+  /* Enable horizontal scrolling when needed */
   body {
-    overflow-x: hidden;
+    overflow-x: auto;
     width: 100%;
+    min-width: 320px; /* Minimum width for mobile */
+  }
+
+  /* Container for horizontal scrolling */
+  .scroll-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) transparent;
+  }
+
+  /* Custom scrollbar for webkit browsers */
+  .scroll-container::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-container::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .scroll-container::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
   }
 
   /* Fluid typography for better mobile scaling */

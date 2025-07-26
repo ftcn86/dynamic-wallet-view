@@ -75,10 +75,11 @@ export default function DashboardPage() {
   const totalTeamMembers = mockTeam.length;
 
   return (
-    <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
+    <div className="w-full max-w-full space-y-4 sm:space-y-6">
       
-      {/* KPI Cards Grid - Responsive and Overflow Safe */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 auto-rows-fr">
+      {/* KPI Cards Grid - Horizontal Scrollable on Mobile */}
+      <div className="scroll-container">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 auto-rows-fr min-w-[800px] sm:min-w-0">
         <KPICard
           title="Total Pi Balance"
           value={(user.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}) + ' π'}
@@ -137,6 +138,7 @@ export default function DashboardPage() {
             />
           </Link>
         )}
+        </div>
       </div>
 
       {/* Tabs Container - Responsive and Overflow Safe */}
@@ -181,7 +183,8 @@ export default function DashboardPage() {
 
         {/* Tab Content - Responsive Grid Layouts */}
         <TabsContent value="overview" className="mt-4 sm:mt-6 w-full max-w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
+          <div className="scroll-container">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-[800px] sm:min-w-0">
             <div className="space-y-4 sm:space-y-6 w-full">
               <BalanceBreakdownCard />
               <TeamActivityCard />
@@ -191,10 +194,12 @@ export default function DashboardPage() {
               <MiningFocusCard />
             </div>
           </div>
+        </div>
         </TabsContent>
         
         <TabsContent value="portfolio" className="mt-4 sm:mt-6 w-full max-w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
+          <div className="scroll-container">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-[800px] sm:min-w-0">
             <div className="w-full">
               <BalanceFluctuationChartCard />
             </div>
@@ -202,10 +207,12 @@ export default function DashboardPage() {
               <WalletAddressCard user={user} />
             </div>
           </div>
+        </div>
         </TabsContent>
         
         <TabsContent value="achievements" className="mt-4 sm:mt-6 w-full max-w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
+          <div className="scroll-container">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-[800px] sm:min-w-0">
             <div className="w-full">
               <MyBadgesCard />
             </div>
@@ -213,10 +220,12 @@ export default function DashboardPage() {
               <RewardedAdsCard />
             </div>
           </div>
+        </div>
         </TabsContent>
         
         <TabsContent value="analysis" className="mt-4 sm:mt-6 w-full max-w-full">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full">
+          <div className="scroll-container">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-[800px] sm:min-w-0">
             <div className="w-full">
               <LockupCalculatorCard />
             </div>
@@ -224,6 +233,7 @@ export default function DashboardPage() {
               <AIFeatureFeedbackCard />
             </div>
           </div>
+        </div>
           <div className="mt-4 sm:mt-6 w-full">
             <NativeFeaturesCard />
           </div>

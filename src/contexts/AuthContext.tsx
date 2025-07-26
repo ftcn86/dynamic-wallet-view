@@ -89,14 +89,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // Check if Pi SDK is available
-        const isSDKAvailable = typeof window !== 'undefined' && 
+        // Check if we're in Pi Browser environment
+        const isPiBrowser = typeof window !== 'undefined' && 
           (window as any).Pi && 
           (window as any).Pi.authenticate && 
           typeof (window as any).Pi.authenticate === 'function';
 
-        if (isSDKAvailable) {
-          // Check if user is already authenticated with Pi SDK
+        // Check if we should use real authentication
+        const shouldUseRealAuth = isPiBrowser && 
+          window.location.hostname.includes('minepi.com');
+
+        if (shouldUseRealAuth) {
+          // Check if user is already authenticated with Pi SDK (only in Pi Browser)
           const sdk = getPiSDKInstance();
           if (sdk.isAuthenticated()) {
             const currentUser = sdk.currentUser();
@@ -141,11 +145,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         } else {
-          // SDK not available - check for stored mock user
+          // Not in Pi Browser - check for stored mock user
+          console.log('🖥️ Regular browser: Checking for stored mock user session');
           const storedUserItem = localStorage.getItem(DYNAMIC_WALLET_USER_KEY);
           if (storedUserItem) {
             const storedUser = JSON.parse(storedUserItem) as User;
             if (storedUser.accessToken === 'mock-token') {
+              console.log('✅ Found stored mock user session');
               setUser(storedUser);
             }
           }
@@ -186,15 +192,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (): Promise<User | null> => {
     setIsLoading(true);
     try {
-      // Check if Pi SDK is available
-      const isSDKAvailable = typeof window !== 'undefined' && 
+      // Check if we're in Pi Browser environment
+      const isPiBrowser = typeof window !== 'undefined' && 
         (window as any).Pi && 
         (window as any).Pi.authenticate && 
         typeof (window as any).Pi.authenticate === 'function';
 
-      if (isSDKAvailable) {
-        // Use real Pi Network authentication
-        console.log('Pi SDK available: Using real Pi Network authentication');
+      // Check if we should use real authentication
+      const shouldUseRealAuth = isPiBrowser && 
+        window.location.hostname.includes('minepi.com');
+
+      if (shouldUseRealAuth) {
+        // Use real Pi Network authentication (only in Pi Browser)
+        console.log('🌐 Pi Browser detected: Using real Pi Network authentication');
         
         const sdk = getPiSDKInstance();
         
@@ -244,8 +254,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserInternal(userWithTermsAccepted);
         return userWithTermsAccepted;
       } else {
-        // SDK not available - use mock authentication
-        console.log('Pi SDK not available: Using mock authentication');
+        // Not in Pi Browser - use mock authentication for development
+        console.log('🖥️ Regular browser detected: Using mock authentication for development');
         const mockUser: User = {
           id: 'test-user-123',
           username: 'testuser',

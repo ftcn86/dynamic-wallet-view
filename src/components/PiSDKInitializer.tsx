@@ -14,25 +14,31 @@ export function PiSDKInitializer() {
     const initializePiSDK = () => {
       if (typeof window !== 'undefined' && (window as any).Pi) {
         try {
-          // Detect if we're in sandbox environment
+          // Detect if we're in Pi Browser environment
+          const isPiBrowser = window.location.hostname.includes('minepi.com');
           const isSandbox = window.location.hostname.includes('sandbox.minepi.com');
           
-          // Initialize Pi SDK with environment specification
-          (window as any).Pi.init({ 
-            version: "2.0",
-            appId: process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view',
-            environment: isSandbox ? 'sandbox' : 'mainnet'
-          });
-          console.log('✅ Pi Network SDK initialized successfully');
-          console.log('🌍 Environment:', isSandbox ? 'sandbox' : 'mainnet');
-          
-
+          if (isPiBrowser) {
+            // Initialize Pi SDK with environment specification (only in Pi Browser)
+            (window as any).Pi.init({ 
+              version: "2.0",
+              appId: process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view',
+              environment: isSandbox ? 'sandbox' : 'mainnet'
+            });
+            console.log('✅ Pi Network SDK initialized successfully');
+            console.log('🌍 Environment:', isSandbox ? 'sandbox' : 'mainnet');
+            console.log('🔧 App ID:', process.env.NEXT_PUBLIC_PI_APP_ID || 'dynamic-wallet-view');
+          } else {
+            console.log('ℹ️ Pi Network SDK available but not in Pi Browser environment');
+            console.log('💡 For development, the app will use mock authentication');
+          }
           
         } catch (error) {
           console.error('❌ Failed to initialize Pi Network SDK:', error);
         }
       } else {
         console.log('ℹ️ Pi Network SDK not available (running in regular browser)');
+        console.log('💡 For development, the app will use mock authentication');
       }
     };
 

@@ -147,43 +147,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return new Promise((resolve, reject) => {
         const Pi = (window as any).Pi;
         
-        Pi.authenticate(['payments', 'username'], async (auth: any) => {
-          try {
-            console.log('🔐 Pi authentication successful:', auth);
-            
-            // Register/login user with our backend
-            const response = await fetch('/api/auth/register', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ authResult: auth }),
-            });
+                 Pi.authenticate(['payments', 'username'], async (auth: any) => {
+           try {
+             console.log('🔐 Pi authentication successful:', auth);
+             console.log('📋 Auth data structure:', {
+               hasUser: !!auth.user,
+               hasAccessToken: !!auth.accessToken,
+               username: auth.user?.username,
+               uid: auth.user?.uid
+             });
+             
+             // Register/login user with our backend
+             console.log('🌐 Calling backend registration endpoint...');
+             const response = await fetch('/api/auth/register', {
+               method: 'POST',
+               headers: {
+                 'Content-Type': 'application/json',
+               },
+               body: JSON.stringify({ authResult: auth }),
+             });
 
-            if (!response.ok) {
-              throw new Error('Failed to register user');
-            }
+             console.log('📡 Backend response status:', response.status);
+             
+             if (!response.ok) {
+               const errorText = await response.text();
+               console.error('❌ Backend registration failed:', errorText);
+               throw new Error(`Failed to register user: ${response.status} ${errorText}`);
+             }
 
-            const result = await response.json();
-            
-            if (result.success) {
-              console.log('✅ User authenticated successfully:', result.user);
-              setUserInternal(result.user);
-              setIsLoading(false);
-              resolve(result.user);
-            } else {
-              throw new Error(result.message || 'Authentication failed');
-            }
-          } catch (error) {
-            console.error('❌ Authentication error:', error);
-            setIsLoading(false);
-            reject(error);
-          }
-        }, (error: any) => {
-          console.error('❌ Pi authentication failed:', error);
-          setIsLoading(false);
-          reject(error);
-        });
+             const result = await response.json();
+             console.log('📋 Backend response:', result);
+             
+             if (result.success) {
+               console.log('✅ User authenticated successfully:', result.user);
+               setUserInternal(result.user);
+               setIsLoading(false);
+               resolve(result.user);
+             } else {
+               console.error('❌ Backend returned error:', result.message);
+               throw new Error(result.message || 'Authentication failed');
+             }
+           } catch (error) {
+             console.error('❌ Authentication error:', error);
+             setIsLoading(false);
+             reject(error);
+           }
+         }, (error: any) => {
+           console.error('❌ Pi authentication failed:', error);
+           setIsLoading(false);
+           reject(error);
+         });
       });
     } catch (error) {
       console.error('Login error:', error);

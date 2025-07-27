@@ -75,15 +75,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('Starting authentication...');
     
     try {
-      // Check if we're actually in Pi Browser with proper Pi SDK
-      const isPiBrowser = typeof window !== 'undefined' && 
-                         (window as any).Pi && 
-                         typeof (window as any).Pi.authenticate === 'function' &&
-                         navigator.userAgent.includes('PiBrowser');
+      // Improved Pi Browser detection - focus on Pi SDK availability
+      const hasPiSDK = typeof window !== 'undefined' && 
+                       (window as any).Pi && 
+                       typeof (window as any).Pi.authenticate === 'function';
       
-      if (!isPiBrowser) {
-        setStatus('Not in Pi Browser, using test mode...');
-        console.log('🌐 Not in Pi Browser or Pi SDK not available, using mock authentication');
+      // Log detection details for debugging
+      console.log('🔍 Pi Browser Detection:', {
+        hasPiSDK,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
+        windowPi: typeof window !== 'undefined' ? !!(window as any).Pi : false,
+        piAuthenticate: typeof window !== 'undefined' && (window as any).Pi ? 
+          typeof (window as any).Pi.authenticate === 'function' : false
+      });
+      
+      if (!hasPiSDK) {
+        setStatus('Pi SDK not available, using test mode...');
+        console.log('🌐 Pi SDK not available, using mock authentication');
         
         // Fallback to mock auth for development/testing
         const mockUser: User = {
@@ -166,9 +174,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return mockUser;
       }
 
-      // Real Pi Network authentication following official demo pattern
+      // Real Pi Network authentication - Pi SDK is available
       setStatus('Authenticating with Pi Network...');
-      console.log('📱 Using Pi Network authentication in Pi Browser');
+      console.log('📱 Using Pi Network authentication - Pi SDK detected');
       
       return new Promise((resolve, reject) => {
         const Pi = (window as any).Pi;

@@ -106,7 +106,7 @@ export default function LoginPage() {
             
             {/* Authentication will be handled automatically by Pi SDK */}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-3">
             <Button 
               onClick={handleLogin} 
               disabled={isLoggingIn}
@@ -121,6 +121,15 @@ export default function LoginPage() {
                 'Sign in with Pi Network'
               )}
             </Button>
+            
+            {/* Debug Information */}
+            <div className="w-full text-xs text-muted-foreground bg-gray-50 p-3 rounded border">
+              <div className="font-semibold mb-2">Debug Info:</div>
+              <div>User Agent: {typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 50) + '...' : 'N/A'}</div>
+              <div>Pi SDK Available: {typeof window !== 'undefined' && (window as any).Pi ? 'Yes' : 'No'}</div>
+              <div>Pi.authenticate: {typeof window !== 'undefined' && (window as any).Pi && typeof (window as any).Pi.authenticate === 'function' ? 'Yes' : 'No'}</div>
+              <div>Environment: {process.env.NODE_ENV}</div>
+            </div>
           </CardFooter>
         </Card>
 

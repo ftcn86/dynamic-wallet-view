@@ -181,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return new Promise((resolve, reject) => {
         const Pi = (window as any).Pi;
         // Use simpler scopes as per official Pi SDK docs
-        const scopes = ['payments'];
+        const scopes = ['payments', 'username'];
         
         console.log('🚀 Calling Pi.authenticate with scopes:', scopes);
         

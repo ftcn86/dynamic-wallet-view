@@ -82,9 +82,27 @@ export default function DonatePage() {
             
             // Check if user is authenticated, if not authenticate them
             const sdk = getPiSDKInstance();
-            if (!sdk.isAuthenticated()) {
+            const isPiAvailable = typeof window !== 'undefined' && (window as any).Pi;
+            
+            if (!isPiAvailable) {
+                throw new Error('Pi SDK not available');
+            }
+            
+            // Check authentication status
+            let isAuthenticated = false;
+            try {
+                isAuthenticated = sdk && typeof sdk.isAuthenticated === 'function' && sdk.isAuthenticated();
+            } catch (error) {
+                console.log('🔍 Could not check authentication status, assuming not authenticated');
+                isAuthenticated = false;
+            }
+            
+            if (!isAuthenticated) {
                 console.log('🔍 User not authenticated, authenticating...');
-                await sdk.authenticate(['username', 'payments', 'wallet_address']);
+                // Use the same authentication pattern as the main app
+                await (window as any).Pi.authenticate(['payments', 'username'], (payment: any) => {
+                    console.log('Incomplete payment found during donation:', payment);
+                });
             } else {
                 console.log('✅ User already authenticated, proceeding with payment');
             }

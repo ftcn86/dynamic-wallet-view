@@ -113,15 +113,19 @@ export default function DonatePage() {
                     
                     // Call server API to approve the payment
                     try {
-                        const response = await fetch('/api/payments', {
+                        const response = await fetch('/api/payments/approve', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Authorization': `Bearer ${user.accessToken || 'mock-token'}`,
                             },
                             body: JSON.stringify({
-                                action: 'approve',  // ✅ CORRECT: approve first
-                                paymentId: paymentId,  // ✅ CORRECT: send paymentId
+                                paymentId: paymentId,
+                                metadata: {
+                                    productId: 'donation',
+                                    amount: paymentData.amount,
+                                    memo: paymentData.memo
+                                }
                             }),
                         });
 
@@ -148,14 +152,13 @@ export default function DonatePage() {
                     
                     // Call server API to complete the payment
                     try {
-                        const response = await fetch('/api/payments', {
+                        const response = await fetch('/api/payments/complete', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Authorization': `Bearer ${user.accessToken || 'mock-token'}`,
                             },
                             body: JSON.stringify({
-                                action: 'complete',  // ✅ CORRECT: complete second
                                 paymentId: paymentId,
                                 txid: txid,
                             }),

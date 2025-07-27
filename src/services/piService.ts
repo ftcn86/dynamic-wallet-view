@@ -8,7 +8,7 @@ const mockApiCall = async <T>({ data, delay = 1000 }: { data: T; delay?: number 
 };
 import { mockUser, mockTeam, mockTransactions, mockNotifications } from '@/data/mocks';
 import type { User, TeamMember, Transaction, Notification } from '@/data/schemas';
-import { isPiSDKAvailable, getPiSDKInstance } from '@/lib/pi-network';
+import { getPiSDKInstance } from '@/lib/pi-network';
 import type { PiPayment, PiPaymentData } from '@/lib/pi-network';
 import { notifyA2UPaymentSent, notifyA2UPaymentFailed } from '@/services/notificationService';
 import { fetchUserBalance, type BalanceData } from '@/services/balanceService';
@@ -31,13 +31,6 @@ const activePayments = new Map<string, {
   txid?: string;
   completedAt?: string;
 }>();
-
-/**
- * Check if Pi SDK is available
- */
-function isPiBrowser(): boolean {
-  return isPiSDKAvailable();
-}
 
 /**
  * Get Pi SDK instance
@@ -104,7 +97,7 @@ function convertPiUserToAppUser(piUser: any, authResult?: any): User {
         dataAiHint: "verified checkmark"
       }
     ],
-    termsAccepted: true, // Auto-accept terms for all users
+    termsAccepted: true,
     settings: {
       theme: 'system',
       language: 'en',
@@ -113,9 +106,6 @@ function convertPiUserToAppUser(piUser: any, authResult?: any): User {
       remindersEnabled: true,
       reminderHoursBefore: 1,
     },
-    accessToken: authResult?.accessToken || authResult?.auth?.accessToken || '',
-    refreshToken: authResult?.refreshToken || authResult?.auth?.refreshToken || '',
-    tokenExpiresAt: authResult?.expiresAt || authResult?.auth?.expiresAt || (Date.now() + 3600000),
   };
 }
 
@@ -125,12 +115,13 @@ function convertPiUserToAppUser(piUser: any, authResult?: any): User {
 export async function getAuthenticatedUser(): Promise<User> {
   console.log("Attempting to authenticate with Pi Network...");
 
-  if (isPiBrowser()) {
+  // Try Pi SDK if available, otherwise use mock data
+  if (typeof window !== 'undefined' && (window as any).Pi) {
     try {
       const piSDK = getPiSDK();
       
       // Check if user is already authenticated
-      if (piSDK.isAuthenticated()) {
+      if (piSDK && piSDK.isAuthenticated()) {
         console.log("✅ User already authenticated, getting current user data");
         const currentUser = piSDK.currentUser();
         if (currentUser) {
@@ -140,690 +131,402 @@ export async function getAuthenticatedUser(): Promise<User> {
       
       // Only authenticate if not already authenticated
       console.log("🔍 User not authenticated, starting authentication...");
-      const authResult = await piSDK.authenticate(['username', 'payments', 'wallet_address']);
-      return convertPiUserToAppUser(authResult.user, authResult);
+      if (piSDK) {
+        const authResult = await piSDK.authenticate(['username', 'payments', 'wallet_address']);
+        return convertPiUserToAppUser(authResult.user, authResult);
+      }
     } catch (error) {
       console.error("Pi Network authentication failed, falling back to mock data:", error);
-      return mockApiCall({ data: mockUser });
     }
-  } else {
-    console.log("Pi SDK not available, using mock data");
-    return mockApiCall({ data: mockUser });
   }
+  
+  console.log("Pi SDK not available, using mock data");
+  return mockApiCall({ data: mockUser });
 }
 
 /**
- * Create a Pi Network payment with enhanced flow
+ * Validate Pi Network access token
+ */
+export async function validatePiToken(accessToken: string): Promise<boolean> {
+  // In a real app, this would validate the token with Pi Network's servers
+  console.log("Validating Pi Network access token:", accessToken ? "Present" : "Missing");
+  
+  // For development, accept any non-empty token
+  return !!accessToken && accessToken.length > 0;
+}
+
+/**
+ * Create a Pi Network payment
  */
 export async function createPiPayment(
   paymentData: PiPaymentData,
   callbacks: PaymentCallbacks
-): Promise<PiPayment> {
-  // Check if Pi SDK is available
-  if (!isPiBrowser()) {
-    console.log('Pi SDK not available - using mock payment flow');
-    
-    // Create mock payment for development
-    const mockPayment: PiPayment = {
-      identifier: `mock_${Date.now()}`,
-      user_uid: 'mock_user',
-      amount: paymentData.amount,
-      memo: paymentData.memo,
-      metadata: paymentData.metadata || {},
-      to_address: paymentData.to_address || 'mock_address',
-      created_at: new Date().toISOString(),
-      status: 'pending',
-      transaction: null,
-    };
+): Promise<string> {
+  console.log("Creating Pi Network payment:", paymentData);
 
-    // Simulate payment flow with delays
-    setTimeout(async () => {
-      try {
-        // Call approval endpoint
-        const approvalResponse = await fetch('/api/payments/approve', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentId: mockPayment.identifier,
-            metadata: paymentData.metadata
-          })
-        });
-
-        if (approvalResponse.ok) {
-          console.log('✅ Mock payment approved');
-          callbacks.onReadyForServerApproval(mockPayment.identifier);
-        } else {
-          console.error('❌ Mock payment approval failed');
-          callbacks.onError(new Error('Payment approval failed'), mockPayment);
-        }
-      } catch (error) {
-        console.error('❌ Mock payment approval error:', error);
-        callbacks.onError(error as Error, mockPayment);
-      }
-    }, 1000);
-
-    setTimeout(async () => {
-      try {
-        const txid = `mock_tx_${Date.now()}`;
-        mockPayment.status = 'completed';
-        mockPayment.transaction = {
-          txid,
-          verified: true,
-          _link: `https://api.minepi.com/blockchain/transactions/${txid}`,
-        };
-
-        // Call completion endpoint
-        const completionResponse = await fetch('/api/payments/complete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentId: mockPayment.identifier,
-            txid: txid
-          })
-        });
-
-        if (completionResponse.ok) {
-          console.log('✅ Mock payment completed');
-          callbacks.onReadyForServerCompletion(mockPayment.identifier, txid);
-        } else {
-          console.error('❌ Mock payment completion failed');
-          callbacks.onError(new Error('Payment completion failed'), mockPayment);
-        }
-      } catch (error) {
-        console.error('❌ Mock payment completion error:', error);
-        callbacks.onError(error as Error, mockPayment);
-      }
-    }, 3000);
-
-    return mockPayment;
-  }
-
-  try {
-    const sdk = getPiSDK();
-    
-    // Create payment using Pi Network SDK
-    const payment = await sdk.createPayment(paymentData, {
-      onReadyForServerApproval: async (paymentId: string) => {
-        console.log('Payment ready for server approval:', paymentId);
+  // Use Pi SDK if available, otherwise simulate payment
+  if (typeof window !== 'undefined' && (window as any).Pi) {
+    try {
+      const Pi = (window as any).Pi;
+      
+      const payment = await Pi.createPayment(paymentData, {
+        onReadyForServerApproval: async (paymentId: string) => {
+          console.log("Payment ready for server approval:", paymentId);
+          
+          // Store payment info
+          activePayments.set(paymentId, {
+            paymentId,
+            status: 'pending',
+            amount: paymentData.amount,
+            memo: paymentData.memo,
+            createdAt: new Date().toISOString()
+          });
+          
+          try {
+            // Call our backend to approve the payment
+            const response = await fetch('/api/payments/approve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId, metadata: paymentData.metadata })
+            });
+            
+            if (response.ok) {
+              console.log("✅ Payment approved by backend");
+              callbacks.onReadyForServerApproval(paymentId);
+            } else {
+              throw new Error(`Backend approval failed: ${response.status}`);
+            }
+          } catch (error) {
+            console.error("❌ Backend approval failed:", error);
+            callbacks.onError(error as Error, payment);
+          }
+        },
         
-        // Track payment status
-        activePayments.set(paymentId, {
-          paymentId,
-          status: 'pending',
-          amount: paymentData.amount,
-          memo: paymentData.memo,
-          createdAt: new Date().toISOString(),
-        });
+        onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+          console.log("Payment ready for server completion:", paymentId, txid);
+          
+          // Update payment info
+          const paymentInfo = activePayments.get(paymentId);
+          if (paymentInfo) {
+            paymentInfo.status = 'approved';
+            paymentInfo.txid = txid;
+          }
+          
+          try {
+            // Call our backend to complete the payment
+            const response = await fetch('/api/payments/complete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentId, txid })
+            });
+            
+            if (response.ok) {
+              console.log("✅ Payment completed by backend");
+              if (paymentInfo) {
+                paymentInfo.status = 'completed';
+                paymentInfo.completedAt = new Date().toISOString();
+              }
+              callbacks.onReadyForServerCompletion(paymentId, txid);
+            } else {
+              throw new Error(`Backend completion failed: ${response.status}`);
+            }
+          } catch (error) {
+            console.error("❌ Backend completion failed:", error);
+            callbacks.onError(error as Error, payment);
+          }
+        },
         
-        try {
-          // Call our approval endpoint
-          const response = await fetch('/api/payments/approve', {
+        onCancel: (paymentId: string) => {
+          console.log("Payment cancelled:", paymentId);
+          
+          // Update payment info
+          const paymentInfo = activePayments.get(paymentId);
+          if (paymentInfo) {
+            paymentInfo.status = 'cancelled';
+          }
+          
+          // Call our backend to handle cancellation
+          fetch('/api/payments/cancel', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              paymentId: paymentId,
-              metadata: paymentData.metadata
-            })
+            body: JSON.stringify({ paymentId })
+          }).catch(error => {
+            console.error("❌ Backend cancellation failed:", error);
           });
-
-          if (response.ok) {
-            console.log('✅ Payment approved via API');
-            callbacks.onReadyForServerApproval(paymentId);
-          } else {
-            console.error('❌ Payment approval failed via API');
-            const errorData = await response.json();
-            callbacks.onError(new Error(errorData.error || 'Payment approval failed'), payment);
+          
+          callbacks.onCancel(paymentId);
+        },
+        
+        onError: (error: Error, payment: PiPayment) => {
+          console.error("❌ Pi Network payment error:", error);
+          
+          // Update payment info
+          if (payment.identifier) {
+            const paymentInfo = activePayments.get(payment.identifier);
+            if (paymentInfo) {
+              paymentInfo.status = 'failed';
+            }
           }
-        } catch (apiError) {
-          console.error('❌ Payment approval API error:', apiError);
-          callbacks.onError(apiError as Error, payment);
+          
+          callbacks.onError(error, payment);
         }
-      },
-      onReadyForServerCompletion: async (paymentId: string, txid: string) => {
-        console.log('Payment ready for server completion:', paymentId, txid);
-        
-        // Update payment status
-        const paymentStatus = activePayments.get(paymentId);
-        if (paymentStatus) {
-          paymentStatus.status = 'approved';
-          paymentStatus.txid = txid;
-        }
-        
-        try {
-          // Call our completion endpoint
-          const response = await fetch('/api/payments/complete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              paymentId: paymentId,
-              txid: txid
-            })
-          });
-
-          if (response.ok) {
-            console.log('✅ Payment completed via API');
-            callbacks.onReadyForServerCompletion(paymentId, txid);
-          } else {
-            console.error('❌ Payment completion failed via API');
-            const errorData = await response.json();
-            callbacks.onError(new Error(errorData.error || 'Payment completion failed'), payment);
-          }
-        } catch (apiError) {
-          console.error('❌ Payment completion API error:', apiError);
-          callbacks.onError(apiError as Error, payment);
-        }
-      },
-      onCancel: async (paymentId: string) => {
-        console.log('Payment cancelled:', paymentId);
-        
-        // Update payment status
-        const paymentStatus = activePayments.get(paymentId);
-        if (paymentStatus) {
-          paymentStatus.status = 'cancelled';
-        }
-        
-        try {
-          // Call our cancellation endpoint
-          const response = await fetch('/api/payments/cancel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              paymentId: paymentId,
-              reason: 'User cancelled'
-            })
-          });
-
-          if (response.ok) {
-            console.log('✅ Payment cancelled via API');
-            callbacks.onCancel(paymentId);
-          } else {
-            console.error('❌ Payment cancellation failed via API');
-            const errorData = await response.json();
-            callbacks.onError(new Error(errorData.error || 'Payment cancellation failed'), payment);
-          }
-        } catch (apiError) {
-          console.error('❌ Payment cancellation API error:', apiError);
-          callbacks.onError(apiError as Error, payment);
-        }
-      },
-      onError: (error: Error, payment: PiPayment) => {
-        console.error('Payment error:', error, payment);
-        
-        // Update payment status
-        const paymentStatus = activePayments.get(payment.identifier);
-        if (paymentStatus) {
-          paymentStatus.status = 'failed';
-        }
-        
-        callbacks.onError(error, payment);
-      },
-    })
+      });
+      
+      return payment.identifier;
+    } catch (error) {
+      console.error("Pi Network payment creation failed:", error);
+      throw error;
+    }
+  } else {
+    // Simulate payment for development
+    console.log("Pi SDK not available, simulating payment");
+    const mockPaymentId = `mock_payment_${Date.now()}`;
     
-    return payment;
-  } catch (error) {
-    console.error('Pi Network payment creation failed:', error);
-    throw new Error(`Payment creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Simulate payment flow
+    setTimeout(() => callbacks.onReadyForServerApproval(mockPaymentId), 1000);
+    setTimeout(() => callbacks.onReadyForServerCompletion(mockPaymentId, `mock_tx_${Date.now()}`), 3000);
+    
+    return mockPaymentId;
   }
 }
 
 /**
- * Create App-to-User payment (A2U)
- * Note: This requires the app to have Pi in its wallet to send to users
+ * Send App-to-User payment
  */
-export async function createAppToUserPayment(
+export async function sendA2UPayment(
+  recipientUid: string,
   amount: number,
   memo: string,
-  userId: string,
-  metadata?: Record<string, any>
-): Promise<any> {
-  try {
-    console.log('🔍 Creating App-to-User payment...');
-    console.log(`🔧 Amount: ${amount} Pi`);
-    console.log(`🔧 Memo: ${memo}`);
-    console.log(`🔧 User ID: ${userId}`);
+  metadata?: any
+): Promise<{ success: boolean; paymentId?: string; error?: string }> {
+  console.log("Sending A2U payment:", { recipientUid, amount, memo });
 
-    // Check if Pi SDK is available for real payments
-    if (isPiBrowser()) {
-      console.log('✅ Pi SDK available - attempting real A2U payment');
-      
-      // In a real implementation, you would:
-      // 1. Check if the app has sufficient Pi balance
-      // 2. Create the payment through Pi Network Platform API
-      // 3. Handle the payment flow
-      
-      // For now, we'll simulate the payment
-      const mockPayment = {
-        success: true,
-        paymentId: `a2u_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  try {
+    const response = await fetch('/api/payments/a2u', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipientUid,
         amount,
         memo,
-        userId,
-        status: 'completed',
-        timestamp: new Date().toISOString(),
-        note: 'This is a simulated payment. In production, the app needs Pi in its wallet to send to users.'
-      };
-      
-      console.log('✅ Simulated A2U payment created');
-      notifyA2UPaymentSent(amount, userId);
-      
-      return mockPayment;
-    } else {
-      console.log('⚠️ Pi SDK not available - using mock A2U payment');
-      
-      // Mock payment for development
-      const mockPayment = {
-        success: true,
-        paymentId: `mock_a2u_${Date.now()}`,
-        amount,
-        memo,
-        userId,
-        status: 'completed',
-        timestamp: new Date().toISOString(),
-        note: 'Mock payment - Pi SDK not available'
-      };
-      
-      notifyA2UPaymentSent(amount, userId);
-      return mockPayment;
-    }
-  } catch (error) {
-    console.error('❌ App-to-User payment creation failed:', error);
-    
-    // Notify failure
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    notifyA2UPaymentFailed(amount, userId, errorMessage);
-    
-    throw error;
-  }
-}
-
-/**
- * Complete a Pi Network payment
- */
-export async function completePiPayment(payment: PiPayment): Promise<PiPayment> {
-  // Check if Pi SDK is available
-  if (!isPiBrowser()) {
-    console.log('Pi SDK not available - using mock payment completion');
-    
-    // Return mock completed payment
-    const completedPayment = { ...payment };
-    completedPayment.status = 'completed';
-    
-    // Update payment status
-    const paymentStatus = activePayments.get(payment.identifier);
-    if (paymentStatus) {
-      paymentStatus.status = 'completed';
-      paymentStatus.completedAt = new Date().toISOString();
-    }
-    
-    return completedPayment;
-  }
-
-  try {
-    const sdk = getPiSDK();
-    
-    // Complete payment using Pi Network SDK
-    const completedPayment = await sdk.completePayment(payment);
-    
-    // Update payment status
-    const paymentStatus = activePayments.get(payment.identifier);
-    if (paymentStatus) {
-      paymentStatus.status = 'completed';
-      paymentStatus.completedAt = new Date().toISOString();
-    }
-    
-    return completedPayment;
-  } catch (error) {
-    console.error('Failed to complete Pi payment:', error);
-    throw new Error(`Payment completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-/**
- * Cancel a Pi Network payment
- */
-export async function cancelPiPayment(payment: PiPayment): Promise<PiPayment> {
-  // Check if Pi SDK is available
-  if (!isPiBrowser()) {
-    console.log('Pi SDK not available - using mock payment cancellation');
-    
-    // Return mock cancelled payment
-    const cancelledPayment = { ...payment };
-    cancelledPayment.status = 'cancelled';
-    
-    // Update payment status
-    const paymentStatus = activePayments.get(payment.identifier);
-    if (paymentStatus) {
-      paymentStatus.status = 'cancelled';
-    }
-    
-    return cancelledPayment;
-  }
-
-  try {
-    const sdk = getPiSDK();
-    
-    // Cancel payment using Pi Network SDK
-    const cancelledPayment = await sdk.cancelPayment(payment);
-    
-    // Update payment status
-    const paymentStatus = activePayments.get(payment.identifier);
-    if (paymentStatus) {
-      paymentStatus.status = 'cancelled';
-    }
-    
-    return cancelledPayment;
-  } catch (error) {
-    console.error('Failed to cancel Pi payment:', error);
-    throw new Error(`Payment cancellation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-/**
- * Validate Pi Network token (simplified)
- */
-export async function validatePiToken(accessToken: string): Promise<boolean> {
-  // In a real app, this would validate with Pi Network servers
-  // For now, we'll just check if the token exists and has a valid format
-  return Boolean(accessToken && accessToken.length > 0 && accessToken !== 'mock-token');
-}
-
-/**
- * Get user Pi balance with real Pi Network integration
- */
-export async function getUserPiBalance(accessToken: string): Promise<{
-  totalBalance: number;
-  transferableBalance: number;
-  unverifiedBalance: number;
-  lockedBalance: number;
-  balanceBreakdown: {
-    transferableToMainnet: number;
-    totalUnverifiedPi: number;
-    currentlyInLockups: number;
-  };
-  unverifiedPiDetails: {
-    fromReferralTeam: number;
-    fromSecurityCircle: number;
-    fromNodeRewards: number;
-    fromOtherBonuses: number;
-  };
-  source: string;
-}> {
-  console.log('💰 Starting balance fetch...');
-  console.log('🔍 Access token available:', !!accessToken);
-  
-  try {
-    // Try to fetch real balance first
-    const balanceData = await fetchUserBalance();
-    console.log('✅ Balance fetched successfully from:', balanceData.source);
-    console.log('🔍 Balance data:', {
-      totalBalance: balanceData.totalBalance,
-      transferableBalance: balanceData.transferableBalance,
-      unverifiedBalance: balanceData.unverifiedBalance,
-      source: balanceData.source
+        metadata
+      })
     });
-    
-    return balanceData;
-  } catch (error) {
-    console.error('❌ Real balance fetch failed:', error);
-    console.log('🔄 Falling back to mock balance data');
-    
-    // Fallback to mock data
-    const mockBalance = 1234.5678;
-    return {
-      totalBalance: mockBalance,
-      transferableBalance: mockBalance * 0.7,
-      unverifiedBalance: mockBalance * 0.3,
-      lockedBalance: 0,
-      balanceBreakdown: {
-        transferableToMainnet: mockBalance * 0.7,
-        totalUnverifiedPi: mockBalance * 0.3,
-        currentlyInLockups: 0,
-      },
-      unverifiedPiDetails: {
-        fromReferralTeam: mockBalance * 0.18,
-        fromSecurityCircle: mockBalance * 0.075,
-        fromNodeRewards: mockBalance * 0.03,
-        fromOtherBonuses: mockBalance * 0.015,
-      },
-      source: 'mock_fallback'
-    };
-  }
-}
 
-/**
- * Get app's Pi balance (for App-to-User payments)
- * This represents the Pi the app has available to send to users
- */
-export async function getAppPiBalance(): Promise<{
-  availableBalance: number;
-  totalReceived: number;
-  totalSent: number;
-  source: string;
-}> {
-  console.log('🔍 Checking app Pi balance for A2U payments...');
-  
-  // In a real implementation, this would:
-  // 1. Check the app's Pi Network wallet balance
-  // 2. Track donations received from users
-  // 3. Track payments sent to users
-  // 4. Calculate available balance for new payments
-  
-  // For now, we'll use mock data
-  const mockBalance = {
-    availableBalance: 0, // App has no Pi to send
-    totalReceived: 0,    // No donations received yet
-    totalSent: 0,        // No payments sent yet
-    source: 'mock'
-  };
-  
-  console.log('⚠️ App Pi balance:', mockBalance);
-  console.log('💡 To enable real A2U payments:');
-  console.log('   1. Register app with Pi Network');
-  console.log('   2. Receive donations from users');
-  console.log('   3. Implement proper wallet management');
-  
-  return mockBalance;
-}
+    const result = await response.json();
 
-/**
- * Check if app can make A2U payment
- */
-export async function canMakeA2UPayment(amount: number): Promise<{
-  canPay: boolean;
-  availableBalance: number;
-  reason?: string;
-}> {
-  console.log('🔍 Checking if app can make A2U payment of', amount, 'Pi...');
-  
-  try {
-    const appBalance = await getAppPiBalance();
-    
-    if (appBalance.availableBalance >= amount) {
-      console.log('✅ App can make A2U payment');
-      return {
-        canPay: true,
-        availableBalance: appBalance.availableBalance
-      };
+    if (response.ok && result.success) {
+      console.log("✅ A2U payment sent successfully:", result.paymentId);
+      notifyA2UPaymentSent(amount, recipientUid);
+      return { success: true, paymentId: result.paymentId };
     } else {
-      console.log('❌ App cannot make A2U payment - insufficient balance');
-      return {
-        canPay: false,
-        availableBalance: appBalance.availableBalance,
-        reason: 'App currently cannot pay rewards. This is normal for development/testing.'
-      };
+      console.error("❌ A2U payment failed:", result.error);
+      notifyA2UPaymentFailed(amount, recipientUid, result.error);
+      return { success: false, error: result.error };
     }
   } catch (error) {
-    console.error('❌ Error checking A2U payment capability:', error);
-    return {
-      canPay: false,
-      availableBalance: 0,
-      reason: 'Unable to check payment capability'
-    };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error("❌ A2U payment request failed:", errorMessage);
+    notifyA2UPaymentFailed(amount, recipientUid, errorMessage);
+    return { success: false, error: errorMessage };
   }
+}
+
+/**
+ * Get user's Pi balance
+ */
+export async function getUserPiBalance(accessToken?: string): Promise<BalanceData> {
+  console.log("Fetching user Pi balance");
+  return await fetchUserBalance();
 }
 
 /**
  * Get team members
  */
 export async function getTeamMembers(): Promise<TeamMember[]> {
+  console.log("Fetching team members");
   return mockApiCall({ data: mockTeam });
-}
-
-/**
- * Get transactions
- */
-export async function getTransactions(): Promise<Transaction[]> {
-  // Check if Pi SDK is available and user is authenticated
-  if (isPiBrowser()) {
-    try {
-      const sdk = getPiSDK();
-      if (sdk.isAuthenticated()) {
-        console.log('🔍 Fetching real transactions from Pi Network...');
-        
-        // Get real transactions from Pi Network
-        const piUser = sdk.currentUser();
-        if (piUser) {
-          // In a real implementation, you would fetch from Pi Network API
-          // For now, we'll return mock data but mark it as real
-          const realTransactions: Transaction[] = mockTransactions.map(tx => ({
-            ...tx,
-            // Add real transaction indicators
-            isRealTransaction: true,
-            source: 'pi-network'
-          }));
-          
-          console.log('✅ Real transactions fetched:', realTransactions.length);
-          return realTransactions;
-        }
-      }
-    } catch (error) {
-      console.error('❌ Failed to fetch real transactions:', error);
-    }
-  }
-  
-  // Fallback to mock data
-  console.log('📝 Using mock transactions (Pi Network not available)');
-  return mockApiCall({ data: mockTransactions });
-}
-
-/**
- * Get notifications
- */
-export async function getNotifications(): Promise<Notification[]> {
-  // Import here to avoid circular dependencies
-  const { getNotifications: getNotificationService } = await import('@/services/notificationService');
-  return getNotificationService();
-}
-
-/**
- * Mark notification as read
- */
-export async function markNotificationAsRead(notificationId: string): Promise<void> {
-  // Import here to avoid circular dependencies
-  const { markNotificationAsRead: markRead } = await import('@/services/notificationService');
-  markRead(notificationId);
-}
-
-/**
- * Mark all notifications as read
- */
-export async function markAllNotificationsAsRead(): Promise<void> {
-  // Import here to avoid circular dependencies
-  const { markAllNotificationsAsRead: markAllRead } = await import('@/services/notificationService');
-  markAllRead();
-}
-
-/**
- * Send broadcast notification
- */
-export async function sendBroadcastNotification(message: string): Promise<{ success: boolean }> {
-  // In a real app, this would send to all team members
-  console.log('Sending broadcast notification:', message);
-  return { success: true };
-}
-
-/**
- * Add notification
- */
-export async function addNotification(notification: Omit<Notification, 'id' | 'date' | 'read'>): Promise<void> {
-  // In a real app, this would add to the database
-  console.log('Adding notification:', notification);
-}
-
-/**
- * Add transaction with enhanced payment integration
- */
-export async function addTransaction(transaction: Omit<Transaction, 'id' | 'date'>): Promise<void> {
-  // In a real app, this would add to the database
-  console.log('Adding transaction:', transaction);
-  
-  // Add blockchain explorer URL if not provided
-  if (!transaction.blockExplorerUrl && transaction.status === 'completed') {
-    // Generate a mock blockchain URL for completed transactions
-    const mockTxId = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    transaction.blockExplorerUrl = `https://api.minepi.com/blockchain/transactions/${mockTxId}`;
-  }
-  
-  // Add notification for significant transactions
-  try {
-    const { addNotification } = await import('@/services/notificationService');
-    
-    if (transaction.amount > 10) {
-      addNotification(
-        'announcement',
-        'Large Transaction Completed',
-        `A transaction of ${transaction.amount}π has been completed successfully.`,
-        '/dashboard/transactions'
-      );
-    }
-    
-    if (transaction.type === 'mining_reward') {
-      addNotification(
-        'badge_earned',
-        'Mining Reward Received',
-        `You received ${transaction.amount}π as a mining reward!`,
-        '/dashboard/transactions'
-      );
-    }
-    
-    if (transaction.type === 'node_bonus') {
-      addNotification(
-        'node_update',
-        'Node Bonus Received',
-        `You received ${transaction.amount}π as a node operation bonus!`,
-        '/dashboard/transactions'
-      );
-    }
-  } catch (notificationError) {
-    console.warn('⚠️ Failed to add transaction notification:', notificationError);
-  }
 }
 
 /**
  * Get node data
  */
-export async function getNodeData(): Promise<any> {
-  // In a real app, this would fetch from Pi Network API
+export async function getNodeData() {
+  console.log("Fetching node data");
+  
+  // Return complete mock node data
   return mockApiCall({ 
     data: {
-      nodeId: 'node-12345',
+      nodeId: 'node_12345',
       status: 'online' as const,
       lastSeen: new Date().toISOString(),
-      nodeSoftwareVersion: '1.8.2',
-      latestSoftwareVersion: '1.8.3',
+      nodeSoftwareVersion: '1.7.3',
+      latestSoftwareVersion: '1.7.3',
       country: 'United States',
       countryFlag: '🇺🇸',
       uptimePercentage: 98.5,
       performanceScore: 95.2,
       blocksProcessed: 15420,
       performanceHistory: [
-        { date: '2024-01-01', score: 92.1 },
-        { date: '2024-01-15', score: 93.5 },
-        { date: '2024-02-01', score: 94.2 },
-        { date: '2024-02-15', score: 95.1 },
-        { date: '2024-03-01', score: 95.8 },
-        { date: '2024-03-15', score: 95.2 },
+        { date: '2024-01-15', score: 94.2 },
+        { date: '2024-01-16', score: 95.8 },
+        { date: '2024-01-17', score: 93.1 },
+        { date: '2024-01-18', score: 96.5 },
+        { date: '2024-01-19', score: 95.2 },
       ]
     }
   });
 }
+
+/**
+ * Get transactions
+ */
+export async function getTransactions(): Promise<Transaction[]> {
+  console.log("Fetching transactions");
+  return mockApiCall({ data: mockTransactions });
+}
+
+/**
+ * Add a new transaction
+ */
+export async function addTransaction(transaction: Omit<Transaction, 'id'>): Promise<Transaction> {
+  console.log("Adding new transaction:", transaction);
+  
+  const newTransaction: Transaction = {
+    ...transaction,
+    id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    blockExplorerUrl: `https://explorer.pinet.com/tx/${Math.random().toString(36).substr(2, 16)}`
+  };
+  
+  // Add to mock data (in real app, this would save to database)
+  mockTransactions.unshift(newTransaction);
+  
+  // Add notification for new transaction
+  const { addNotification } = await import('@/services/notificationService');
+  
+  let notificationTitle = '';
+  let notificationDescription = '';
+  
+  switch (transaction.type) {
+    case 'sent':
+      notificationTitle = 'Payment Sent';
+      notificationDescription = `Successfully sent ${transaction.amount}π to ${transaction.to}`;
+      break;
+    case 'received':
+      notificationTitle = 'Payment Received';
+      notificationDescription = `Received ${transaction.amount}π from ${transaction.from}`;
+      break;
+    case 'mining_reward':
+      notificationTitle = 'Mining Reward';
+      notificationDescription = `Earned ${transaction.amount}π from mining`;
+      break;
+    case 'node_bonus':
+      notificationTitle = 'Node Bonus';
+      notificationDescription = `Received ${transaction.amount}π node operation bonus`;
+      break;
+  }
+  
+  addNotification(
+    'announcement',
+    notificationTitle,
+    notificationDescription,
+    '/dashboard/transactions'
+  );
+  
+  return newTransaction;
+}
+
+/**
+ * Get notifications
+ */
+export async function getNotifications(): Promise<Notification[]> {
+  console.log("Fetching notifications");
+  return mockApiCall({ data: mockNotifications });
+}
+
+// PiNetworkSDK class for centralized SDK management
+class PiNetworkSDK {
+  private pi: any = null;
+
+  constructor() {
+    this.initializeSDK();
+  }
+
+  private initializeSDK(): void {
+    if (typeof window === 'undefined') return;
+    
+    const checkForPiSDK = () => {
+      if ((window as any).Pi) {
+        this.pi = (window as any).Pi;
+        try {
+          // Simple initialization following official demo pattern
+          this.pi.init({ version: '2.0' });
+          console.log('✅ Pi Network SDK initialized');
+        } catch (error) {
+          console.error('❌ Failed to initialize Pi Network SDK:', error);
+        }
+      } else {
+        setTimeout(checkForPiSDK, 100);
+      }
+    };
+    checkForPiSDK();
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated(): boolean {
+    return this.pi?.isAuthenticated() || false;
+  }
+
+  /**
+   * Get current authenticated user
+   */
+  currentUser(): any {
+    return this.pi?.currentUser() || null;
+  }
+
+  /**
+   * Authenticate user with Pi Network
+   */
+  async authenticate(
+    scopes: string[] = ['username', 'payments', 'wallet_address'],
+    onIncompletePaymentFound?: (payment: PiPayment) => void
+  ): Promise<any> {
+    if (!this.pi) {
+      throw new Error('Pi Network SDK not available');
+    }
+
+    if (typeof this.pi.authenticate !== 'function') {
+      console.error('Pi Network SDK authenticate method not found');
+      throw new Error('Pi Network SDK authenticate method not available');
+    }
+
+    try {
+      const authResult = await this.pi.authenticate(scopes, onIncompletePaymentFound);
+      return authResult;
+    } catch (error) {
+      console.error('Pi Network authentication failed:', error);
+      throw new Error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Create a payment
+   */
+  async createPayment(paymentData: PiPaymentData, callbacks: any): Promise<PiPayment> {
+    if (!this.pi) {
+      throw new Error('Pi Network SDK not available');
+    }
+
+    try {
+      return await this.pi.createPayment(paymentData, callbacks);
+    } catch (error) {
+      console.error('Pi Network payment creation failed:', error);
+      throw new Error(`Payment creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+}
+
+// Export singleton instance
+export const piNetworkSDK = new PiNetworkSDK();

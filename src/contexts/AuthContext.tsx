@@ -73,21 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     setStatus('Starting authentication...');
+    
     try {
-      // Check if we're in Pi Browser
-      const isPiBrowser = typeof window !== 'undefined' && (window as any).Pi;
-      console.log('🔍 Pi Browser detection:', {
-        hasWindow: typeof window !== 'undefined',
-        hasPi: !!(window as any).Pi,
-        isPiBrowser: isPiBrowser,
-        hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
-        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'N/A'
-      });
-      
-             if (!isPiBrowser) {
-         setStatus('Not in Pi Browser, using test mode...');
-         console.log('🌐 Not in Pi Browser, using mock authentication');
-         // Fallback to mock auth for development/testing
+      // Check if Pi SDK is available
+      if (typeof window === 'undefined' || !(window as any).Pi) {
+        setStatus('Not in Pi Browser, using test mode...');
+        console.log('🌐 Pi SDK not available, using mock authentication');
+        
+        // Fallback to mock auth for development/testing
         const mockUser: User = {
           id: 'test-user-123',
           username: 'testuser',
@@ -152,105 +145,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         setUserInternal(mockUser);
         setIsLoading(false);
+        setStatus(null);
         return mockUser;
       }
 
-             // Real Pi Network authentication
-       setStatus('Authenticating with Pi Network...');
-       console.log('📱 Using Pi Network authentication');
+      // Real Pi Network authentication following official demo pattern
+      setStatus('Authenticating with Pi Network...');
+      console.log('📱 Using Pi Network authentication');
       
-             return new Promise((resolve, reject) => {
-         const Pi = (window as any).Pi;
-         console.log('🔍 Pi SDK object:', {
-           hasPi: !!Pi,
-           hasAuthenticate: !!Pi?.authenticate,
-           authenticateType: typeof Pi?.authenticate
-         });
-         
-         if (!Pi || !Pi.authenticate) {
-           setError('Pi Network SDK not available or authenticate method missing');
-           setIsLoading(false);
-           reject(new Error('Pi Network SDK not available'));
-           return;
-         }
-         
-                 console.log('🚀 Calling Pi.authenticate...');
-        console.log('🔧 Authentication scopes:', ['payments', 'username']);
+      return new Promise((resolve, reject) => {
+        const Pi = (window as any).Pi;
+        const scopes = ['username', 'payments', 'wallet_address'];
+        
+        console.log('🚀 Calling Pi.authenticate with scopes:', scopes);
         
         // Add timeout for authentication
         const authTimeout = setTimeout(() => {
           console.error('❌ Authentication timeout after 30 seconds');
           setError('Authentication timeout. Please try again.');
           setIsLoading(false);
+          reject(new Error('Authentication timeout'));
         }, 30000);
         
-                Pi.authenticate(['payments', 'username'], async (auth: any) => {
+        // Official Pi Network demo pattern: delegate to backend
+        Pi.authenticate(scopes, async (authResult: any) => {
           try {
-            clearTimeout(authTimeout); // Clear timeout on success
-            setStatus('Pi authentication successful! Loading dashboard...');
-             console.log('🔐 Pi authentication successful:', auth);
-             
-             // Convert Pi user to our app user format (no backend registration needed)
-             const user: User = {
-               id: auth.user.uid,
-               username: auth.user.username,
-               name: auth.user.username, // Pi doesn't provide name, use username
-               email: auth.user.profile?.email || '',
-               walletAddress: auth.user.wallet_address || '',
-               avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${auth.user.username}`,
-               bio: '',
-               balance: 0, // Will be fetched separately
-               miningRate: 0, // Will be fetched separately
-               teamSize: 0,
-               isNodeOperator: false,
-               kycStatus: 'verified', // Pi Network users are verified
-               joinDate: new Date().toISOString(),
-               lastActive: new Date().toISOString(),
-               termsAccepted: true,
-               settings: {
-                 theme: 'system',
-                 language: 'en',
-                 notifications: true,
-                 emailNotifications: false,
-                 remindersEnabled: false,
-                 reminderHoursBefore: 1,
-               },
-               balanceBreakdown: {
-                 transferableToMainnet: 0,
-                 totalUnverifiedPi: 0,
-                 currentlyInLockups: 0,
-               },
-               unverifiedPiDetails: {
-                 fromReferralTeam: 0,
-                 fromSecurityCircle: 0,
-                 fromNodeRewards: 0,
-                 fromOtherBonuses: 0,
-               },
-               badges: [],
-               userActiveMiningHours_LastWeek: 0,
-               userActiveMiningHours_LastMonth: 0,
-               activeMiningDays_LastWeek: 0,
-               activeMiningDays_LastMonth: 0,
-             };
-             
-             console.log('✅ User created from Pi authentication:', user);
-             setUserInternal(user);
-             setIsLoading(false);
-             setStatus(null);
-             resolve(user);
-           } catch (error) {
-             console.error('❌ Authentication error:', error);
-             setError(`Authentication error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-             setIsLoading(false);
-             reject(error);
-           }
-         }, (error: any) => {
-           console.error('❌ Pi authentication failed:', error);
-           setError(`Pi authentication failed: ${error.message || 'Unknown error'}`);
-           setIsLoading(false);
-           reject(error);
-         });
+            clearTimeout(authTimeout);
+            setStatus('Processing authentication...');
+            console.log('🔐 Pi authentication successful, sending to backend...');
+            
+            // Send auth result to backend for processing (official demo pattern)
+            const response = await fetch('/api/auth/signin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ authResult })
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Backend authentication failed: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success || !data.user) {
+              throw new Error(data.message || 'Backend authentication failed');
+            }
+            
+            console.log('✅ Backend authentication successful');
+            setUserInternal(data.user);
+            setIsLoading(false);
+            setStatus(null);
+            resolve(data.user);
+            
+          } catch (error) {
+            console.error('❌ Backend authentication error:', error);
+            setError(`Authentication error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            setIsLoading(false);
+            reject(error);
+          }
+        }, (error: any) => {
+          clearTimeout(authTimeout);
+          console.error('❌ Pi authentication failed:', error);
+          setError(`Pi authentication failed: ${error.message || 'Unknown error'}`);
+          setIsLoading(false);
+          reject(error);
+        });
       });
+      
     } catch (error) {
       console.error('Login error:', error);
       setError(`Login error: ${error instanceof Error ? error.message : 'Unknown error'}`);

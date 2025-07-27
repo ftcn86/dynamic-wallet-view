@@ -6,7 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getTeamMembers, sendBroadcastNotification, addNotification, getTransactions } from '@/services/piService';
+import { getTeamMembers, getTransactions } from '@/services/piService';
+import { addNotification } from '@/services/notificationService';
 import type { TeamMember, Transaction } from '@/data/schemas';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -58,25 +59,21 @@ function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
         setIsBroadcasting(true);
         try {
             // Send broadcast and create notification
-            const result = await sendBroadcastNotification(broadcastMessage);
+            console.log('Sending broadcast message:', broadcastMessage);
             
-            if (result.success) {
-                // Also create a notification for the current user
-                await addNotification({
-                    type: 'team_message',
-                    title: 'Message from your Team Leader',
-                    description: broadcastMessage,
-                    link: '/dashboard/team'
-                });
+            // Create a notification for the current user (simulate broadcast)
+            addNotification(
+                'team_message',
+                'Message from your Team Leader',
+                broadcastMessage,
+                '/dashboard/team'
+            );
                 
-                toast({
-                    title: t('teamInsights.broadcastSuccessTitle'),
-                    description: t('teamInsights.broadcastSuccessDesc'),
-                });
-                setBroadcastMessage("");
-            } else {
-                throw new Error('Failed to send broadcast');
-            }
+            toast({
+                title: t('teamInsights.broadcastSuccessTitle'),
+                description: t('teamInsights.broadcastSuccessDesc'),
+            });
+            setBroadcastMessage("");
         } catch (error) {
              toast({
                 title: t('teamInsights.broadcastErrorTitle'),

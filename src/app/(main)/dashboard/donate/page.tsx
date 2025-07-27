@@ -16,10 +16,8 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { getPiSDKInstance } from '@/lib/pi-network';
 import { SendIcon, HeartIcon, UsersIcon, TrendingUpIcon, AlertTriangleIcon } from '@/components/shared/icons';
 import { RecentSupporters } from '@/components/dashboard/donate/RecentSupporters';
-import { 
-  addTransaction, 
-  addNotification
-} from '@/services/piService';
+import { addTransaction } from '@/services/piService';
+import { addNotification } from '@/services/notificationService';
 import type { PiPayment } from '@/lib/pi-network';
 
 export default function DonatePage() {

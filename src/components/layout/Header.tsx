@@ -3,7 +3,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '@/services/piService';
+import { getNotifications } from '@/services/piService';
+import { markNotificationAsRead, markAllNotificationsAsRead } from '@/services/notificationService';
 import type { Notification, NotificationType } from '@/data/schemas';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';

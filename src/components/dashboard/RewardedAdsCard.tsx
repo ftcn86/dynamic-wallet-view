@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { getPiSDKInstance } from '@/lib/pi-network';
-import { createAppToUserPayment, canMakeA2UPayment } from '@/services/piService';
+import { sendA2UPayment } from '@/services/piService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Play, Gift, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { notifyAdRewardEarned, notifyDailyAdLimitReached, notifyAdNotAvailable } from '@/services/notificationService';
@@ -35,9 +35,8 @@ export default function RewardedAdsCard() {
 
   const checkAdReadiness = async () => {
     try {
-      const sdk = getPiSDKInstance();
-      const ready = await sdk.isRewardedAdReady();
-      setIsAdReady(ready);
+      // For development, simulate ad availability
+      setIsAdReady(Math.random() > 0.3); // 70% chance ad is ready
     } catch (error) {
       console.error('Failed to check ad readiness:', error);
       setIsAdReady(false);
@@ -105,7 +104,8 @@ export default function RewardedAdsCard() {
         });
       }, 500);
 
-      const result = await sdk.showRewardedAd();
+      // Simulate ad watching for development
+      const result = { result: Math.random() > 0.2 ? 'AD_REWARDED' : 'AD_FAILED' };
       
       clearInterval(progressInterval);
       setRewardProgress(100);
@@ -151,10 +151,10 @@ export default function RewardedAdsCard() {
     if (!user) return;
 
     try {
-      await createAppToUserPayment(
+      await sendA2UPayment(
+        user.id,
         REWARD_AMOUNT,
         `Reward for watching ad - Dynamic Wallet View`,
-        user.id,
         {
           type: 'ad_reward',
           timestamp: new Date().toISOString(),
@@ -170,8 +170,11 @@ export default function RewardedAdsCard() {
 
   const checkAppPaymentCapability = async () => {
     try {
-      const paymentCheck = await canMakeA2UPayment(REWARD_AMOUNT);
-      setCanPayReward(paymentCheck);
+      // For now, assume we can't pay rewards (this would be implemented with app balance checking)
+      setCanPayReward({ 
+        canPay: false, 
+        reason: 'App currently cannot pay rewards. This is normal for development/testing.' 
+      });
     } catch (error) {
       console.error('Failed to check app payment capability:', error);
       setCanPayReward({ canPay: false, reason: 'Unable to check payment capability' });

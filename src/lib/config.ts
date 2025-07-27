@@ -57,14 +57,6 @@ function getEnvVar(key: string, fallback: string = ''): string {
 }
 
 /**
- * Detect if running in Pi Browser
- */
-function isPiBrowser(): boolean {
-  if (typeof window === 'undefined') return false;
-  return !!(window as any).Pi;
-}
-
-/**
  * Detect Pi Network environment
  */
 function getPiEnvironment(): 'testnet' | 'mainnet' {
@@ -78,7 +70,6 @@ function getPiEnvironment(): 'testnet' | 'mainnet' {
     return 'mainnet';
   }
 }
-
 
 /**
  * Get Pi Platform API URL based on environment
@@ -131,10 +122,10 @@ export const config: AppConfig = {
     retries: parseInt(getEnvVar('NEXT_PUBLIC_API_RETRIES', '3')),
   },
   
-  // Feature flags
+  // Feature flags - Pi SDK handles browser detection internally
   features: {
-    realPayments: isPiBrowser(),
-    realAuthentication: isPiBrowser(),
+    realPayments: getEnvVar('NEXT_PUBLIC_ENABLE_REAL_PAYMENTS', 'true') === 'true',
+    realAuthentication: getEnvVar('NEXT_PUBLIC_ENABLE_REAL_AUTH', 'true') === 'true',
     analytics: getEnvVar('NEXT_PUBLIC_ENABLE_ANALYTICS', 'false') === 'true',
     notifications: getEnvVar('NEXT_PUBLIC_ENABLE_NOTIFICATIONS', 'true') === 'true',
   },
@@ -163,10 +154,8 @@ export function getPiNetworkConfig() {
  * Check if real Pi Network features should be enabled
  */
 export function shouldUseRealPiNetwork(): boolean {
-  return isPiBrowser() && config.features.realAuthentication;
+  return config.features.realAuthentication;
 }
-
-
 
 /**
  * Get API endpoint URL
@@ -180,7 +169,6 @@ export function getApiUrl(endpoint: string): string {
  */
 export function getEnvironmentSettings() {
   return {
-    isPiBrowser: isPiBrowser(),
     isDevelopment: config.isDevelopment,
     isProduction: config.isProduction,
     piEnvironment: config.piEnvironment,
@@ -224,7 +212,6 @@ export function logConfig(): void {
   if (config.isDevelopment) {
     console.log('🔧 App Configuration:', {
       environment: getEnvVar('NODE_ENV'),
-      isPiBrowser: isPiBrowser(),
       piNetwork: {
         appId: config.piNetwork.appId,
         platformApiUrl: config.piNetwork.platformApiUrl,

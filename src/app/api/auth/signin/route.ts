@@ -1,99 +1,134 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import { config } from '@/lib/config';
+import type { User } from '@/data/schemas';
 
 /**
- * Simplified Authentication Endpoint (Following Official Demo Pattern)
+ * Authentication Endpoint (Following Official Pi Network Demo Pattern)
  * 
- * This endpoint validates Pi Network access tokens and returns user data.
- * It follows the exact same pattern as the official Pi Network demo.
+ * This endpoint receives the raw authResult from Pi.authenticate() on the frontend
+ * and handles all user data processing on the backend, just like the official demos.
  */
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔐 Authentication endpoint called');
     const { authResult } = await request.json();
 
-    if (!authResult || !authResult.accessToken) {
+    console.log('📋 Auth result received:', {
+      hasAuthResult: !!authResult,
+      hasAccessToken: !!authResult?.accessToken,
+      hasUser: !!authResult?.user,
+      username: authResult?.user?.username
+    });
+
+    if (!authResult || !authResult.accessToken || !authResult.user) {
+      console.error('❌ Invalid authentication data');
       return NextResponse.json(
-        { error: 'Access token is required' },
+        { success: false, message: 'Invalid authentication data' },
         { status: 400 }
       );
     }
 
-    console.log('🔍 Validating Pi Network access token...');
-    console.log(`🔧 Environment: ${config.isDevelopment ? 'development' : 'production'}`);
+    let piUser = authResult.user;
 
-    // Use Pi Platform API client to verify the token (following official demo pattern)
-    const piPlatformClient = getPiPlatformAPIClient();
-    
-    try {
-      const userData = await piPlatformClient.verifyUser(authResult.accessToken);
-      console.log('✅ Pi Network token validation successful');
-
-      // Convert Pi user data to our app's User format
-      const appUser = {
-        id: userData.uid || authResult.user.uid,
-        username: userData.username || authResult.user.username,
-        name: userData.username || authResult.user.username, // Use username as name
-        email: userData.email || '',
-        walletAddress: userData.wallet_address || '',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.username || authResult.user.username}`,
-        bio: 'Pi Network Pioneer',
-        balance: 0, // Will be fetched separately
-        miningRate: 0, // Will be fetched separately
-        isNodeOperator: userData.roles?.some((role: string) => 
-          ['node_operator', 'validator', 'super_node', 'node'].includes(role)
-        ) || false,
-        kycStatus: 'verified',
-        joinDate: new Date().toISOString(),
-        lastActive: new Date().toISOString(),
-        balanceBreakdown: {
-          transferableToMainnet: 0,
-          totalUnverifiedPi: 0,
-          currentlyInLockups: 0,
-        },
-        unverifiedPiDetails: {
-          fromReferralTeam: 0,
-          fromSecurityCircle: 0,
-          fromNodeRewards: 0,
-          fromOtherBonuses: 0,
-        },
-        badges: [],
-        userActiveMiningHours_LastWeek: 0,
-        userActiveMiningHours_LastMonth: 0,
-        activeMiningDays_LastWeek: 0,
-        activeMiningDays_LastMonth: 0,
-        termsAccepted: true,
-        settings: {
-          theme: 'system',
-          language: 'en',
-          notifications: true,
-          emailNotifications: false,
-          remindersEnabled: true,
-          reminderHoursBefore: 1,
-        },
-        accessToken: authResult.accessToken,
-        refreshToken: authResult.refreshToken || '',
-        tokenExpiresAt: authResult.expiresAt || (Date.now() + 3600000),
-      };
-
-      return NextResponse.json({
-        success: true,
-        user: appUser,
-        message: "User signed in successfully"
-      });
-    } catch (platformError) {
-      console.error('❌ Pi Platform API validation failed:', platformError);
-      return NextResponse.json(
-        { error: 'Invalid access token' },
-        { status: 401 }
-      );
+    // Validate with Pi Platform API in production
+    if (config.isProduction) {
+      try {
+        console.log('🔍 Validating with Pi Platform API...');
+        const piPlatformClient = getPiPlatformAPIClient();
+        piUser = await piPlatformClient.verifyUser(authResult.accessToken);
+        console.log('✅ Pi Platform API validation successful');
+      } catch (error) {
+        console.error('❌ Pi Platform API validation failed:', error);
+        return NextResponse.json(
+          { success: false, message: 'Token validation failed' },
+          { status: 401 }
+        );
+      }
+    } else {
+      console.log('🔧 Development mode: Using auth result directly');
     }
 
+    console.log('👤 Processing user data:', {
+      username: piUser.username,
+      uid: piUser.uid,
+      hasWalletAddress: !!piUser.wallet_address
+    });
+
+    // Convert Pi user to our app user format (backend processing)
+    const user: User = {
+      id: piUser.uid,
+      username: piUser.username,
+      name: piUser.username, // Pi doesn't provide separate name, use username
+      email: piUser.profile?.email || '',
+      walletAddress: piUser.wallet_address || '',
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${piUser.username}`,
+      bio: '',
+      balance: 0, // Will be fetched separately via other endpoints
+      miningRate: 0, // Will be fetched separately via other endpoints
+      teamSize: 0,
+      isNodeOperator: false,
+      kycStatus: 'verified', // Pi Network users are verified
+      joinDate: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      termsAccepted: true,
+      settings: {
+        theme: 'system',
+        language: 'en',
+        notifications: true,
+        emailNotifications: false,
+        remindersEnabled: false,
+        reminderHoursBefore: 1,
+      },
+      balanceBreakdown: {
+        transferableToMainnet: 0,
+        totalUnverifiedPi: 0,
+        currentlyInLockups: 0,
+      },
+      unverifiedPiDetails: {
+        fromReferralTeam: 0,
+        fromSecurityCircle: 0,
+        fromNodeRewards: 0,
+        fromOtherBonuses: 0,
+      },
+      badges: [],
+      userActiveMiningHours_LastWeek: 0,
+      userActiveMiningHours_LastMonth: 0,
+      activeMiningDays_LastWeek: 0,
+      activeMiningDays_LastMonth: 0,
+      // Store Pi Network tokens for API calls
+      accessToken: authResult.accessToken,
+      refreshToken: authResult.refreshToken,
+      tokenExpiresAt: authResult.expiresAt,
+    };
+
+    // In a real app with database, you would:
+    // 1. Check if user exists in database
+    // 2. Create new user or update existing user
+    // 3. Generate JWT session token
+    // 4. Store session in database
+    
+    // For now, return the user data directly
+    console.log('✅ User authentication successful:', {
+      userId: user.id,
+      username: user.username,
+      hasWalletAddress: !!user.walletAddress
+    });
+
+    return NextResponse.json({
+      success: true,
+      user,
+      message: 'Authentication successful'
+    });
+
   } catch (error) {
-    console.error('❌ Authentication API error:', error);
+    console.error('❌ Authentication error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Authentication failed' 
+      },
       { status: 500 }
     );
   }

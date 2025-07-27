@@ -180,69 +180,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return new Promise((resolve, reject) => {
         const Pi = (window as any).Pi;
-        const scopes = ['username', 'payments', 'wallet_address'];
+        // Use simpler scopes as per official Pi SDK docs
+        const scopes = ['payments'];
         
         console.log('🚀 Calling Pi.authenticate with scopes:', scopes);
         
-        // Add timeout for authentication
+        // Add timeout for authentication (reduced to 20 seconds)
         const authTimeout = setTimeout(() => {
-          console.error('❌ Authentication timeout after 30 seconds');
+          console.error('❌ Authentication timeout after 20 seconds');
           setError('Authentication timeout. Please try again.');
           setIsLoading(false);
           reject(new Error('Authentication timeout'));
-        }, 30000);
+        }, 20000);
         
         try {
-          // Official Pi Network demo pattern: delegate to backend
-          Pi.authenticate(scopes, async (authResult: any) => {
-            try {
-              clearTimeout(authTimeout);
-              setStatus('Processing authentication...');
-              console.log('🔐 Pi authentication successful, sending to backend...', {
-                hasAuthResult: !!authResult,
-                hasAccessToken: !!authResult?.accessToken,
-                hasUser: !!authResult?.user
-              });
-              
-              // Send auth result to backend for processing (official demo pattern)
-              const response = await fetch('/api/auth/signin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ authResult })
-              });
-              
-              if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Backend response error:', errorText);
-                throw new Error(`Backend authentication failed: ${response.status}`);
+          // Official Pi Network demo pattern with onIncompletePaymentFound callback
+          const onIncompletePaymentFound = (payment: any) => {
+            console.log('🔄 Incomplete payment found:', payment);
+            // Handle incomplete payments
+            fetch('/api/payments/incomplete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ payment })
+            }).catch(console.error);
+          };
+          
+          // Use the official Pi.authenticate pattern with promise
+          Pi.authenticate(scopes, onIncompletePaymentFound)
+            .then(async (authResult: any) => {
+              try {
+                clearTimeout(authTimeout);
+                setStatus('Processing authentication...');
+                console.log('🔐 Pi authentication successful, sending to backend...', {
+                  hasAuthResult: !!authResult,
+                  hasAccessToken: !!authResult?.accessToken,
+                  hasUser: !!authResult?.user
+                });
+                
+                // Send auth result to backend for processing (official demo pattern)
+                const response = await fetch('/api/auth/signin', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ authResult })
+                });
+                
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  console.error('Backend response error:', errorText);
+                  throw new Error(`Backend authentication failed: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success || !data.user) {
+                  throw new Error(data.message || 'Backend authentication failed');
+                }
+                
+                console.log('✅ Backend authentication successful');
+                setUserInternal(data.user);
+                setIsLoading(false);
+                setStatus(null);
+                resolve(data.user);
+                
+              } catch (error) {
+                clearTimeout(authTimeout);
+                console.error('❌ Backend authentication error:', error);
+                setError(`Authentication error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                setIsLoading(false);
+                reject(error);
               }
-              
-              const data = await response.json();
-              
-              if (!data.success || !data.user) {
-                throw new Error(data.message || 'Backend authentication failed');
-              }
-              
-              console.log('✅ Backend authentication successful');
-              setUserInternal(data.user);
-              setIsLoading(false);
-              setStatus(null);
-              resolve(data.user);
-              
-            } catch (error) {
+            })
+            .catch((error: any) => {
               clearTimeout(authTimeout);
-              console.error('❌ Backend authentication error:', error);
-              setError(`Authentication error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              console.error('❌ Pi authentication failed:', error);
+              setError(`Pi authentication failed: ${error?.message || 'Unknown error'}`);
               setIsLoading(false);
               reject(error);
-            }
-          }, (error: any) => {
-            clearTimeout(authTimeout);
-            console.error('❌ Pi authentication failed:', error);
-            setError(`Pi authentication failed: ${error?.message || 'Unknown error'}`);
-            setIsLoading(false);
-            reject(error);
-          });
+            });
+            
         } catch (error) {
           clearTimeout(authTimeout);
           console.error('❌ Error calling Pi.authenticate:', error);

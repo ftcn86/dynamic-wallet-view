@@ -5,29 +5,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
+import { LoadingSpinner } from '../shared/LoadingSpinner';
 
 export function BalanceBreakdownCard() {
   const { user } = useAuth();
 
   if (!user) return (
-    <Card className={cn("shadow-lg")}>
-      <CardHeader>
-        <Skeleton className="h-6 w-3/4" />
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Skeleton className="h-5 w-full" />
-        <Skeleton className="h-5 w-full" />
-        <Skeleton className="h-5 w-full" />
-      </CardContent>
-      <CardFooter>
-        <Skeleton className="h-4 w-full" />
-      </CardFooter>
+    <Card className={cn("shadow-lg flex items-center justify-center min-h-[120px]")}>
+      <LoadingSpinner size={24} />
     </Card>
   );
 
-  // Conditional Rendering: Only render if balance breakdown data is available.
   if (!user.balanceBreakdown) {
-    return null;
+    return (
+      <Card className={cn("shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center")}> 
+        <span className="text-gray-500">No balance breakdown data available.</span>
+      </Card>
+    );
   }
 
   const breakdownItems = [

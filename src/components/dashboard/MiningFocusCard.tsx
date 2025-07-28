@@ -9,6 +9,7 @@ import { getDaysInMonth, subMonths, isValid } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { TargetIcon, UsersIcon, CalendarDaysIcon } from '@/components/shared/icons';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 export function MiningFocusCard() {
   const { user } = useAuth();
@@ -22,8 +23,19 @@ export function MiningFocusCard() {
     }
   }, []);
 
+  if (!user) return (
+    <Card className="shadow-lg flex items-center justify-center min-h-[120px]">
+      <LoadingSpinner size={24} />
+    </Card>
+  );
 
-  if (!user) return null;
+  if (user.activeMiningDays_LastWeek === undefined && user.activeMiningDays_LastMonth === undefined) {
+    return (
+      <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
+        <span className="text-gray-500">No mining activity data available.</span>
+      </Card>
+    );
+  }
 
   const activeMiningDaysLastWeek = user.activeMiningDays_LastWeek ?? 0;
   const activeMiningDaysLastMonth = user.activeMiningDays_LastMonth ?? 0;

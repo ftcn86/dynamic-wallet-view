@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -10,6 +10,8 @@ import type { Badge } from '@/data/schemas';
 import { format, parseISO } from 'date-fns';
 import { BadgeIcon } from './badge/BadgeIcon';
 import { AwardIcon, CheckCircleIcon } from '@/components/shared/icons';
+import { LoadingSpinner } from '../shared/LoadingSpinner';
+import { getUserBadges } from '@/services/piService';
 
 function BadgeItem({ badge }: { badge: Badge }) {
   const earnedDate = badge.earnedDate ? format(parseISO(badge.earnedDate), "MMMM dd, yyyy") : '';
@@ -44,27 +46,38 @@ function BadgeItem({ badge }: { badge: Badge }) {
 
 
 export function MyBadgesCard() {
-  const { user } = useAuth();
-  
-  if (!user) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-7 w-1/3" />
-          <Skeleton className="h-4 w-2/3" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const [badges, setBadges] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const sortedBadges = [...(user.badges || [])].sort((a, b) => {
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    getUserBadges()
+      .then(setBadges)
+      .catch(() => setError('Failed to load badges. Please try again.'))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return (
+    <Card className="shadow-lg flex items-center justify-center min-h-[120px]">
+      <LoadingSpinner size={24} />
+    </Card>
+  );
+
+  if (error) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center bg-red-50 border border-red-200">
+      <span className="text-red-700 font-medium">{error}</span>
+    </Card>
+  );
+
+  if (!badges.length) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
+      <span className="text-gray-500">No badges earned yet.</span>
+    </Card>
+  );
+
+  const sortedBadges = [...(badges || [])].sort((a, b) => {
     if (a.earned === b.earned) return 0;
     return a.earned ? -1 : 1;
   });

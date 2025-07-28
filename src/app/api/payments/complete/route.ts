@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import { config } from '@/lib/config';
+import { TransactionService } from '@/services/databaseService';
 
 /**
  * Payment Completion Endpoint (Following Official Demo Pattern)
@@ -26,50 +27,31 @@ export async function POST(request: NextRequest) {
     const piPlatformClient = getPiPlatformAPIClient();
 
     try {
-      // In a real app, you would:
-      // 1. Verify the transaction on the blockchain
-      // 2. Update the order record in your database
-      // 3. Deliver the product/service to the user
-      // 4. Send confirmation emails/notifications
-
-      // Verify transaction on blockchain (mock implementation)
-      console.log('🔍 Verifying transaction on blockchain...');
-      const transactionVerified = true; // In real app, verify with blockchain API
-
+      // TODO: Implement real blockchain verification if possible
+      const transactionVerified = true;
       if (!transactionVerified) {
         throw new Error('Transaction verification failed');
       }
 
-      // Update order record (mock implementation)
-      const updatedOrder = {
-        pi_payment_id: paymentId,
-        txid: txid,
-        paid: true,
-        completed_at: new Date().toISOString(),
-        transaction_verified: true
-      };
-
-      console.log('📝 Updated order record:', updatedOrder);
+      // Update order/payment record in DB (set status to 'completed', add txid)
+      // TODO: Replace with real user ID extraction and real order lookup
+      const userId = 'mock_user_id';
+      // For now, just create a new transaction with status 'completed'
+      const updatedOrder = await TransactionService.createTransaction(userId, {
+        type: 'sent',
+        amount: 0, // Should be updated with actual amount from payment/order
+        status: 'completed',
+        from: userId,
+        to: 'Dynamic Wallet View',
+        description: 'Payment completed',
+        blockExplorerUrl: `https://api.minepi.com/blockchain/transactions/${txid}`,
+      });
 
       // Complete the payment with Pi Network
       await piPlatformClient.completePayment(paymentId, txid);
       console.log('✅ Payment completed successfully');
 
-      // Add transaction to history
-      try {
-        const { addTransaction } = await import('@/services/piService');
-        addTransaction({
-          type: 'sent',
-          amount: 0, // Will be updated with actual amount from payment
-          status: 'completed',
-          description: 'Payment completed',
-          blockExplorerUrl: `https://api.minepi.com/blockchain/transactions/${txid}`
-        });
-      } catch (transactionError) {
-        console.warn('⚠️ Failed to add transaction:', transactionError);
-      }
-
-      // Add success notification
+      // Add notification for successful completion (optional)
       try {
         const { addNotification } = await import('@/services/notificationService');
         addNotification(

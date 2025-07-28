@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart as RechartsBarChart } from 'recharts';
 import { ChartTooltip, ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
@@ -9,10 +9,43 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockChartData } from '@/data/mocks';
 import { format } from 'date-fns';
 import { BarChartIcon } from '@/components/shared/icons';
+import { LoadingSpinner } from '../shared/LoadingSpinner';
+import { getBalanceHistory } from '@/services/piService';
 
 type ChartPeriod = '3M' | '6M' | '12M';
 
 export function BalanceFluctuationChartCard() {
+  const [chartData, setChartData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    getBalanceHistory()
+      .then(setChartData)
+      .catch(() => setError('Failed to load balance history. Please try again.'))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return (
+    <Card className="shadow-lg flex items-center justify-center min-h-[120px]">
+      <LoadingSpinner size={24} />
+    </Card>
+  );
+
+  if (error) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center bg-red-50 border border-red-200">
+      <span className="text-red-700 font-medium">{error}</span>
+    </Card>
+  );
+
+  if (!chartData.length) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
+      <span className="text-gray-500">No balance history data available.</span>
+    </Card>
+  );
+
   const [period, setPeriod] = useState<ChartPeriod>('6M');
   const data = mockChartData[period];
 

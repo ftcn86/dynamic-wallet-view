@@ -344,46 +344,33 @@ export async function getUserPiBalance(accessToken?: string): Promise<BalanceDat
  * Get team members
  */
 export async function getTeamMembers(): Promise<TeamMember[]> {
-  console.log("Fetching team members");
-  return mockApiCall({ data: mockTeam });
+  // Fetch from real backend API
+  const res = await fetch('/api/team/members');
+  if (!res.ok) throw new Error('Failed to fetch team members');
+  const data = await res.json();
+  return data.teamMembers || [];
 }
 
 /**
  * Get node data
  */
 export async function getNodeData() {
-  console.log("Fetching node data");
-  
-  // Return complete mock node data
-  return mockApiCall({ 
-    data: {
-      nodeId: 'node_12345',
-      status: 'online' as const,
-      lastSeen: new Date().toISOString(),
-      nodeSoftwareVersion: '1.7.3',
-      latestSoftwareVersion: '1.7.3',
-      country: 'United States',
-      countryFlag: '🇺🇸',
-      uptimePercentage: 98.5,
-      performanceScore: 95.2,
-      blocksProcessed: 15420,
-      performanceHistory: [
-        { date: '2024-01-15', score: 94.2 },
-        { date: '2024-01-16', score: 95.8 },
-        { date: '2024-01-17', score: 93.1 },
-        { date: '2024-01-18', score: 96.5 },
-        { date: '2024-01-19', score: 95.2 },
-      ]
-    }
-  });
+  // Fetch from real backend API
+  const res = await fetch('/api/node/performance');
+  if (!res.ok) throw new Error('Failed to fetch node data');
+  const data = await res.json();
+  return data.nodeData || null;
 }
 
 /**
  * Get transactions
  */
 export async function getTransactions(): Promise<Transaction[]> {
-  console.log("Fetching transactions");
-  return mockApiCall({ data: mockTransactions });
+  // Fetch from real backend API
+  const res = await fetch('/api/transactions');
+  if (!res.ok) throw new Error('Failed to fetch transactions');
+  const data = await res.json();
+  return data.transactions || [];
 }
 
 /**
@@ -440,8 +427,33 @@ export async function addTransaction(transaction: Omit<Transaction, 'id'>): Prom
  * Get notifications
  */
 export async function getNotifications(): Promise<Notification[]> {
-  console.log("Fetching notifications");
-  return mockApiCall({ data: mockNotifications });
+  // Fetch from real backend API
+  const res = await fetch('/api/notifications');
+  if (!res.ok) throw new Error('Failed to fetch notifications');
+  const data = await res.json();
+  return data.notifications || [];
+}
+
+/**
+ * Get user badges
+ */
+export async function getUserBadges(): Promise<any[]> {
+  // Try to fetch from a real backend API endpoint
+  const res = await fetch('/api/user/me');
+  if (!res.ok) throw new Error('Failed to fetch user badges');
+  const data = await res.json();
+  return data.user?.badges || [];
+}
+
+/**
+ * Get balance history
+ */
+export async function getBalanceHistory(): Promise<any[]> {
+  // Try to fetch from a real backend API endpoint
+  const res = await fetch('/api/user/me');
+  if (!res.ok) throw new Error('Failed to fetch balance history');
+  const data = await res.json();
+  return data.user?.balanceHistory || [];
 }
 
 // PiNetworkSDK class for centralized SDK management

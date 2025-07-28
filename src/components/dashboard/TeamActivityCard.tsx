@@ -14,6 +14,9 @@ import { BadgeIcon } from './badge/BadgeIcon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TrophyIcon, AwardIcon } from '@/components/shared/icons';
 import { ChevronRightIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { getTeamMembers } from '@/services/piService';
+import { LoadingSpinner } from '../shared/LoadingSpinner';
 
 const MAX_LEADERBOARD_ENTRIES = 5;
 const DISPLAY_RECENT_BADGES_COUNT = 3;
@@ -21,7 +24,18 @@ const DISPLAY_RECENT_BADGES_COUNT = 3;
 export function TeamActivityCard() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const team = mockTeam; 
+  const [team, setTeam] = useState<any[]>([]); // Changed type to any[] as TeamMember type is removed
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    getTeamMembers()
+      .then(setTeam)
+      .catch(() => setError('Failed to load team data. Please try again.'))
+      .finally(() => setIsLoading(false));
+  }, []);
 
   if (!user) return (
      <Card className={cn("shadow-lg")}>
@@ -36,6 +50,24 @@ export function TeamActivityCard() {
       <CardFooter>
         <Skeleton className="h-10 w-full" />
       </CardFooter>
+    </Card>
+  );
+
+  if (isLoading) return (
+    <Card className={cn("shadow-lg flex items-center justify-center min-h-[120px]")}>
+      <LoadingSpinner size={24} />
+    </Card>
+  );
+
+  if (error) return (
+    <Card className={cn("shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center bg-red-50 border border-red-200")}> 
+      <span className="text-red-700 font-medium">{error}</span>
+    </Card>
+  );
+
+  if (!team.length) return (
+    <Card className={cn("shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center")}> 
+      <span className="text-gray-500">No team members found.</span>
     </Card>
   );
 

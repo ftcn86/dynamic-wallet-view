@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import { config } from '@/lib/config';
+import { TransactionService } from '@/services/databaseService';
 
 /**
  * Payment Approval Endpoint (Following Official Demo Pattern)
@@ -35,33 +36,24 @@ export async function POST(request: NextRequest) {
         user_uid: currentPayment.user_uid
       });
 
-      // In a real app, you would:
-      // 1. Create an order record in your database
-      // 2. Reserve inventory if needed
-      // 3. Validate payment amount and metadata
-      // 4. Check user permissions
-
-      // Create order record (mock implementation)
-      const orderRecord = {
-        pi_payment_id: paymentId,
-        product_id: metadata?.productId || 'donation',
-        user_uid: currentPayment.user_uid,
+      // Persist order/payment record in DB (as a transaction with status 'approved')
+      // TODO: Replace with real user ID extraction
+      const userId = 'mock_user_id';
+      const orderRecord = await TransactionService.createTransaction(userId, {
+        type: 'sent',
         amount: currentPayment.amount,
-        memo: currentPayment.memo,
-        txid: null,
-        paid: false,
-        cancelled: false,
-        created_at: new Date().toISOString(),
-        metadata: metadata || {}
-      };
-
-      console.log('📝 Created order record:', orderRecord);
+        status: 'approved',
+        from: userId,
+        to: metadata?.to || 'Dynamic Wallet View',
+        description: currentPayment.memo || 'Pi Payment',
+        blockExplorerUrl: undefined,
+      });
 
       // Approve the payment with Pi Network
       await piPlatformClient.approvePayment(paymentId);
       console.log('✅ Payment approved successfully');
 
-      // Add notification for successful approval
+      // Add notification for successful approval (optional)
       try {
         const { addNotification } = await import('@/services/notificationService');
         addNotification(

@@ -12,12 +12,14 @@ import { sendA2UPayment } from '@/services/piService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Play, Gift, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { notifyAdRewardEarned, notifyDailyAdLimitReached, notifyAdNotAvailable } from '@/services/notificationService';
+import { LoadingSpinner } from '../shared/LoadingSpinner';
 
 export default function RewardedAdsCard() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isAdReady, setIsAdReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [adsAvailable, setAdsAvailable] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [rewardProgress, setRewardProgress] = useState(0);
   const [dailyWatches, setDailyWatches] = useState(0);
@@ -26,6 +28,34 @@ export default function RewardedAdsCard() {
 
   const MAX_DAILY_WATCHES = 5;
   const REWARD_AMOUNT = 0.1; // 0.1 Pi per ad
+
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    // Simulate ad fetch
+    setTimeout(() => {
+      setAdsAvailable(false); // Simulate no ads for now
+      setIsLoading(false);
+    }, 1000);
+  }, []);
+
+  if (isLoading) return (
+    <Card className="shadow-lg flex items-center justify-center min-h-[120px]">
+      <LoadingSpinner size={24} />
+    </Card>
+  );
+
+  if (error) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center bg-red-50 border border-red-200">
+      <span className="text-red-700 font-medium">{error}</span>
+    </Card>
+  );
+
+  if (!adsAvailable) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
+      <span className="text-gray-500">No rewarded ads available at the moment.</span>
+    </Card>
+  );
 
   useEffect(() => {
     checkAdReadiness();

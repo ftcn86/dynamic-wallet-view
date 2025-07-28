@@ -3,6 +3,10 @@ import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import { config } from '@/lib/config';
 import { TransactionService } from '@/services/databaseService';
 
+function now() {
+  return new Date().toISOString();
+}
+
 /**
  * Payment Approval Endpoint (Official Pi Demo Pattern)
  */
@@ -17,21 +21,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔍 Approving payment:', paymentId);
+    console.log(`[${now()}] 🔍 [APPROVE] Request received for paymentId:`, paymentId);
     const piPlatformClient = getPiPlatformAPIClient();
 
     // 1. Approve the payment with Pi Network IMMEDIATELY
     try {
+      console.log(`[${now()}] 🔗 Calling piPlatformClient.approvePayment...`);
       await piPlatformClient.approvePayment(paymentId);
-      console.log('✅ Payment approved successfully');
+      console.log(`[${now()}] ✅ Payment approved successfully`);
 
       // 2. Fetch payment details (optional, for DB)
+      console.log(`[${now()}] 🔗 Fetching payment details from Pi Platform API...`);
       const currentPayment = await piPlatformClient.request(`/v2/payments/${paymentId}`);
-      console.log('📋 Payment details:', currentPayment);
+      console.log(`[${now()}] 📋 Payment details:`, currentPayment);
 
       // 3. Persist order/payment record in DB
       // TODO: Replace with real user ID extraction
       const userId = 'mock_user_id';
+      console.log(`[${now()}] 💾 Writing transaction to DB...`);
       const orderRecord = await TransactionService.createTransaction(userId, {
         type: 'sent',
         amount: currentPayment.amount,
@@ -41,6 +48,7 @@ export async function POST(request: NextRequest) {
         description: currentPayment.memo || 'Pi Payment',
         blockExplorerUrl: undefined,
       });
+      console.log(`[${now()}] 💾 Transaction written to DB.`);
 
       // 4. Add notification for successful approval (optional)
       try {
@@ -52,9 +60,10 @@ export async function POST(request: NextRequest) {
           '/dashboard/transactions'
         );
       } catch (notificationError) {
-        console.warn('⚠️ Failed to add notification:', notificationError);
+        console.warn(`[${now()}] ⚠️ Failed to add notification:`, notificationError);
       }
 
+      console.log(`[${now()}] 🚀 Responding to frontend with success.`);
       return NextResponse.json({
         success: true,
         message: `Payment ${paymentId} approved successfully`,
@@ -68,7 +77,7 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (platformError) {
-      console.error('❌ Payment approval failed:', platformError);
+      console.error(`[${now()}] ❌ Payment approval failed:`, platformError);
       // Add error notification
       try {
         const { addNotification } = await import('@/services/notificationService');
@@ -79,7 +88,7 @@ export async function POST(request: NextRequest) {
           '/dashboard/transactions'
         );
       } catch (notificationError) {
-        console.warn('⚠️ Failed to add error notification:', notificationError);
+        console.warn(`[${now()}] ⚠️ Failed to add error notification:`, notificationError);
       }
 
       return NextResponse.json(
@@ -92,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Payment approval API error:', error);
+    console.error(`[${now()}] ❌ Payment approval API error:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

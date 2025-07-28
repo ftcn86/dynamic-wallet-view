@@ -84,55 +84,34 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verify the transaction on the Pi blockchain
-      console.log('🔍 Verifying transaction on blockchain:', txURL);
-      try {
-        const horizonResponse = await fetch(txURL);
-        if (!horizonResponse.ok) {
-          throw new Error(`Blockchain API error: ${horizonResponse.status}`);
+      // Fetch payment details from Pi Platform API
+      const payment = await piPlatformClient.getPayment(paymentId);
+      const txid = payment?.transaction?.txid;
+      const developerCompleted = payment?.status?.developer_completed;
+
+      if (txid && !developerCompleted) {
+        // Complete the payment if not already completed
+        try {
+          const completeResult = await piPlatformClient.completePayment(paymentId, txid);
+          console.log(`[${new Date().toISOString()}] Completed payment:`, completeResult);
+          return NextResponse.json({ success: true, action: 'completed', completeResult });
+        } catch (err) {
+          console.error(`[${new Date().toISOString()}] Error completing payment:`, err);
+          return NextResponse.json({ success: false, error: 'Failed to complete payment', details: err }, { status: 500 });
         }
-        
-        const transactionData = await horizonResponse.json();
-        console.log('📋 Transaction data:', {
-          memo: transactionData.memo,
-          amount: transactionData.amount,
-          from: transactionData.from,
-          to: transactionData.to
-        });
-
-        // Verify payment ID matches
-        const paymentIdOnBlock = transactionData.memo;
-        if (paymentIdOnBlock !== order.pi_payment_id) {
-          console.log('❌ Payment ID mismatch:', {
-            expected: order.pi_payment_id,
-            found: paymentIdOnBlock
-          });
-          return NextResponse.json(
-            { error: 'Payment ID does not match' },
-            { status: 400 }
-          );
+      } else if (!txid) {
+        // Cancel the payment if no transaction exists
+        try {
+          const cancelResult = await piPlatformClient.cancelPayment(paymentId, 'Cancelling stale/incomplete payment');
+          console.log(`[${new Date().toISOString()}] Cancelled payment:`, cancelResult);
+          return NextResponse.json({ success: true, action: 'cancelled', cancelResult });
+        } catch (err) {
+          console.error(`[${new Date().toISOString()}] Error cancelling payment:`, err);
+          return NextResponse.json({ success: false, error: 'Failed to cancel payment', details: err }, { status: 500 });
         }
-
-        // Verify amount matches
-        if (parseFloat(transactionData.amount) !== payment.amount) {
-          console.log('❌ Amount mismatch:', {
-            expected: payment.amount,
-            found: transactionData.amount
-          });
-          return NextResponse.json(
-            { error: 'Payment amount does not match' },
-            { status: 400 }
-          );
-        }
-
-        console.log('✅ Transaction verification successful');
-
-      } catch (blockchainError) {
-        console.error('❌ Blockchain verification failed:', blockchainError);
-        return NextResponse.json(
-          { error: 'Transaction verification failed' },
-          { status: 500 }
-        );
+      } else {
+        // Payment is already completed or cancelled
+        return NextResponse.json({ success: true, action: 'noop', message: 'No action needed.' });
       }
 
       // Mark the order as paid

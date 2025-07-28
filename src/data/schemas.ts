@@ -120,6 +120,7 @@ export interface Transaction {
     to?: string;
     description: string;
     blockExplorerUrl?: string;
+    txid?: string; // Added for Pi Testnet explorer linking
 }
 
 export type NotificationType = 'badge_earned' | 'team_update' | 'node_update' | 'announcement' | 'team_message';

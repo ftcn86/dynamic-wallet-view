@@ -1,11 +1,6 @@
 
 "use client";
 
-// Mock API call function for development
-const mockApiCall = async <T>({ data, delay = 1000 }: { data: T; delay?: number }): Promise<T> => {
-  await new Promise(resolve => setTimeout(resolve, delay));
-  return data;
-};
 import { mockUser, mockTeam, mockTransactions, mockNotifications } from '@/data/mocks';
 import type { User, TeamMember, Transaction, Notification } from '@/data/schemas';
 import { getPiSDKInstance } from '@/lib/pi-network';
@@ -113,35 +108,11 @@ function convertPiUserToAppUser(piUser: any, authResult?: any): User {
  * Authenticate user with Pi Network
  */
 export async function getAuthenticatedUser(): Promise<User> {
-  console.log("Attempting to authenticate with Pi Network...");
-
-  // Try Pi SDK if available, otherwise use mock data
-  if (typeof window !== 'undefined' && (window as any).Pi) {
-    try {
-      const piSDK = getPiSDK();
-      
-      // Check if user is already authenticated
-      if (piSDK && piSDK.isAuthenticated()) {
-        console.log("✅ User already authenticated, getting current user data");
-        const currentUser = piSDK.currentUser();
-        if (currentUser) {
-          return convertPiUserToAppUser(currentUser);
-        }
-      }
-      
-      // Only authenticate if not already authenticated
-      console.log("🔍 User not authenticated, starting authentication...");
-      if (piSDK) {
-        const authResult = await piSDK.authenticate(['username', 'payments', 'wallet_address']);
-        return convertPiUserToAppUser(authResult.user, authResult);
-      }
-    } catch (error) {
-      console.error("Pi Network authentication failed, falling back to mock data:", error);
-    }
-  }
-  
-  console.log("Pi SDK not available, using mock data");
-  return mockApiCall({ data: mockUser });
+  // Fetch from backend API
+  const res = await fetch('/api/user/me');
+  if (!res.ok) throw new Error('Failed to fetch user');
+  const data = await res.json();
+  return data.user;
 }
 
 /**
@@ -335,31 +306,31 @@ export async function sendA2UPayment(
 /**
  * Get user's Pi balance
  */
-export async function getUserPiBalance(accessToken?: string): Promise<BalanceData> {
-  console.log("Fetching user Pi balance");
-  return await fetchUserBalance();
+export async function getUserPiBalance(): Promise<any> {
+  const res = await fetch('/api/user/me');
+  if (!res.ok) throw new Error('Failed to fetch balance');
+  const data = await res.json();
+  return data.user?.balanceBreakdown || {};
 }
 
 /**
  * Get team members
  */
-export async function getTeamMembers(): Promise<TeamMember[]> {
-  // Fetch from real backend API
-  const res = await fetch('/api/team/members');
+export async function getTeamMembers(): Promise<any[]> {
+  const res = await fetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch team members');
   const data = await res.json();
-  return data.teamMembers || [];
+  return data.user?.teamMembers || [];
 }
 
 /**
  * Get node data
  */
 export async function getNodeData() {
-  // Fetch from real backend API
-  const res = await fetch('/api/node/performance');
+  const res = await fetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch node data');
   const data = await res.json();
-  return data.nodeData || null;
+  return data.user?.nodeData || null;
 }
 
 /**
@@ -376,13 +347,19 @@ export async function getTransactions(): Promise<Transaction[]> {
 /**
  * Add a new transaction
  */
-export async function addTransaction(transaction: Omit<Transaction, 'id'>): Promise<Transaction> {
+export async function addTransaction(transaction: Omit<Transaction, 'id'> & { txid?: string }): Promise<Transaction> {
   console.log("Adding new transaction:", transaction);
   
+  // Use the correct Pi Testnet explorer URL if txid is present
+  const blockExplorerUrl = transaction.txid
+    ? `https://blockexplorer.minepi.com/testnet/transactions/${transaction.txid}`
+    : undefined;
+
   const newTransaction: Transaction = {
     ...transaction,
     id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    blockExplorerUrl: `https://explorer.pinet.com/tx/${Math.random().toString(36).substr(2, 16)}`
+    blockExplorerUrl,
+    txid: transaction.txid
   };
   
   // Add to mock data (in real app, this would save to database)
@@ -438,9 +415,8 @@ export async function getNotifications(): Promise<Notification[]> {
  * Get user badges
  */
 export async function getUserBadges(): Promise<any[]> {
-  // Try to fetch from a real backend API endpoint
   const res = await fetch('/api/user/me');
-  if (!res.ok) throw new Error('Failed to fetch user badges');
+  if (!res.ok) throw new Error('Failed to fetch badges');
   const data = await res.json();
   return data.user?.badges || [];
 }
@@ -449,7 +425,6 @@ export async function getUserBadges(): Promise<any[]> {
  * Get balance history
  */
 export async function getBalanceHistory(): Promise<any[]> {
-  // Try to fetch from a real backend API endpoint
   const res = await fetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch balance history');
   const data = await res.json();

@@ -68,13 +68,19 @@ function NotificationsDropdown() {
     const router = useRouter();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         async function fetchNotifications() {
             if (user) {
                 setIsLoading(true);
-                const fetchedNotifications = await getNotifications();
-                setNotifications(fetchedNotifications);
+                setError(null);
+                try {
+                  const fetchedNotifications = await getNotifications();
+                  setNotifications(fetchedNotifications);
+                } catch (err) {
+                  setError('Failed to fetch notifications.');
+                }
                 setIsLoading(false);
             }
         }
@@ -85,8 +91,12 @@ function NotificationsDropdown() {
     
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {
-            await markNotificationAsRead(notification.id);
-            refreshData(); // Trigger a global refresh
+            try {
+              await markNotificationAsRead(notification.id);
+              refreshData(); // Trigger a global refresh
+            } catch (err) {
+              setError('Failed to mark notification as read.');
+            }
         }
         if (notification.link) {
             router.push(notification.link);
@@ -95,8 +105,12 @@ function NotificationsDropdown() {
 
     const handleMarkAllRead = async (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent the dropdown from closing
-        await markAllNotificationsAsRead();
-        refreshData(); // Trigger a global refresh
+        try {
+          await markAllNotificationsAsRead();
+          refreshData(); // Trigger a global refresh
+        } catch (err) {
+          setError('Failed to mark all notifications as read.');
+        }
     };
 
     return (
@@ -169,6 +183,9 @@ function NotificationsDropdown() {
                             </Button>
                         </DropdownMenuItem>
                     </>
+                )}
+                {error && (
+                  <div className="p-2 text-red-500 text-xs">{error}</div>
                 )}
             </DropdownMenuContent>
         </DropdownMenu>

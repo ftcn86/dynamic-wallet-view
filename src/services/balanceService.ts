@@ -30,50 +30,15 @@ export interface BalanceData {
  * Fetch user balance from Pi Network SDK or fallback to mock data
  */
 export async function fetchUserBalance(): Promise<BalanceData> {
-  console.log('💰 Starting balance fetch...');
-
-  // Try to get balance from Pi SDK if available
-  if (typeof window !== 'undefined' && (window as any).Pi) {
-    try {
-      console.log('🔍 Attempting to fetch balance from Pi Network SDK...');
-      const sdk = getPiSDKInstance();
-      
-      if (sdk && sdk.isAuthenticated()) {
-        // Try to get balance from Pi Network SDK
-        // Note: Pi Network SDK may not have a direct balance method
-        // This would need to be implemented based on available SDK methods
-        console.log('⚠️ Pi Network SDK balance method not available');
-        console.log('💡 Real balance fetching requires blockchain API integration');
-      } else {
-        console.log('⚠️ Pi Network SDK not authenticated');
-      }
-    } catch (error) {
-      console.error('❌ Pi Network SDK balance fetch failed:', error);
-    }
+  try {
+    const res = await fetch('/api/user/me');
+    if (!res.ok) throw new Error('Failed to fetch balance');
+    const data = await res.json();
+    return data.user?.balanceBreakdown || {};
+  } catch (error) {
+    console.error('Failed to fetch balance:', error);
+    throw error;
   }
-
-  console.log('🔄 Using mock balance data');
-  
-  // Return mock balance data
-  const mockBalance = 12345.6789;
-  return {
-    totalBalance: mockBalance,
-    transferableBalance: mockBalance * 0.45, // ~5678
-    unverifiedBalance: mockBalance * 0.34, // ~4206  
-    lockedBalance: mockBalance * 0.21, // ~2461
-    balanceBreakdown: {
-      transferableToMainnet: mockBalance * 0.45, // ~5678
-      totalUnverifiedPi: mockBalance * 0.34, // ~4206
-      currentlyInLockups: mockBalance * 0.21, // ~2461
-    },
-    unverifiedPiDetails: {
-      fromReferralTeam: mockBalance * 0.162, // ~2000
-      fromSecurityCircle: mockBalance * 0.081, // ~1000
-      fromNodeRewards: mockBalance * 0.061, // ~750
-      fromOtherBonuses: mockBalance * 0.037, // ~456
-    },
-    source: 'mock'
-  };
 }
 
 /**

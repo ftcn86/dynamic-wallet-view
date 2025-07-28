@@ -298,11 +298,16 @@ export class PiPlatformAPIClient {
  */
 export function getPiPlatformAPIClient(): PiPlatformAPIClient {
   const apiKey = config.piNetwork.apiKey;
+  const apiUrl = config.piNetwork.platformApiUrl;
+  const appId = config.piNetwork.appId;
   if (!apiKey) {
     throw new Error('Pi Network API key not configured');
   }
-  
-  return new PiPlatformAPIClient(apiKey, config.piNetwork.platformApiUrl);
+  // Add logging for debugging
+  console.log('[PiPlatformAPIClient] Using API URL:', apiUrl);
+  console.log('[PiPlatformAPIClient] Using App ID:', appId);
+  console.log('[PiPlatformAPIClient] API Key present:', !!apiKey ? '[HIDDEN]' : '[NOT SET]');
+  return new PiPlatformAPIClient(apiKey, apiUrl);
 }
 
 /**

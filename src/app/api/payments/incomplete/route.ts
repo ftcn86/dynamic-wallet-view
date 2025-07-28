@@ -26,11 +26,22 @@ export async function POST(request: NextRequest) {
     const txURL = payment.transaction && payment.transaction._link;
 
     if (!txid || !txURL) {
-      console.log('⚠️ No transaction data found for incomplete payment');
-      return NextResponse.json(
-        { error: 'No transaction data found' },
-        { status: 400 }
-      );
+      console.log('⚠️ No transaction data found for incomplete payment, attempting to cancel...');
+      try {
+        const piPlatformClient = getPiPlatformAPIClient();
+        await piPlatformClient.cancelPayment(paymentId, "Cancelling stale/incomplete payment");
+        console.log('✅ Incomplete payment cancelled successfully');
+        return NextResponse.json(
+          { success: true, message: 'Incomplete payment cancelled' },
+          { status: 200 }
+        );
+      } catch (cancelError) {
+        console.error('❌ Failed to cancel incomplete payment:', cancelError);
+        return NextResponse.json(
+          { error: 'Failed to cancel incomplete payment' },
+          { status: 500 }
+        );
+      }
     }
 
     console.log('📋 Payment details:', {

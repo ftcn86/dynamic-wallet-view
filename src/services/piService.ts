@@ -456,6 +456,22 @@ export async function getBalanceHistory(): Promise<any[]> {
   return data.user?.balanceHistory || [];
 }
 
+/**
+ * Handle incomplete payment found by Pi SDK
+ */
+export async function handleIncompletePayment(payment: PiPayment) {
+  try {
+    // Send to backend for handling (cancel or complete)
+    await fetch('/api/payments/incomplete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment })
+    });
+  } catch (error) {
+    console.error('❌ Failed to handle incomplete payment:', error);
+  }
+}
+
 // PiNetworkSDK class for centralized SDK management
 class PiNetworkSDK {
   private pi: any = null;

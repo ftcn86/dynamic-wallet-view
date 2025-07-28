@@ -4,12 +4,8 @@ import { config } from '@/lib/config';
 import { TransactionService } from '@/services/databaseService';
 
 /**
- * Payment Approval Endpoint (Following Official Demo Pattern)
- * 
- * This endpoint approves payments and creates order records.
- * It follows the exact same pattern as the official Pi Network demo.
+ * Payment Approval Endpoint (Official Pi Demo Pattern)
  */
-
 export async function POST(request: NextRequest) {
   try {
     const { paymentId, metadata } = await request.json();
@@ -22,38 +18,31 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔍 Approving payment:', paymentId);
-    console.log('📋 Payment metadata:', metadata);
-
     const piPlatformClient = getPiPlatformAPIClient();
 
+    // 1. Approve the payment with Pi Network IMMEDIATELY
     try {
-      // Get payment details from Pi Network
-      const currentPayment = await piPlatformClient.request(`/v2/payments/${paymentId}`);
-      console.log('📋 Payment details:', {
-        amount: currentPayment.amount,
-        memo: currentPayment.memo,
-        status: currentPayment.status,
-        user_uid: currentPayment.user_uid
-      });
+      await piPlatformClient.approvePayment(paymentId);
+      console.log('✅ Payment approved successfully');
 
-      // Persist order/payment record in DB (as a transaction with status 'approved')
+      // 2. Fetch payment details (optional, for DB)
+      const currentPayment = await piPlatformClient.request(`/v2/payments/${paymentId}`);
+      console.log('📋 Payment details:', currentPayment);
+
+      // 3. Persist order/payment record in DB
       // TODO: Replace with real user ID extraction
       const userId = 'mock_user_id';
       const orderRecord = await TransactionService.createTransaction(userId, {
         type: 'sent',
         amount: currentPayment.amount,
-        status: 'approved',
+        status: 'pending', // Use 'pending' for approval step
         from: userId,
         to: metadata?.to || 'Dynamic Wallet View',
         description: currentPayment.memo || 'Pi Payment',
         blockExplorerUrl: undefined,
       });
 
-      // Approve the payment with Pi Network
-      await piPlatformClient.approvePayment(paymentId);
-      console.log('✅ Payment approved successfully');
-
-      // Add notification for successful approval (optional)
+      // 4. Add notification for successful approval (optional)
       try {
         const { addNotification } = await import('@/services/notificationService');
         addNotification(
@@ -80,7 +69,6 @@ export async function POST(request: NextRequest) {
 
     } catch (platformError) {
       console.error('❌ Payment approval failed:', platformError);
-      
       // Add error notification
       try {
         const { addNotification } = await import('@/services/notificationService');

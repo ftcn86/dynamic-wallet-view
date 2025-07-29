@@ -197,20 +197,23 @@ export class PiPlatformAPIClient {
    */
   async request(endpoint: string, options: RequestInit = {}): Promise<any> {
     const url = `${this.baseURL}${endpoint}`;
-    
+    // Only set API key if not already set (i.e., not a Bearer token request)
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
+    if (!headers['Authorization']) {
+      headers['Authorization'] = `Key ${this.apiKey}`;
+    }
+    // Debug log
+    console.log('[PiPlatformAPIClient] Request to', url, 'with headers:', headers);
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Authorization': `Key ${this.apiKey}`,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
     });
-
     if (!response.ok) {
       throw new Error(`Pi Platform API request failed: ${response.status} ${response.statusText}`);
     }
-
     return response.json();
   }
 

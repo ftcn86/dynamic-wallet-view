@@ -33,7 +33,7 @@ export interface PiPayment {
   user_uid: string;
   amount: number;
   memo: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   to_address?: string;
   from_address?: string;
   direction?: 'user_to_app' | 'app_to_user';
@@ -50,13 +50,23 @@ export interface PiPayment {
 export interface PiPaymentData {
   amount: number;
   memo: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   to_address?: string;
+}
+
+// Pi Network SDK type definition
+export interface PiSDK {
+  authenticate: (scopes: string[], onIncompletePaymentFound?: (payment: PiPayment) => void) => Promise<PiAuthResult>;
+  createPayment: (paymentData: PiPaymentData, callbacks: Record<string, unknown>) => Promise<PiPayment>;
+  completePayment: (payment: PiPayment) => Promise<PiPayment>;
+  cancelPayment: (payment: PiPayment) => Promise<PiPayment>;
+  isAuthenticated?: () => boolean;
+  currentUser?: () => PiUser | null;
 }
 
 // Pi Network SDK wrapper class
 class PiNetworkSDK {
-  private pi: any = null;
+  private pi: unknown = null;
 
   constructor() {
     this.initializeSDK();
@@ -66,16 +76,11 @@ class PiNetworkSDK {
     if (typeof window === 'undefined') return;
     
     const checkForPiSDK = () => {
-      if ((window as any).Pi) {
-        this.pi = (window as any).Pi;
-        try {
-          // Simple initialization following official demo pattern
-          this.pi.init({ version: '2.0' });
-          console.log('✅ Pi Network SDK initialized');
-        } catch (error) {
-          console.error('❌ Failed to initialize Pi Network SDK:', error);
-        }
-      } else {
+      const win = window as unknown as { Pi?: unknown };
+      if (win.Pi && typeof win.Pi === 'object') {
+        this.pi = win.Pi as PiSDK;
+      }
+      if (!this.pi) {
         setTimeout(checkForPiSDK, 100);
       }
     };
@@ -86,14 +91,20 @@ class PiNetworkSDK {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return this.pi?.isAuthenticated() || false;
+    if (this.pi && typeof this.pi === 'object' && 'isAuthenticated' in this.pi && typeof (this.pi as PiSDK).isAuthenticated === 'function') {
+      return (this.pi as PiSDK).isAuthenticated!();
+    }
+    return false;
   }
 
   /**
    * Get current authenticated user
    */
   currentUser(): PiUser | null {
-    return this.pi?.currentUser() || null;
+    if (this.pi && typeof this.pi === 'object' && 'currentUser' in this.pi && typeof (this.pi as PiSDK).currentUser === 'function') {
+      return (this.pi as PiSDK).currentUser!();
+    }
+    return null;
   }
 
   /**
@@ -107,30 +118,30 @@ class PiNetworkSDK {
       throw new Error('Pi Network SDK not available');
     }
 
-    if (typeof this.pi.authenticate !== 'function') {
+    if (this.pi && typeof this.pi === 'object' && 'authenticate' in this.pi) {
+      try {
+        const authResult = await (this.pi as PiSDK).authenticate(scopes, onIncompletePaymentFound);
+        return authResult;
+      } catch (error) {
+        console.error('Pi Network authentication failed:', error);
+        throw new Error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else {
       console.error('Pi Network SDK authenticate method not found');
       throw new Error('Pi Network SDK authenticate method not available');
-    }
-
-    try {
-      const authResult = await this.pi.authenticate(scopes, onIncompletePaymentFound);
-      return authResult;
-    } catch (error) {
-      console.error('Pi Network authentication failed:', error);
-      throw new Error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
    * Create a payment
    */
-  async createPayment(paymentData: PiPaymentData, callbacks: any): Promise<PiPayment> {
+  async createPayment(paymentData: PiPaymentData, callbacks: Record<string, unknown>): Promise<PiPayment> {
     if (!this.pi) {
       throw new Error('Pi Network SDK not available');
     }
 
     try {
-      return await this.pi.createPayment(paymentData, callbacks);
+      return await (this.pi as PiSDK).createPayment(paymentData, callbacks);
     } catch (error) {
       console.error('Pi Network payment creation failed:', error);
       throw new Error(`Payment creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -146,7 +157,7 @@ class PiNetworkSDK {
     }
 
     try {
-      return await this.pi.completePayment(payment);
+      return await (this.pi as PiSDK).completePayment(payment);
     } catch (error) {
       console.error('Pi Network payment completion failed:', error);
       throw new Error(`Payment completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -162,7 +173,7 @@ class PiNetworkSDK {
     }
 
     try {
-      return await this.pi.cancelPayment(payment);
+      return await (this.pi as PiSDK).cancelPayment(payment);
     } catch (error) {
       console.error('Pi Network payment cancellation failed:', error);
       throw new Error(`Payment cancellation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -195,7 +206,7 @@ export class PiPlatformAPIClient {
   /**
    * Make a request to Pi Platform API
    */
-  async request(endpoint: string, options: RequestInit = {}): Promise<any> {
+  async request(endpoint: string, options: RequestInit = {}): Promise<unknown> {
     const url = `${this.baseURL}${endpoint}`;
     // Only set API key if not already set (i.e., not a Bearer token request)
     const headers: Record<string, string> = {
@@ -225,20 +236,20 @@ export class PiPlatformAPIClient {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
-    });
+    }) as Promise<PiUser>;
   }
 
   /**
    * Get payment details
    */
   async getPayment(paymentId: string): Promise<PiPayment> {
-    return this.request(`/v2/payments/${paymentId}`);
+    return this.request(`/v2/payments/${paymentId}`) as Promise<PiPayment>;
   }
 
   /**
    * Approve a payment
    */
-  async approvePayment(paymentId: string): Promise<any> {
+  async approvePayment(paymentId: string): Promise<unknown> {
     return this.request(`/v2/payments/${paymentId}/approve`, {
       method: 'POST',
     });
@@ -247,7 +258,7 @@ export class PiPlatformAPIClient {
   /**
    * Complete a payment
    */
-  async completePayment(paymentId: string, txid: string): Promise<any> {
+  async completePayment(paymentId: string, txid: string): Promise<unknown> {
     return this.request(`/v2/payments/${paymentId}/complete`, {
       method: 'POST',
       body: JSON.stringify({ txid }),
@@ -257,7 +268,7 @@ export class PiPlatformAPIClient {
   /**
    * Cancel a payment
    */
-  async cancelPayment(paymentId: string, reason?: string): Promise<any> {
+  async cancelPayment(paymentId: string, reason?: string): Promise<unknown> {
     return this.request(`/v2/payments/${paymentId}/cancel`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
@@ -271,8 +282,8 @@ export class PiPlatformAPIClient {
     recipient_uid: string;
     amount: number;
     memo: string;
-    metadata?: Record<string, any>;
-  }): Promise<any> {
+    metadata?: Record<string, unknown>;
+  }): Promise<unknown> {
     return this.request('/v2/payments', {
       method: 'POST',
       body: JSON.stringify(paymentData),
@@ -285,14 +296,14 @@ export class PiPlatformAPIClient {
   async submitPayment(paymentId: string): Promise<{ txid: string }> {
     return this.request(`/v2/payments/${paymentId}/submit`, {
       method: 'POST',
-    });
+    }) as Promise<{ txid: string }>;
   }
 
   /**
    * Get incomplete server payments
    */
   async getIncompleteServerPayments(): Promise<PiPayment[]> {
-    return this.request('/v2/payments/incomplete_server_payments');
+    return this.request('/v2/payments/incomplete_server_payments') as Promise<PiPayment[]>;
   }
 }
 
@@ -309,7 +320,7 @@ export function getPiPlatformAPIClient(): PiPlatformAPIClient {
   // Add logging for debugging
   console.log('[PiPlatformAPIClient] Using API URL:', apiUrl);
   console.log('[PiPlatformAPIClient] Using App ID:', appId);
-  console.log('[PiPlatformAPIClient] API Key present:', !!apiKey ? '[HIDDEN]' : '[NOT SET]');
+  console.log('[PiPlatformAPIClient] API Key present:', apiKey ? '[HIDDEN]' : '[NOT SET]');
   return new PiPlatformAPIClient(apiKey, apiUrl);
 }
 

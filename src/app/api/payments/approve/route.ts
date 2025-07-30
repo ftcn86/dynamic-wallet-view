@@ -41,11 +41,11 @@ export async function POST(request: NextRequest) {
       console.log(`[${now()}] 💾 Writing transaction to DB...`);
       const orderRecord = await TransactionService.createTransaction(userId, {
         type: 'sent',
-        amount: currentPayment.amount,
+        amount: (currentPayment as { amount: number }).amount,
         status: 'pending', // Use 'pending' for approval step
         from: userId,
         to: metadata?.to || 'Dynamic Wallet View',
-        description: currentPayment.memo || 'Pi Payment',
+        description: (currentPayment as { memo?: string }).memo || 'Pi Payment',
         blockExplorerUrl: undefined,
       });
       console.log(`[${now()}] 💾 Transaction written to DB.`);
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         addNotification(
           'announcement',
           'Payment Approved',
-          `Payment of ${currentPayment.amount}π has been approved and is ready for completion.`,
+          `Payment of ${(currentPayment as { amount: number }).amount}π has been approved and is ready for completion.`,
           '/dashboard/transactions'
         );
       } catch (notificationError) {
@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
         order: orderRecord,
         payment: {
           id: paymentId,
-          amount: currentPayment.amount,
-          memo: currentPayment.memo,
+          amount: (currentPayment as { amount: number }).amount,
+          memo: (currentPayment as { memo?: string }).memo,
           status: 'approved'
         }
       });

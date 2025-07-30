@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { User } from '@/data/schemas';
 import { getNodeData } from '@/services/piService';
 import type { NodeData } from '@/data/schemas';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +42,7 @@ function NodeOperatorView() {
       try {
         const data = await getNodeData();
         setNodeData(data);
-      } catch (err) {
+      } catch {
         setError("An error occurred fetching node data.");
       } finally {
         setIsLoading(false);
@@ -91,7 +92,7 @@ function NodeOperatorView() {
                 title="Location"
                 icon={<GlobeIcon />}
                 mainContent={<div className="flex items-center gap-2"><span className="text-2xl">{nodeData.countryFlag}</span> <span className="truncate">{nodeData.country}</span></div>}
-                footerText="Based on your node's IP address"
+                footerText="Based on your node&apos;s IP address"
             />
             <NodeStatCard
                 title="Blocks Processed"
@@ -123,7 +124,7 @@ function NodeOperatorView() {
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full max-w-full">
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl break-words">Performance History</CardTitle>
-          <CardDescription className="text-sm sm:text-base break-words">Your node's performance score trend over the last few months.</CardDescription>
+          <CardDescription className="text-sm sm:text-base break-words">Your node&apos;s performance score trend over the last few months.</CardDescription>
         </CardHeader>
         <CardContent className="w-full max-w-full">
           <ChartContainer config={chartConfig} className="h-[300px] w-full max-w-full">
@@ -173,7 +174,7 @@ function BecomeANodeOperatorPrompt() {
                     </div>
                     <div className="min-w-0 flex-1">
                         <h4 className="font-medium text-sm sm:text-base break-words">Earn Pi Rewards</h4>
-                        <p className="text-xs sm:text-sm text-muted-foreground break-words">Receive additional Pi for your contribution to the network's operation.</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground break-words">Receive additional Pi for your contribution to the network&apos;s operation.</p>
                     </div>
                 </div>
                 <div className="flex items-start gap-3 sm:gap-4">
@@ -203,7 +204,7 @@ function BecomeANodeOperatorPrompt() {
 
 
 export default function NodeAnalysisPage() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
 
   if (!user) return <div className="flex h-full w-full items-center justify-center"><LoadingSpinner size={32} /></div>;
 

@@ -14,8 +14,8 @@ interface ResponsiveTableProps {
 interface ResponsiveTableRowProps {
   children: React.ReactNode;
   className?: string;
-  data?: Record<string, any>;
-  renderCard?: (data: Record<string, any>) => React.ReactNode;
+  data?: Record<string, unknown>;
+  renderCard?: (data: Record<string, unknown>) => React.ReactNode;
 }
 
 export function ResponsiveTable({ 

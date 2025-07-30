@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getNotifications } from '@/services/piService';
 import { markNotificationAsRead, markAllNotificationsAsRead } from '@/services/notificationService';
 import type { Notification, NotificationType } from '@/data/schemas';
+import type { User } from '@/data/schemas';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import {
@@ -93,7 +94,7 @@ function NotificationsDropdown() {
         if (!notification.read) {
             try {
               await markNotificationAsRead(notification.id);
-              refreshData(); // Trigger a global refresh
+              (refreshData as () => void)(); // Trigger a global refresh
             } catch (err) {
               setError('Failed to mark notification as read.');
             }
@@ -107,7 +108,7 @@ function NotificationsDropdown() {
         e.stopPropagation(); // Prevent the dropdown from closing
         try {
           await markAllNotificationsAsRead();
-          refreshData(); // Trigger a global refresh
+          (refreshData as () => void)(); // Trigger a global refresh
         } catch (err) {
           setError('Failed to mark all notifications as read.');
         }
@@ -165,7 +166,7 @@ function NotificationsDropdown() {
                     </div>
                 ) : (
                     <div className="p-4 text-center text-sm text-muted-foreground">
-                        You're all caught up!
+                        You&apos;re all caught up!
                     </div>
                 )}
                 {unreadCount > 0 && (
@@ -193,16 +194,17 @@ function NotificationsDropdown() {
 }
 
 export function Header({children}: {children?: React.ReactNode}) {
-  const { user, logout, refreshData } = useAuth();
+  const { user: rawUser, logout, refreshData } = useAuth();
+  const user = rawUser as User | null;
   const router = useRouter();
 
   const handleLogout = () => {
-    logout();
+    (logout as () => void)();
     router.push('/login');
   };
 
   const handleRefresh = () => {
-    refreshData();
+    (refreshData as () => void)();
     window.location.reload();
   };
 

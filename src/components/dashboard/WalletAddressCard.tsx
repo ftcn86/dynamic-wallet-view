@@ -30,7 +30,7 @@ export default function WalletAddressCard({ user }: WalletAddressCardProps) {
       });
       notifyWalletAddressViewed();
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         title: "Copy failed",
         description: "Failed to copy wallet address to clipboard.",
@@ -76,12 +76,12 @@ export default function WalletAddressCard({ user }: WalletAddressCardProps) {
                 Has Wallet Address: {user.walletAddress ? 'Yes' : 'No'}
               </p>
               <p className="text-xs text-muted-foreground">
-                Environment: {typeof window !== 'undefined' && (window as any).Pi ? 'Pi Browser' : 'Regular Browser'}
+                Environment: {typeof window !== 'undefined' && (window as unknown as { Pi?: boolean })?.Pi ? 'Pi Browser' : 'Regular Browser'}
               </p>
             </div>
             
             <div className="text-xs text-muted-foreground space-y-1">
-              <p>• Make sure you're using Pi Browser</p>
+              <p>• Make sure you&apos;re using Pi Browser</p>
               <p>• Grant wallet address permission during login</p>
               <p>• Check browser console for debug information</p>
             </div>

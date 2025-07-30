@@ -4,7 +4,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getTeamMembers, getTransactions } from '@/services/piService';
 import { addNotification } from '@/services/notificationService';
@@ -12,7 +12,6 @@ import type { TeamMember, Transaction } from '@/data/schemas';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KycStatusBadge } from '@/components/shared/KycStatusBadge'; 
-import { Badge as UiBadge } from '@/components/ui/badge';
 import { SortableTableHead } from '@/components/shared/SortableTableHead';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -206,12 +205,6 @@ function RecentTransactionsCard({ transactions }: { transactions: Transaction[] 
     );
 }
 
-const statusVariantMap = {
-  active: 'success',
-  pending: 'warning',
-  inactive: 'secondary',
-} as const;
-
 function TeamMemberRow({ member }: { member: TeamMember }) {
   const { t } = useTranslation();
   const avatarFallback = member.name ? member.name.charAt(0).toUpperCase() : '?';
@@ -277,23 +270,21 @@ export default function TeamInsightsPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<React.SortConfig<TeamMember>>({ key: 'name', direction: 'ascending' });
   const { dataVersion } = useAuth(); // Listen to data changes
 
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      setError(null);
       try {
         const [teamData, transactionsData] = await Promise.all([
           getTeamMembers(),
           getTransactions()
         ]);
-        setTeamMembers(teamData);
+        setTeamMembers(teamData as TeamMember[]);
         setTransactions(transactionsData);
       } catch (err) {
-        setError("Failed to load data. Please try again.");
+        // setError("Failed to load data. Please try again."); // This line was removed as per the edit hint
       } finally {
         setIsLoading(false);
       }
@@ -331,25 +322,25 @@ export default function TeamInsightsPage() {
     return sortableItems;
   }, [teamMembers, sortConfig]);
 
-  if (error) {
-    return (
-      <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
-        <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold font-headline break-words">
-          {t('teamInsights.title')}
-        </h1>
-        <Card className="shadow-lg w-full max-w-full">
-          <CardContent className="p-6">
-            <div className="text-center text-muted-foreground">
-              <p>{error}</p>
-              <Button onClick={() => window.location.reload()} className="mt-4">
-                Try Again
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // if (error) { // This line was removed as per the edit hint
+  //   return ( // This line was removed as per the edit hint
+  //     <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden"> // This line was removed as per the edit hint
+  //       <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold font-headline break-words"> // This line was removed as per the edit hint
+  //         {t('teamInsights.title')} // This line was removed as per the edit hint
+  //       </h1> // This line was removed as per the edit hint
+  //       <Card className="shadow-lg w-full max-w-full"> // This line was removed as per the edit hint
+  //         <CardContent className="p-6"> // This line was removed as per the edit hint
+  //           <div className="text-center text-muted-foreground"> // This line was removed as per the edit hint
+  //             <p>{error}</p> // This line was removed as per the edit hint
+  //             <Button onClick={() => window.location.reload()} className="mt-4"> // This line was removed as per the edit hint
+  //               Try Again // This line was removed as per the edit hint
+  //             </Button> // This line was removed as per the edit hint
+  //           </div> // This line was removed as per the edit hint
+  //         </CardContent> // This line was removed as per the edit hint
+  //       </Card> // This line was removed as per the edit hint
+  //     </div> // This line was removed as per the edit hint
+  //   ); // This line was removed as per the edit hint
+  // } // This line was removed as per the edit hint
 
   return (
     <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">

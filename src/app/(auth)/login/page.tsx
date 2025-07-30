@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import type { User } from '@/data/schemas';
 
 export default function LoginPage() {
-  const { user, login, isLoading: isAuthContextLoading, error, status } = useAuth();
+  const { user, login, isLoading: isAuthContextLoading, error, status } = useAuth() as { user: User | null, login: () => Promise<User | null>, isLoading: boolean, error: string | null, status: string | null };
   const router = useRouter();
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);

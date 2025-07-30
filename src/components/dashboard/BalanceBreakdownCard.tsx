@@ -2,13 +2,15 @@
 "use client"
 
 import { useAuth } from '@/contexts/AuthContext';
+import type { User } from '@/data/schemas';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 
 export function BalanceBreakdownCard() {
-  const { user } = useAuth();
+  const { user: rawUser } = useAuth();
+  const user = rawUser as User | null;
 
   if (!user) return (
     <Card className={cn("shadow-lg flex items-center justify-center min-h-[120px]")}>

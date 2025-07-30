@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import type { User } from '@/data/schemas';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
@@ -33,7 +34,8 @@ const calculateEstimatedRate = (baseRate: number, teamBonus: number, nodeBonus: 
 };
 
 export function LockupCalculatorCard() {
-    const { user } = useAuth();
+    const { user: rawUser } = useAuth();
+    const user = rawUser as User | null;
     const [lockupPercent, setLockupPercent] = useState([50]);
     const [lockupDurationIndex, setLockupDurationIndex] = useState([2]); 
     const [estimatedRate, setEstimatedRate] = useState<number | null>(null);

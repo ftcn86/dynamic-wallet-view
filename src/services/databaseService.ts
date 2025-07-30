@@ -1,5 +1,87 @@
 import { PrismaClient } from '@prisma/client';
-import { User as UserType, Transaction as TransactionType, Notification as NotificationType, TeamMember as TeamMemberType, NodeData as NodeDataType } from '@/data/schemas';
+import type { User as UserType, Transaction as AppTransactionType, Notification as AppNotificationType, TeamMember as AppTeamMemberType, NodeData as AppNodeDataType } from '@/data/schemas';
+
+import { KycStatus, TeamMemberStatus, NodeStatus, TransactionType as PrismaTransactionType, TransactionStatus as PrismaTransactionStatus, NotificationType as PrismaNotificationType } from '@prisma/client';
+import type { Badge as PrismaBadge } from '@prisma/client';
+
+function mapKycStatus(status: string | undefined): KycStatus | undefined {
+  if (!status) return undefined;
+  switch (status.toUpperCase()) {
+    case 'COMPLETED':
+    case 'VERIFIED':
+      return KycStatus.COMPLETED;
+    case 'PENDING':
+      return KycStatus.PENDING;
+    case 'NOT_COMPLETED':
+    case 'NOTCOMPLETED':
+    case 'NOT COMPLETED':
+      return KycStatus.NOT_COMPLETED;
+    default:
+      return undefined;
+  }
+}
+function mapTeamMemberStatus(status: string | undefined): TeamMemberStatus | undefined {
+  if (!status) return undefined;
+  switch (status.toUpperCase()) {
+    case 'ACTIVE': return TeamMemberStatus.ACTIVE;
+    case 'INACTIVE': return TeamMemberStatus.INACTIVE;
+    case 'PENDING': return TeamMemberStatus.PENDING;
+    default: return undefined;
+  }
+}
+function mapNodeStatus(status: string | undefined): NodeStatus | undefined {
+  if (!status) return undefined;
+  switch (status.toUpperCase()) {
+    case 'ONLINE': return NodeStatus.ONLINE;
+    case 'OFFLINE': return NodeStatus.OFFLINE;
+    case 'SYNCHRONIZING': return NodeStatus.SYNCHRONIZING;
+    default: return undefined;
+  }
+}
+function mapTransactionType(type: string | undefined): PrismaTransactionType | undefined {
+  if (!type) return undefined;
+  switch (type.toUpperCase()) {
+    case 'SENT': return PrismaTransactionType.SENT;
+    case 'RECEIVED': return PrismaTransactionType.RECEIVED;
+    case 'MINING_REWARD':
+    case 'MININGREWARD':
+      return PrismaTransactionType.MINING_REWARD;
+    case 'NODE_BONUS':
+    case 'NODEBONUS':
+      return PrismaTransactionType.NODE_BONUS;
+    default: return undefined;
+  }
+}
+function mapTransactionStatus(status: string | undefined): PrismaTransactionStatus | undefined {
+  if (!status) return undefined;
+  switch (status.toUpperCase()) {
+    case 'COMPLETED': return PrismaTransactionStatus.COMPLETED;
+    case 'PENDING': return PrismaTransactionStatus.PENDING;
+    case 'FAILED': return PrismaTransactionStatus.FAILED;
+    default: return undefined;
+  }
+}
+function mapNotificationType(type: string | undefined): PrismaNotificationType | undefined {
+  if (!type) return undefined;
+  switch (type.toUpperCase()) {
+    case 'BADGE_EARNED':
+    case 'BADGE EARNED':
+    case 'BADGE-EARNED':
+    case 'BADGE_ACHIEVED':
+      return PrismaNotificationType.BADGE_EARNED;
+    case 'TEAM_UPDATE':
+    case 'TEAM UPDATE':
+      return PrismaNotificationType.TEAM_UPDATE;
+    case 'NODE_UPDATE':
+    case 'NODE UPDATE':
+      return PrismaNotificationType.NODE_UPDATE;
+    case 'ANNOUNCEMENT': return PrismaNotificationType.ANNOUNCEMENT;
+    case 'TEAM_MESSAGE':
+    case 'TEAM MESSAGE':
+      return PrismaNotificationType.TEAM_MESSAGE;
+    default: return undefined;
+  }
+}
 
 // Use environment variable for database URL (with fallback for build time)
 const databaseUrl = process.env.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy';
@@ -11,14 +93,34 @@ const prisma = new PrismaClient({
   },
 });
 
-// Use any for now until Prisma types are properly generated
-type User = any;
-type Transaction = any;
-type Notification = any;
-type TeamMember = any;
-type NodeData = any;
-type Badge = any;
-type UserBadge = any;
+// Use unknown for now until Prisma types are properly generated
+type User = unknown;
+type Transaction = unknown;
+type Notification = unknown;
+type TeamMember = unknown;
+type NodeData = unknown;
+interface Badge {
+  name: string;
+  description: string;
+  iconUrl: string;
+  dataAiHint?: string;
+}
+interface UserBadgeResult {
+  name: string;
+  description: string;
+  iconUrl: string;
+  dataAiHint?: string;
+  earned: boolean;
+  earnedDate: string;
+}
+type UserBadge = unknown;
+
+interface CreateBadgeInput {
+  name: string;
+  description: string;
+  iconUrl: string;
+  dataAiHint?: string;
+}
 
 // User Management
 export class UserService {
@@ -36,7 +138,7 @@ export class UserService {
         teamSize: userData.teamSize || 0,
         isNodeOperator: userData.isNodeOperator || false,
         nodeUptimePercentage: userData.nodeUptimePercentage,
-        kycStatus: userData.kycStatus,
+        kycStatus: mapKycStatus(userData.kycStatus as string),
         joinDate: userData.joinDate ? new Date(userData.joinDate) : new Date(),
         termsAccepted: userData.termsAccepted || false,
         accessToken: userData.accessToken,
@@ -144,7 +246,7 @@ export class UserService {
         teamSize: userData.teamSize,
         isNodeOperator: userData.isNodeOperator,
         nodeUptimePercentage: userData.nodeUptimePercentage,
-        kycStatus: userData.kycStatus,
+        kycStatus: mapKycStatus(userData.kycStatus as string),
         lastActive: new Date(),
         termsAccepted: userData.termsAccepted,
         accessToken: userData.accessToken,
@@ -192,14 +294,14 @@ export class UserService {
 
 // Transaction Management
 export class TransactionService {
-  static async createTransaction(userId: string, transactionData: Omit<TransactionType, 'id' | 'date'>): Promise<Transaction> {
+  static async createTransaction(userId: string, transactionData: Omit<AppTransactionType, 'id' | 'date'>): Promise<Transaction> {
     return await prisma.transaction.create({
       data: {
         userId,
         date: new Date(),
-        type: transactionData.type,
+        type: mapTransactionType(transactionData.type as string) ?? PrismaTransactionType.SENT,
         amount: transactionData.amount,
-        status: transactionData.status,
+        status: mapTransactionStatus(transactionData.status as string) ?? PrismaTransactionStatus.PENDING,
         from: transactionData.from,
         to: transactionData.to,
         description: transactionData.description,
@@ -235,11 +337,11 @@ export class TransactionService {
 
 // Notification Management
 export class NotificationService {
-  static async createNotification(userId: string, notificationData: Omit<NotificationType, 'id' | 'date' | 'read'>): Promise<Notification> {
+  static async createNotification(userId: string, notificationData: Omit<AppNotificationType, 'id' | 'date' | 'read'>): Promise<Notification> {
     return await prisma.notification.create({
       data: {
         userId,
-        type: notificationData.type,
+        type: mapNotificationType(notificationData.type as string) ?? PrismaNotificationType.ANNOUNCEMENT,
         title: notificationData.title,
         description: notificationData.description,
         link: notificationData.link,
@@ -280,18 +382,18 @@ export class NotificationService {
 
 // Team Management
 export class TeamService {
-  static async createTeamMember(userId: string, memberData: Omit<TeamMemberType, 'id'>): Promise<TeamMember> {
+  static async createTeamMember(userId: string, memberData: Omit<AppTeamMemberType, 'id'>): Promise<TeamMember> {
     return await prisma.teamMember.create({
       data: {
         userId,
         name: memberData.name,
         avatarUrl: memberData.avatarUrl,
         joinDate: new Date(memberData.joinDate),
-        status: memberData.status,
+        status: mapTeamMemberStatus(memberData.status as string),
         unverifiedPiContribution: memberData.unverifiedPiContribution,
         teamMemberActiveMiningHours_LastWeek: memberData.teamMemberActiveMiningHours_LastWeek || 0,
         teamMemberActiveMiningHours_LastMonth: memberData.teamMemberActiveMiningHours_LastMonth || 0,
-        kycStatus: memberData.kycStatus,
+        kycStatus: mapKycStatus(memberData.kycStatus as string),
         dataAiHint: memberData.dataAiHint,
       }
     });
@@ -304,17 +406,17 @@ export class TeamService {
     });
   }
 
-  static async updateTeamMember(id: string, memberData: Partial<TeamMemberType>): Promise<TeamMember> {
+  static async updateTeamMember(id: string, memberData: Partial<AppTeamMemberType>): Promise<TeamMember> {
     return await prisma.teamMember.update({
       where: { id },
       data: {
         name: memberData.name,
         avatarUrl: memberData.avatarUrl,
-        status: memberData.status,
+        status: mapTeamMemberStatus(memberData.status as string),
         unverifiedPiContribution: memberData.unverifiedPiContribution,
         teamMemberActiveMiningHours_LastWeek: memberData.teamMemberActiveMiningHours_LastWeek,
         teamMemberActiveMiningHours_LastMonth: memberData.teamMemberActiveMiningHours_LastMonth,
-        kycStatus: memberData.kycStatus,
+        kycStatus: mapKycStatus(memberData.kycStatus as string),
         dataAiHint: memberData.dataAiHint,
       }
     });
@@ -323,12 +425,12 @@ export class TeamService {
 
 // Node Data Management
 export class NodeService {
-  static async createNodeData(userId: string, nodeData: Omit<NodeDataType, 'id'>): Promise<NodeData> {
+  static async createNodeData(userId: string, nodeData: Omit<AppNodeDataType, 'id'>): Promise<NodeData> {
     return await prisma.nodeData.create({
       data: {
         userId,
         nodeId: nodeData.nodeId,
-        status: nodeData.status,
+        status: NodeStatus.ONLINE,
         lastSeen: new Date(nodeData.lastSeen),
         nodeSoftwareVersion: nodeData.nodeSoftwareVersion,
         latestSoftwareVersion: nodeData.latestSoftwareVersion,
@@ -364,11 +466,11 @@ export class NodeService {
     });
   }
 
-  static async updateNodeData(userId: string, nodeData: Partial<NodeDataType>): Promise<NodeData> {
+  static async updateNodeData(userId: string, nodeData: Partial<AppNodeDataType>): Promise<NodeData> {
     return await prisma.nodeData.update({
       where: { userId },
       data: {
-        status: nodeData.status,
+        status: NodeStatus.ONLINE,
         lastSeen: nodeData.lastSeen ? new Date(nodeData.lastSeen) : new Date(),
         nodeSoftwareVersion: nodeData.nodeSoftwareVersion,
         latestSoftwareVersion: nodeData.latestSoftwareVersion,
@@ -389,13 +491,17 @@ export class NodeService {
 
 // Badge Management
 export class BadgeService {
-  static async createBadge(badgeData: Omit<Badge, 'id' | 'createdAt'>): Promise<Badge> {
+  static async createBadge(badgeData: Record<string, unknown>): Promise<PrismaBadge> {
+    if (typeof badgeData.name !== 'string') throw new Error('Invalid badge name');
+    if (typeof badgeData.description !== 'string') throw new Error('Invalid badge description');
+    if (typeof badgeData.iconUrl !== 'string') throw new Error('Invalid badge iconUrl');
+    if (badgeData.dataAiHint !== undefined && typeof badgeData.dataAiHint !== 'string') throw new Error('Invalid badge dataAiHint');
     return await prisma.badge.create({
       data: {
         name: badgeData.name,
         description: badgeData.description,
         iconUrl: badgeData.iconUrl,
-        dataAiHint: badgeData.dataAiHint,
+        dataAiHint: badgeData.dataAiHint as string | undefined,
       }
     });
   }
@@ -411,7 +517,7 @@ export class BadgeService {
     });
   }
 
-  static async getUserBadges(userId: string): Promise<Badge[]> {
+  static async getUserBadges(userId: string): Promise<UserBadgeResult[]> {
     const userBadges = await prisma.userBadge.findMany({
       where: { userId },
       include: {
@@ -419,11 +525,33 @@ export class BadgeService {
       }
     });
     
-    return userBadges.map((ub: any) => ({
-      ...ub.badge,
-      earned: ub.earned,
-      earnedDate: ub.earnedDate?.toISOString(),
-    }));
+    return userBadges.map((ub: unknown): UserBadgeResult => {
+      if (
+        typeof ub === 'object' &&
+        ub !== null &&
+        'badge' in ub &&
+        typeof (ub as { badge?: unknown }).badge === 'object'
+      ) {
+        const badgeObj = (ub as { badge: Record<string, unknown> }).badge;
+        const { name, description, iconUrl, dataAiHint } = badgeObj;
+        return {
+          name: name as string,
+          description: description as string,
+          iconUrl: iconUrl as string,
+          dataAiHint: dataAiHint as string | undefined,
+          earned: (ub as { earned?: boolean }).earned ?? false,
+          earnedDate: (ub as { earnedDate?: string }).earnedDate ?? '',
+        };
+      }
+      return {
+        name: '',
+        description: '',
+        iconUrl: '',
+        dataAiHint: undefined,
+        earned: false,
+        earnedDate: '',
+      };
+    });
   }
 }
 
@@ -440,7 +568,7 @@ export class BalanceHistoryService {
     });
   }
 
-  static async getBalanceHistory(userId: string, period: '3M' | '6M' | '12M' = '6M'): Promise<any[]> {
+  static async getBalanceHistory(userId: string, period: '3M' | '6M' | '12M' = '6M'): Promise<unknown[]> {
     const months = period === '3M' ? 3 : period === '6M' ? 6 : 12;
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);

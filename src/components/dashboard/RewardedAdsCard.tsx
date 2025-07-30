@@ -10,12 +10,13 @@ import { useToast } from '@/hooks/use-toast';
 import { getPiSDKInstance } from '@/lib/pi-network';
 import { sendA2UPayment } from '@/services/piService';
 import { useAuth } from '@/contexts/AuthContext';
-import { Play, Gift, AlertTriangle, CheckCircle, Info } from 'lucide-react';
-import { notifyAdRewardEarned, notifyDailyAdLimitReached, notifyAdNotAvailable } from '@/services/notificationService';
+import type { User } from '@/data/schemas';
+import { Play, Gift, AlertTriangle, CheckCircle } from 'lucide-react';
+import { notifyAdRewardEarned, notifyAdNotAvailable } from '@/services/notificationService';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 
 export default function RewardedAdsCard() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: User | null };
   const { toast } = useToast();
   const [adsAvailable, setAdsAvailable] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,8 +25,8 @@ export default function RewardedAdsCard() {
   const [rewardProgress, setRewardProgress] = useState(0);
   const [dailyWatches, setDailyWatches] = useState(0);
   const [lastRewardTime, setLastRewardTime] = useState<Date | null>(null);
-  const [canPayReward, setCanPayReward] = useState<{ canPay: boolean; reason?: string }>({ canPay: false });
-
+  const [isAdReady, setIsAdReady] = useState(false);
+  const [canPayReward, setCanPayReward] = useState<{ canPay: boolean; reason: string }>({ canPay: false, reason: '' });
   const MAX_DAILY_WATCHES = 5;
   const REWARD_AMOUNT = 0.1; // 0.1 Pi per ad
 
@@ -37,6 +38,11 @@ export default function RewardedAdsCard() {
       setAdsAvailable(false); // Simulate no ads for now
       setIsLoading(false);
     }, 1000);
+    // Also run the other setup logic here
+    checkAdReadiness();
+    loadDailyStats();
+    checkAppPaymentCapability();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isLoading) return (
@@ -56,12 +62,6 @@ export default function RewardedAdsCard() {
       <span className="text-gray-500">No rewarded ads available at the moment.</span>
     </Card>
   );
-
-  useEffect(() => {
-    checkAdReadiness();
-    loadDailyStats();
-    checkAppPaymentCapability();
-  }, []);
 
   const checkAdReadiness = async () => {
     try {
@@ -247,7 +247,7 @@ export default function RewardedAdsCard() {
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              You've reached your daily limit. Come back tomorrow for more rewards!
+              You&apos;ve reached your daily limit. Come back tomorrow for more rewards!
             </AlertDescription>
           </Alert>
         )}

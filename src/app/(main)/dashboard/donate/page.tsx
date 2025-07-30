@@ -1,29 +1,28 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
+import type { User } from '@/data/schemas';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { getPiSDKInstance } from '@/lib/pi-network';
-import { SendIcon, HeartIcon, UsersIcon, TrendingUpIcon, AlertTriangleIcon } from '@/components/shared/icons';
+import { SendIcon, HeartIcon, UsersIcon, TrendingUpIcon } from '@/components/shared/icons';
 import { RecentSupporters } from '@/components/dashboard/donate/RecentSupporters';
 import { addTransaction } from '@/services/piService';
 import { addNotification } from '@/services/notificationService';
-import type { PiPayment } from '@/lib/pi-network';
 
 export default function DonatePage() {
-  const { user, refreshData } = useAuth();
+  const { user: rawUser, refreshData } = useAuth();
+  const user = rawUser as User | null;
   const { toast } = useToast();
-  const router = useRouter();
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [isDonating, setIsDonating] = useState(false);
@@ -72,9 +71,9 @@ export default function DonatePage() {
 
         // Check if Pi SDK is available
         const isSDKAvailable = typeof window !== 'undefined' && 
-          (window as any).Pi && 
-          (window as any).Pi.authenticate && 
-          typeof (window as any).Pi.authenticate === 'function';
+          (window as unknown as { Pi?: unknown }).Pi && 
+          (window as unknown as { Pi?: { authenticate?: unknown } }).Pi?.authenticate && 
+          typeof (window as unknown as { Pi?: { authenticate?: unknown } }).Pi?.authenticate === 'function';
 
         if (isSDKAvailable) {
             // Real Pi Network payment flow
@@ -82,7 +81,7 @@ export default function DonatePage() {
             
             // Check if user is authenticated, if not authenticate them
             const sdk = getPiSDKInstance();
-            const isPiAvailable = typeof window !== 'undefined' && (window as any).Pi;
+            const isPiAvailable = typeof window !== 'undefined' && (window as unknown as { Pi?: unknown }).Pi;
             
             if (!isPiAvailable) {
                 throw new Error('Pi SDK not available');
@@ -100,14 +99,19 @@ export default function DonatePage() {
             if (!isAuthenticated) {
                 console.log('🔍 User not authenticated, authenticating...');
                 // Use the same authentication pattern as the main app
-                await (window as any).Pi.authenticate(['payments', 'username'], (payment: any) => {
+                await (window as unknown as { Pi: { authenticate: (scopes: string[], cb: (payment: unknown) => void) => Promise<unknown> } }).Pi.authenticate(['payments', 'username'], (payment: unknown) => {
                     console.log('Incomplete payment found during donation:', payment);
                 });
             } else {
                 console.log('✅ User already authenticated, proceeding with payment');
             }
             
-            const payment = await (window as any).Pi.createPayment(paymentData, {
+            const payment = await (window as unknown as { Pi: { createPayment: (data: typeof paymentData, handlers: {
+                onReadyForServerApproval: (paymentId: string) => void;
+                onReadyForServerCompletion: (paymentId: string, txid: string) => void;
+                onCancel: (paymentId: string) => void;
+                onError: (error: Error, payment: unknown) => void;
+            }) => Promise<unknown> } }).Pi.createPayment(paymentData, {
                 onReadyForServerApproval: async (paymentId: string) => {
                     console.log('Donation ready for approval:', paymentId);
                     
@@ -139,11 +143,11 @@ export default function DonatePage() {
                         console.log('Payment approved on server:', paymentId, result);
                         
                         // ✅ CORRECT: Call payment.approve() after server approval
-                        payment.approve(paymentId);
+                        (payment as { approve: (id: string) => void }).approve(paymentId);
                     } catch (error) {
                         console.error('Server approval failed:', error);
                         // Cancel the payment if server approval fails
-                        payment.cancel(paymentId);
+                        (payment as { cancel: (id: string) => void }).cancel(paymentId);
                         throw error;
                     }
                 },
@@ -184,7 +188,7 @@ export default function DonatePage() {
                         console.log('Payment completed on server:', paymentId, result);
                         
                         // ✅ CORRECT: Call payment.complete() after server completion
-                        payment.complete(paymentId, txid);
+                        (payment as { complete: (id: string, txid: string) => void }).complete(paymentId, txid);
                         
                         // Add transaction to our app's history
                         addTransaction({
@@ -192,16 +196,17 @@ export default function DonatePage() {
                             amount: donationAmount,
                             status: 'completed',
                             to: 'Dynamic Wallet View Project',
-                            description: transactionDescription
+                            description: transactionDescription,
+                            date: new Date().toISOString(),
                         });
 
                         // Add notification
-                        addNotification({
-                            type: 'announcement',
-                            title: "Thank you for your support!",
-                            description: `Your donation of ${donationAmount}π has been processed successfully.`,
-                            link: '/dashboard/transactions'
-                        });
+                        addNotification(
+                          'announcement',
+                          "Thank you for your support!",
+                          `Your donation of ${donationAmount}π has been processed successfully.`,
+                          '/dashboard/transactions'
+                        );
 
                         toast({
                             title: "Thank you for your support!",
@@ -220,16 +225,17 @@ export default function DonatePage() {
                             amount: donationAmount,
                             status: 'completed',
                             to: 'Dynamic Wallet View Project',
-                            description: transactionDescription
+                            description: transactionDescription,
+                            date: new Date().toISOString(),
                         });
 
                         // Add notification
-                        addNotification({
-                            type: 'announcement',
-                            title: "Thank you for your support!",
-                            description: `Your donation of ${donationAmount}π has been processed successfully.`,
-                            link: '/dashboard/transactions'
-                        });
+                        addNotification(
+                          'announcement',
+                          "Thank you for your support!",
+                          `Your donation of ${donationAmount}π has been processed successfully.`,
+                          '/dashboard/transactions'
+                        );
 
                         toast({
                             title: "Thank you for your support!",
@@ -245,7 +251,7 @@ export default function DonatePage() {
                         variant: "destructive",
                     });
                 },
-                onError: (error: Error, payment: any) => {
+                onError: (error: Error, payment: unknown) => {
                     console.error('Donation error:', error);
                     toast({
                         title: "Donation Failed",
@@ -264,15 +270,16 @@ export default function DonatePage() {
                 amount: donationAmount,
                 status: 'completed',
                 to: 'Dynamic Wallet View Project',
-                description: transactionDescription
+                description: transactionDescription,
+                date: new Date().toISOString(),
             });
 
-            await addNotification({
-                type: 'announcement',
-                title: "Thank you for your support!",
-                description: `Your donation of ${donationAmount}π has been recorded.`,
-                link: '/dashboard/transactions'
-            });
+            await addNotification(
+              'announcement',
+              "Thank you for your support!",
+              `Your donation of ${donationAmount}π has been recorded.`,
+              '/dashboard/transactions'
+            );
 
             toast({
                 title: "Thank you for your support!",
@@ -286,7 +293,7 @@ export default function DonatePage() {
         const newSupporter = { name: user.name, amount: donationAmount };
         setRecentSupporters(prev => [newSupporter, ...prev.slice(0, 9)]);
 
-        refreshData();
+        (refreshData as () => void)();
         setMessage("");
 
     } catch (error) {
@@ -386,7 +393,7 @@ export default function DonatePage() {
               <AlertDialogTrigger asChild>
                 <Button className="w-full text-sm sm:text-base min-h-[44px] sm:min-h-[40px]" size="lg" disabled={!amount || parseFloat(amount) <= 0 || isDonating}>
                   <SendIcon className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  {typeof window !== 'undefined' && (window as any).Pi
+                  {typeof window !== 'undefined' && (window as unknown as { Pi?: unknown }).Pi
                     ? `Support with ${amount && parseFloat(amount) > 0 ? amount : ''} π` 
                     : `Support with ${amount && parseFloat(amount) > 0 ? amount : ''} π (Mock)`
                   }
@@ -396,7 +403,7 @@ export default function DonatePage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirm Your Support</AlertDialogTitle>
                   <AlertDialogDescription className="break-words">
-                    {typeof window !== 'undefined' && (window as any).Pi
+                    {typeof window !== 'undefined' && (window as unknown as { Pi?: unknown }).Pi
                       ? `You are about to contribute ${amount} π to support Dynamic Wallet View. This will be processed through the Pi Network. Are you sure?`
                       : `You are about to contribute ${amount} π to support Dynamic Wallet View. This is a mock transaction for development purposes. Are you sure?`
                     }

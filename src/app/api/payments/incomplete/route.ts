@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
 
       // Find the incomplete order (mock implementation)
       console.log('🔍 Looking for order with payment ID:', paymentId);
+      const payment = await piPlatformClient.getPayment(paymentId);
       const order = {
         pi_payment_id: paymentId,
         product_id: 'donation',
@@ -85,14 +86,13 @@ export async function POST(request: NextRequest) {
       }
 
       // Fetch payment details from Pi Platform API
-      const payment = await piPlatformClient.getPayment(paymentId);
       const txid = payment?.transaction?.txid;
-      const developerCompleted = payment?.status?.developer_completed;
+      const developerCompleted = payment.status === 'completed';
 
       if (txid && !developerCompleted) {
         // Complete the payment if not already completed
         try {
-          const completeResult = await piPlatformClient.completePayment(paymentId, txid);
+          const completeResult = await piPlatformClient.completePayment(paymentId, txid as string);
           console.log(`[${new Date().toISOString()}] Completed payment:`, completeResult);
           return NextResponse.json({ success: true, action: 'completed', completeResult });
         } catch (err) {
@@ -126,8 +126,10 @@ export async function POST(request: NextRequest) {
       console.log('📝 Updated order record:', updatedOrder);
 
       // Complete the payment with Pi Network
-      await piPlatformClient.completePayment(paymentId, txid);
-      console.log('✅ Payment completed successfully');
+      if (txid) {
+        await piPlatformClient.completePayment(paymentId, txid as string);
+        console.log('✅ Payment completed successfully');
+      }
 
       // Add transaction to history
       try {
@@ -137,7 +139,8 @@ export async function POST(request: NextRequest) {
           amount: payment.amount,
           status: 'completed',
           description: payment.memo || 'Incomplete payment completed',
-          blockExplorerUrl: txURL
+          blockExplorerUrl: txURL,
+          date: new Date().toISOString(),
         });
         console.log('✅ Transaction added to history');
       } catch (transactionError) {

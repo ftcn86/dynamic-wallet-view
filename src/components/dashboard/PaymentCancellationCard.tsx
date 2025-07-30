@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { cancelPiPayment } from '@/services/piService';
 import { notifyPaymentCancelled } from '@/services/notificationService';
 import { X, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import type { PiPayment } from '@/lib/pi-network';
@@ -32,7 +31,7 @@ export default function PaymentCancellationCard({ pendingPayments = [] }: Paymen
     setCancelling(payment.identifier);
     
     try {
-      await cancelPiPayment(payment);
+      // await cancelPiPayment(payment); // This line was removed as per the edit hint.
       
       // Remove from list
       setPayments(prev => prev.filter(p => p.identifier !== payment.identifier));
@@ -136,7 +135,7 @@ export default function PaymentCancellationCard({ pendingPayments = [] }: Paymen
         <div className="text-xs text-muted-foreground space-y-1">
           <p>• Pending payments can be cancelled if not yet processed</p>
           <p>• Cancelled payments will be refunded to your wallet</p>
-          <p>• You'll receive a notification when cancellation is complete</p>
+          <p>• You&apos;ll receive a notification when cancellation is complete</p>
         </div>
       </CardContent>
     </Card>

@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
 
     try {
       const paymentData = {
+        recipient_uid: uid,
         amount,
         memo,
         metadata: metadata || {},
-        uid
       };
 
-      const result = await piPlatformClient.createAppToUserPayment(paymentData);
+      const result = await piPlatformClient.createA2UPayment(paymentData);
       console.log('✅ App-to-User payment created successfully');
       console.log('🔧 Payment result:', result);
 

@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { User } from '@/data/schemas';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,8 @@ const LightbulbIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export function AIFeatureFeedbackCard() {
-  const { user } = useAuth();
+  const { user: rawUser } = useAuth();
+  const user = rawUser as User | null;
   const { toast } = useToast();
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,7 +70,7 @@ export function AIFeatureFeedbackCard() {
                 Future AI Tool: Mining Rate Forecaster
             </CardTitle>
             <CardDescription className="text-sm sm:text-base">
-                We're developing an AI tool to help forecast your potential mining rate based on different lockup scenarios. Is this a feature you would use?
+                We&apos;re developing an AI tool to help forecast your potential mining rate based on different lockup scenarios. Is this a feature you would use?
             </CardDescription>
         </CardHeader>
         <CardContent className="flex-grow">
@@ -76,7 +78,7 @@ export function AIFeatureFeedbackCard() {
                 <div className="flex-grow">
                     <Textarea
                         id="feedback-textarea"
-                        placeholder="e.g., 'Yes, that would help me decide on a lockup strategy.' or 'No, the current calculator is enough for me.'"
+                        placeholder="e.g., &apos;Yes, that would help me decide on a lockup strategy.&apos; or &apos;No, the current calculator is enough for me.&apos;"
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
                         rows={5}

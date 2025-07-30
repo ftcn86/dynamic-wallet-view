@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     
     // Fetch all user data
     const [balanceData, teamMembers, nodeData, transactions] = await Promise.all([
-      getUserPiBalance(effectiveToken),
+      getUserPiBalance(),
       getTeamMembers(),
       getNodeData(),
       getTransactions(),
@@ -64,12 +64,12 @@ export async function GET(request: NextRequest) {
       email: 'mock@example.com',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=mock_user',
       bio: 'Pi Network Pioneer - Active miner and community member',
-      balance: balanceData.totalBalance,
+      balance: (balanceData as { totalBalance: number }).totalBalance,
       miningRate: 0.0202, // Base rate + bonuses would be calculated
       isNodeOperator: nodeData.status !== 'offline',
       nodeUptimePercentage: nodeData.uptimePercentage,
-      balanceBreakdown: balanceData.balanceBreakdown,
-      unverifiedPiDetails: balanceData.unverifiedPiDetails,
+      balanceBreakdown: (balanceData as { balanceBreakdown: any }).balanceBreakdown,
+      unverifiedPiDetails: (balanceData as { unverifiedPiDetails: any }).unverifiedPiDetails,
       badges: [
         {
           id: 'first_mining_session',

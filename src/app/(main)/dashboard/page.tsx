@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import type { User } from '@/data/schemas';
 import { KPICard } from '@/components/shared/KPICard';
 import {
   AlertDialog,
@@ -47,7 +48,8 @@ import {
 const TABS = ['overview', 'portfolio', 'achievements', 'analysis'];
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user: rawUser } = useAuth();
+  const user = rawUser as User | null;
   const router = useRouter();
   const searchParams = useSearchParams();
   

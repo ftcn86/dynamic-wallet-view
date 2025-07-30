@@ -4,17 +4,40 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import type { User } from '@/data/schemas';
 
-interface AuthContextType {
-  user: User | null;
-  setUser: Dispatch<SetStateAction<User | null>>;
-  isLoading: boolean;
-  login: () => Promise<User | null>;
+// Define the structure of the Pi SDK object available on window
+interface PiSDK {
+  authenticate: (scopes: string[], onIncompletePaymentFound: (payment: Payment) => void) => Promise<AuthResult>;
   logout: () => void;
-  dataVersion: number;
-  refreshData: () => void;
-  error: string | null;
-  status: string | null;
+  // Add other Pi SDK methods if they are used
 }
+
+// Define the structure of the authentication result from Pi.authenticate
+interface AuthResult {
+  accessToken: string;
+  user: {
+    uid: string;
+    username: string;
+    wallet_address?: string;
+    profile?: {
+      email?: string;
+      // Add other profile fields if they are used
+    };
+    // Add other user fields if they are used
+  };
+  expiresAt: number;
+  // Add other authResult fields if they are used
+}
+
+// Minimal Payment interface to satisfy type checks
+interface Payment {
+  identifier?: string;
+  amount?: number;
+  status?: string;
+  memo?: string;
+  created_at?: string;
+}
+
+export type AuthContextType = Record<string, unknown>;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -69,6 +92,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Handle incomplete payments (following official demo pattern)
+  const handleIncompletePayment = useCallback((payment: Payment) => {
+    console.log("🔄 Incomplete payment found:", payment);
+    // Send to backend for handling
+    fetch('/api/payments/incomplete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment })
+    }).catch(console.error);
+  }, []);
+
   const login = useCallback(async (): Promise<User | null> => {
     setIsLoading(true);
     setError(null);
@@ -77,16 +111,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Improved Pi Browser detection - focus on Pi SDK availability
       const hasPiSDK = typeof window !== 'undefined' && 
-                       (window as any).Pi && 
-                       typeof (window as any).Pi.authenticate === 'function';
+                       (window as Window & typeof globalThis & { Pi: PiSDK }).Pi && 
+                       typeof (window as Window & typeof globalThis & { Pi: PiSDK }).Pi.authenticate === 'function';
       
       // Log detection details for debugging
       console.log('🔍 Pi Browser Detection:', {
         hasPiSDK,
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
-        windowPi: typeof window !== 'undefined' ? !!(window as any).Pi : false,
-        piAuthenticate: typeof window !== 'undefined' && (window as any).Pi ? 
-          typeof (window as any).Pi.authenticate === 'function' : false
+        windowPi: typeof window !== 'undefined' ? !!(window as Window & typeof globalThis & { Pi: PiSDK }).Pi : false,
+        piAuthenticate: typeof window !== 'undefined' && (window as Window & typeof globalThis & { Pi: PiSDK }).Pi ? 
+          typeof (window as Window & typeof globalThis & { Pi: PiSDK }).Pi.authenticate === 'function' : false
       });
       
       if (!hasPiSDK) {
@@ -179,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('📱 Using Pi Network authentication - Pi SDK detected');
       
       return new Promise((resolve, reject) => {
-        const Pi = (window as any).Pi;
+        const Pi = ((window as unknown) as { Pi: PiSDK }).Pi;
         // Use simpler scopes as per official Pi SDK docs
         const scopes = ['payments', 'username'];
         
@@ -194,20 +228,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }, 20000);
         
         try {
-          // Official Pi Network demo pattern with onIncompletePaymentFound callback
-          const onIncompletePaymentFound = (payment: any) => {
-            console.log('🔄 Incomplete payment found:', payment);
-            // Handle incomplete payments
-            fetch('/api/payments/incomplete', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ payment })
-            }).catch(console.error);
-          };
-          
           // Use the official Pi.authenticate pattern with promise
-          Pi.authenticate(scopes, onIncompletePaymentFound)
-            .then(async (authResult: any) => {
+          Pi.authenticate(scopes, handleIncompletePayment) // Use the dedicated handler
+            .then(async (authResult: AuthResult) => { // Use AuthResult interface
               try {
                 clearTimeout(authTimeout);
                 setStatus('Processing authentication...');
@@ -250,7 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 reject(error);
               }
             })
-            .catch((error: any) => {
+            .catch((error: Error) => { // Use Error type for caught errors
               clearTimeout(authTimeout);
               console.error('❌ Pi authentication failed:', error);
               setError(`Pi authentication failed: ${error?.message || 'Unknown error'}`);
@@ -273,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       throw error;
     }
-  }, [setUserInternal, dataVersion]);
+  }, [setUserInternal, handleIncompletePayment]); 
 
   const logout = useCallback(() => {
     try {
@@ -281,8 +304,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(DYNAMIC_WALLET_USER_KEY);
       
       // If Pi SDK is available, logout from Pi Network
-      if (typeof window !== 'undefined' && (window as any).Pi && (window as any).Pi.logout) {
-        (window as any).Pi.logout();
+      if (typeof window !== 'undefined' && (window as Window & typeof globalThis & { Pi: PiSDK }).Pi && typeof (window as Window & typeof globalThis & { Pi: PiSDK }).Pi.logout === 'function') {
+        (window as Window & typeof globalThis & { Pi: PiSDK }).Pi.logout(); // Cast to PiSDK
       }
       
       setUserInternal(null);
@@ -293,17 +316,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshData = useCallback(() => {
     setDataVersion(prev => prev + 1);
-  }, []);
-
-  // Handle incomplete payments (following official demo pattern)
-  const onIncompletePaymentFound = useCallback((payment: any) => {
-    console.log("onIncompletePaymentFound", payment);
-    // Send to backend for handling
-    fetch('/api/payments/incomplete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payment })
-    });
   }, []);
 
   const value: AuthContextType = {

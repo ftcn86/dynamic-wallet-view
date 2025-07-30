@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserService } from '@/services/databaseService';
+import type { User } from '@/data/schemas';
 
 // GET - Retrieve user settings
 export async function GET(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      settings: user.settings
+      settings: (user as User).settings
     });
 
   } catch (error) {
@@ -74,7 +75,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Settings updated successfully',
-      settings: updatedUser.settings
+      settings: (updatedUser as User).settings
     });
 
   } catch (error) {

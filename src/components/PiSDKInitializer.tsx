@@ -17,16 +17,16 @@ export default function PiSDKInitializer() {
     const initializePiSDK = () => {
       initAttempts++;
       
-      if (typeof window !== 'undefined' && (window as any).Pi) {
+      if (typeof window !== 'undefined' && (window as unknown as { Pi?: unknown }).Pi) {
         try {
           console.log('🚀 Initializing Pi Network SDK...');
           
-          if ((window as any).Pi.initialized) {
+          if ((window as unknown as { Pi?: { initialized?: boolean } }).Pi?.initialized) {
             console.log('✅ Pi Network SDK already initialized');
             return;
           }
           // Add sandbox: true for testnet
-          (window as any).Pi.init({ version: "2.0", sandbox: true });
+          (window as unknown as { Pi: { init: (opts: { version: string; sandbox: boolean }) => void } }).Pi.init({ version: "2.0", sandbox: true });
           
           console.log('✅ Pi Network SDK initialized successfully (sandbox mode)');
         } catch (error) {

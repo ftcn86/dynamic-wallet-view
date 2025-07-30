@@ -2,6 +2,7 @@
 "use client"
 
 import { useAuth } from '@/contexts/AuthContext';
+import type { User } from '@/data/schemas';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,8 @@ import { TargetIcon, UsersIcon, CalendarDaysIcon } from '@/components/shared/ico
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 export function MiningFocusCard() {
-  const { user } = useAuth();
+  const { user: rawUser } = useAuth();
+  const user = rawUser as User | null;
   const [daysInPreviousMonth, setDaysInPreviousMonth] = useState(30); 
 
   useEffect(() => {

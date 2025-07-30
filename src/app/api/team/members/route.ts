@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { TeamMember } from '@/data/schemas';
 
 // In-memory storage for team members (in production, this would be a database)
-let teamMembers: TeamMember[] = [
+const teamMembers: TeamMember[] = [
   {
     id: 'member_001',
     name: 'Alice Miner',
@@ -79,12 +79,12 @@ export async function GET(request: NextRequest) {
     const order = searchParams.get('order') || 'desc';
 
     // Create a copy of team members for sorting
-    let sortedMembers = [...teamMembers];
+    const sortedMembers = [...teamMembers];
 
     // Apply sorting
     sortedMembers.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      let aValue: unknown;
+      let bValue: unknown;
 
       switch (sortBy) {
         case 'joinDate':
@@ -117,9 +117,21 @@ export async function GET(request: NextRequest) {
       }
 
       if (order === 'desc') {
-        return bValue > aValue ? 1 : -1;
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return bValue - aValue;
+        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return bValue.localeCompare(aValue);
+        } else {
+          return 0;
+        }
       } else {
-        return aValue > bValue ? 1 : -1;
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return aValue - bValue;
+        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return aValue.localeCompare(bValue);
+        } else {
+          return 0;
+        }
       }
     });
 

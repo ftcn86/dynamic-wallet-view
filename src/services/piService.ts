@@ -37,16 +37,18 @@ function getPiSDK() {
 /**
  * Convert Pi Network user to our app's User format
  */
-function convertPiUserToAppUser(piUser: any, authResult?: any): User {
-  const name = piUser.profile 
-    ? `${piUser.profile.firstname || ''} ${piUser.profile.lastname || ''}`.trim() || piUser.username
-    : piUser.username;
+function convertPiUserToAppUser(piUser: unknown, authResult?: unknown): User {
+  const pi = piUser as Record<string, unknown>;
+  const profile = typeof pi.profile === 'object' && pi.profile !== null ? pi.profile as Record<string, unknown> : undefined;
+  const name = profile && typeof profile.firstname === 'string' && typeof profile.lastname === 'string'
+    ? `${profile.firstname || ''} ${profile.lastname || ''}`.trim() || (typeof pi.username === 'string' ? pi.username : '')
+    : (typeof pi.username === 'string' ? pi.username : '');
 
   return {
-    id: piUser.uid,
-    username: piUser.username,
+    id: typeof pi.uid === 'string' ? pi.uid : '',
+    username: typeof pi.username === 'string' ? pi.username : '',
     name: name,
-    email: piUser.profile?.email || '',
+    email: profile && typeof profile.email === 'string' ? profile.email : '',
     avatar: '',
     bio: 'Test user for development',
     balance: 12345.6789,
@@ -136,9 +138,11 @@ export async function createPiPayment(
   console.log("Creating Pi Network payment:", paymentData);
 
   // Use Pi SDK if available, otherwise simulate payment
-  if (typeof window !== 'undefined' && (window as any).Pi) {
+  if (typeof window !== 'undefined' && typeof (window as { Pi?: unknown }).Pi === 'object') {
     try {
-      const Pi = (window as any).Pi;
+      const Pi = (window as { Pi?: unknown }).Pi as {
+        createPayment: (data: PiPaymentData, callbacks: PaymentCallbacks) => Promise<PiPayment & { identifier: string }>;
+      };
       
       const payment = await Pi.createPayment(paymentData, {
         onReadyForServerApproval: async (paymentId: string) => {
@@ -268,7 +272,7 @@ export async function sendA2UPayment(
   recipientUid: string,
   amount: number,
   memo: string,
-  metadata?: any
+  metadata?: Record<string, unknown>
 ): Promise<{ success: boolean; paymentId?: string; error?: string }> {
   console.log("Sending A2U payment:", { recipientUid, amount, memo });
 
@@ -306,20 +310,20 @@ export async function sendA2UPayment(
 /**
  * Get user's Pi balance
  */
-export async function getUserPiBalance(): Promise<any> {
+export async function getUserPiBalance(): Promise<unknown> {
   const res = await fetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch balance');
-  const data = await res.json();
+  const data: { user?: { balanceBreakdown?: Record<string, unknown> } } = await res.json();
   return data.user?.balanceBreakdown || {};
 }
 
 /**
  * Get team members
  */
-export async function getTeamMembers(): Promise<any[]> {
+export async function getTeamMembers(): Promise<unknown[]> {
   const res = await fetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch team members');
-  const data = await res.json();
+  const data: { user?: { teamMembers?: unknown[] } } = await res.json();
   return data.user?.teamMembers || [];
 }
 
@@ -414,7 +418,7 @@ export async function getNotifications(): Promise<Notification[]> {
 /**
  * Get user badges
  */
-export async function getUserBadges(): Promise<any[]> {
+export async function getUserBadges(): Promise<unknown[]> {
   const res = await fetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch badges');
   const data = await res.json();
@@ -424,7 +428,7 @@ export async function getUserBadges(): Promise<any[]> {
 /**
  * Get balance history
  */
-export async function getBalanceHistory(): Promise<any[]> {
+export async function getBalanceHistory(): Promise<unknown[]> {
   const res = await fetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch balance history');
   const data = await res.json();
@@ -449,7 +453,7 @@ export async function handleIncompletePayment(payment: PiPayment) {
 
 // PiNetworkSDK class for centralized SDK management
 class PiNetworkSDK {
-  private pi: any = null;
+  private pi: unknown = null;
 
   constructor() {
     this.initializeSDK();
@@ -459,11 +463,11 @@ class PiNetworkSDK {
     if (typeof window === 'undefined') return;
     
     const checkForPiSDK = () => {
-      if ((window as any).Pi) {
-        this.pi = (window as any).Pi;
+      if (typeof (window as { Pi?: unknown }).Pi === 'object') {
+        this.pi = (window as { Pi?: unknown }).Pi;
         try {
           // Simple initialization following official demo pattern
-          this.pi.init({ version: '2.0' });
+          (this.pi as unknown as { init: (args: { version: string }) => void }).init({ version: '2.0' });
           console.log('✅ Pi Network SDK initialized');
         } catch (error) {
           console.error('❌ Failed to initialize Pi Network SDK:', error);
@@ -479,14 +483,18 @@ class PiNetworkSDK {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return this.pi?.isAuthenticated() || false;
+    return typeof (this.pi as { isAuthenticated?: () => boolean }).isAuthenticated === 'function'
+      ? (this.pi as { isAuthenticated: () => boolean }).isAuthenticated()
+      : false;
   }
 
   /**
    * Get current authenticated user
    */
-  currentUser(): any {
-    return this.pi?.currentUser() || null;
+  currentUser(): unknown {
+    return typeof (this.pi as { currentUser?: () => unknown }).currentUser === 'function'
+      ? (this.pi as { currentUser: () => unknown }).currentUser()
+      : null;
   }
 
   /**
@@ -495,18 +503,18 @@ class PiNetworkSDK {
   async authenticate(
     scopes: string[] = ['username', 'payments', 'wallet_address'],
     onIncompletePaymentFound?: (payment: PiPayment) => void
-  ): Promise<any> {
+  ): Promise<unknown> {
     if (!this.pi) {
       throw new Error('Pi Network SDK not available');
     }
 
-    if (typeof this.pi.authenticate !== 'function') {
+    if (typeof (this.pi as { authenticate?: unknown }).authenticate !== 'function') {
       console.error('Pi Network SDK authenticate method not found');
       throw new Error('Pi Network SDK authenticate method not available');
     }
 
     try {
-      const authResult = await this.pi.authenticate(scopes, onIncompletePaymentFound);
+      const authResult = await (this.pi as { authenticate: (scopes: string[], cb?: (payment: PiPayment) => void) => Promise<unknown> }).authenticate(scopes, onIncompletePaymentFound);
       return authResult;
     } catch (error) {
       console.error('Pi Network authentication failed:', error);
@@ -517,13 +525,13 @@ class PiNetworkSDK {
   /**
    * Create a payment
    */
-  async createPayment(paymentData: PiPaymentData, callbacks: any): Promise<PiPayment> {
+  async createPayment(paymentData: PiPaymentData, callbacks: Record<string, unknown>): Promise<PiPayment> {
     if (!this.pi) {
       throw new Error('Pi Network SDK not available');
     }
 
     try {
-      return await this.pi.createPayment(paymentData, callbacks);
+      return await (this.pi as { createPayment: (data: PiPaymentData, callbacks: Record<string, unknown>) => Promise<PiPayment> }).createPayment(paymentData, callbacks);
     } catch (error) {
       console.error('Pi Network payment creation failed:', error);
       throw new Error(`Payment creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

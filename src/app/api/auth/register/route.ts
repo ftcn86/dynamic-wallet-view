@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserService } from '@/services/databaseService';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
+import type { User } from '@/data/schemas';
 
 export async function POST(request: NextRequest) {
   try {
@@ -115,8 +116,8 @@ export async function POST(request: NextRequest) {
       });
 
       console.log('✅ User created successfully:', {
-        id: newUser.id,
-        username: newUser.username
+        id: (newUser as User).id,
+        username: (newUser as User).username
       });
 
       return NextResponse.json({

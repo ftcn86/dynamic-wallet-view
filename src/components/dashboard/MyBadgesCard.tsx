@@ -46,7 +46,7 @@ function BadgeItem({ badge }: { badge: Badge }) {
 
 
 export function MyBadgesCard() {
-  const [badges, setBadges] = useState([]);
+  const [badges, setBadges] = useState<Badge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +54,7 @@ export function MyBadgesCard() {
     setIsLoading(true);
     setError(null);
     getUserBadges()
-      .then(setBadges)
+      .then((data) => setBadges(data as Badge[]))
       .catch(() => setError('Failed to load badges. Please try again.'))
       .finally(() => setIsLoading(false));
   }, []);

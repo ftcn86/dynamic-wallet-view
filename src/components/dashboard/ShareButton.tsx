@@ -34,12 +34,24 @@ export default function ShareButton({
     
     try {
       const sdk = getPiSDKInstance();
-      await sdk.openShareDialog(title, message);
+      // openShareDialog doesn't exist in the SDK, so we'll use a fallback
+      // await sdk.openShareDialog(title, message);
       
+      // Fallback: use browser's native share API if available
+      if (navigator.share) {
+        await navigator.share({
+          title: title,
+          text: message,
+        });
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(`${title}\n\n${message}`);
+      }
+
       setShared(true);
       toast({
         title: "Shared successfully!",
-        description: "Your message has been shared.",
+        description: "Your content has been shared.",
       });
       notifyAppShared();
       

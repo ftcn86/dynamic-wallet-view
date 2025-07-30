@@ -3,7 +3,8 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockTeam, GAMIFICATION_BADGE_IDS } from '@/data/mocks';
+import type { User, TeamMember } from '@/data/schemas';
+import { GAMIFICATION_BADGE_IDS } from '@/data/mocks';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,9 +23,10 @@ const MAX_LEADERBOARD_ENTRIES = 5;
 const DISPLAY_RECENT_BADGES_COUNT = 3;
 
 export function TeamActivityCard() {
-  const { user } = useAuth();
+  const { user: rawUser } = useAuth();
+  const user = rawUser as User | null;
   const { t } = useTranslation();
-  const [team, setTeam] = useState<any[]>([]); // Changed type to any[] as TeamMember type is removed
+  const [team, setTeam] = useState<unknown[]>([]); // Use unknown[] if TeamMember type is not available
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,28 +74,28 @@ export function TeamActivityCard() {
   );
 
   const leaderboard = team
-    .filter(member => member.status === 'active' && typeof member.teamMemberActiveMiningHours_LastWeek === 'number')
-    .map(member => ({
-      ...member,
-      activity: member.teamMemberActiveMiningHours_LastWeek!,
+    .filter((member: unknown) => (member as TeamMember).status === 'active' && typeof (member as TeamMember).teamMemberActiveMiningHours_LastWeek === 'number')
+    .map((member: unknown) => ({
+      ...(member as TeamMember),
+      activity: (member as TeamMember).teamMemberActiveMiningHours_LastWeek!,
     }))
     .sort((a, b) => b.activity - a.activity);
 
   const displayLeaderboard = leaderboard.slice(0, MAX_LEADERBOARD_ENTRIES);
 
-  const userWeeklyActivity = user.userActiveMiningHours_LastWeek ?? 0;
+  const userWeeklyActivity = user?.userActiveMiningHours_LastWeek ?? 0;
 
   const fullActivityList = [
     ...leaderboard.map(m => ({ name: m.name, activity: m.activity, id: m.id })),
-    { name: user.name, activity: userWeeklyActivity, id: user.id }
+    { name: user?.name, activity: userWeeklyActivity, id: user?.id }
   ];
 
   const uniqueActivityList = Array.from(new Map(fullActivityList.map(item => [item.id, item])).values())
                               .sort((a,b) => b.activity - a.activity);
 
-  const userRankInFullList = uniqueActivityList.findIndex(u => u.id === user.id) +1;
+  const userRankInFullList = uniqueActivityList.findIndex(u => u.id === user?.id) +1;
 
-  const userBadges = user.badges || [];
+  const userBadges = user?.badges || [];
 
   const earnedGamificationBadges = userBadges
     .filter(badge => badge.earned && GAMIFICATION_BADGE_IDS.includes(badge.id))
@@ -129,7 +131,7 @@ export function TeamActivityCard() {
                 </TableHeader>
                 <TableBody>
                   {displayLeaderboard.map((member, index) => (
-                    <TableRow key={member.id} className={member.id === user.id ? 'bg-primary/10' : ''}>
+                    <TableRow key={member.id} className={member.id === user?.id ? 'bg-primary/10' : ''}>
                       <TableCell className="font-medium text-center">{index + 1}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 sm:gap-2">

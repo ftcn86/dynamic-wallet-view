@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import type { User } from '@/data/schemas';
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -26,7 +27,8 @@ import {
 } from '@/components/shared/icons';
 
 function ProfileCard() {
-    const { user, setUser } = useAuth();
+    const { user: rawUser, setUser } = useAuth();
+    const user = rawUser as User | null;
     const { toast } = useToast();
 
     const [displayName, setDisplayName] = useState(user?.name || '');
@@ -51,7 +53,7 @@ function ProfileCard() {
             const updatedUserData = { ...user, name: displayName, bio, avatarUrl };
             await mockApiCall({ data: updatedUserData }); 
             
-            setUser(updatedUserData); 
+            (setUser as (user: User) => void)(updatedUserData); 
             
             toast({
                 title: "Profile Saved!",
@@ -149,7 +151,8 @@ function ProfileCard() {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user, setUser } = useAuth();
+  const { user: rawUser, setUser } = useAuth();
+  const user = rawUser as User | null;
   const { toast } = useToast();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -179,7 +182,7 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     
-    setUser(prevUser => {
+    (setUser as (updater: (prevUser: User | null) => User | null) => void)((prevUser) => {
       if (!prevUser) return null;
       return {
         ...prevUser,
@@ -240,7 +243,7 @@ export default function SettingsPage() {
                   </Button>
                 ))}
               </div>
-               <p className="text-xs sm:text-sm text-muted-foreground">Choose between light, dark, or your system's default theme.</p>
+               <p className="text-xs sm:text-sm text-muted-foreground">Choose between light, dark, or your system&apos;s default theme.</p>
             </div>
           </CardContent>
         </Card>

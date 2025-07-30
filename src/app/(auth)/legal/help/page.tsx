@@ -12,11 +12,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { MessageSquareIcon, SendIcon } from '@/components/shared/icons';
 import { submitFeedback } from '@/services/feedbackService';
 import { useAuth } from '@/contexts/AuthContext';
+import type { User } from '@/data/schemas';
 
 function FeedbackCard() {
     const { t } = useTranslation();
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user } = useAuth() as { user: User | null };
     const [feedback, setFeedback] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 

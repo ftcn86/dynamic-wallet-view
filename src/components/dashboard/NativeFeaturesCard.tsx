@@ -41,7 +41,8 @@ export default function NativeFeaturesCard() {
     
     try {
       const sdk = getPiSDKInstance();
-      const availableFeatures = await sdk.getNativeFeatures();
+      // getNativeFeatures doesn't exist in the SDK, so we'll show all features as unavailable
+      const availableFeatures: string[] = [];
       
       const featureList: NativeFeature[] = Object.entries(FEATURE_DEFINITIONS).map(([key, def]) => ({
         name: def.name,

@@ -6,8 +6,8 @@ import { useCallback } from 'react';
 import type { LegalSection } from '@/data/schemas';
 
 // Helper to get nested values from a JSON object using a dot-separated path.
-function getNestedValue(obj: any, path: string): any {
-  return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+function getNestedValue(obj: unknown, path: string): unknown {
+  return path.split('.').reduce((acc, part) => acc && (acc as Record<string, unknown>)[part], obj);
 }
 
 /**
@@ -16,8 +16,8 @@ function getNestedValue(obj: any, path: string): any {
  */
 export function useTranslation() {
 
-  const getRawTranslation = useCallback((key: string): any => {
-    let value = getNestedValue(en, key);
+  const getRawTranslation = useCallback((key: string): unknown => {
+    const value = getNestedValue(en, key);
 
     if (value === undefined) {
       console.error(`Translation key "${key}" not found in en.json.`);
@@ -47,10 +47,10 @@ export function useTranslation() {
     if (params) {
       Object.keys(params).forEach(paramKey => {
         const regex = new RegExp(`{{\\s*${paramKey}\\s*}}`, 'g');
-        translation = translation.replace(regex, String(params[paramKey]));
+        translation = (translation as string).replace(regex, String(params[paramKey]));
       });
     }
-    return translation;
+    return translation as string;
   }, [getRawTranslation]);
 
   return { t, getRawTranslation, getLegalSections };

@@ -15,9 +15,10 @@ import { getBalanceHistory } from '@/services/piService';
 type ChartPeriod = '3M' | '6M' | '12M';
 
 export function BalanceFluctuationChartCard() {
-  const [chartData, setChartData] = useState([]);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<ChartPeriod>('6M');
 
   useEffect(() => {
     setIsLoading(true);
@@ -46,7 +47,6 @@ export function BalanceFluctuationChartCard() {
     </Card>
   );
 
-  const [period, setPeriod] = useState<ChartPeriod>('6M');
   const data = mockChartData[period];
 
   const chartConfig = {

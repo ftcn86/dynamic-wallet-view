@@ -103,24 +103,61 @@ export async function POST(request: NextRequest) {
       tokenExpiresAt: authResult.expiresAt,
     };
 
-    // In a real app with database, you would:
-    // 1. Check if user exists in database
-    // 2. Create new user or update existing user
-    // 3. Generate JWT session token
-    // 4. Store session in database
+    // Save user to database
+    const { UserService } = await import('@/services/databaseService');
     
-    // For now, return the user data directly
-    console.log('✅ User authentication successful:', {
-      userId: user.id,
-      username: user.username,
-      hasWalletAddress: !!user.walletAddress
-    });
+    try {
+      // Check if user already exists
+      let existingUser = await UserService.getUserById(piUser.uid);
+      
+      if (!existingUser) {
+        // Check by username as well
+        existingUser = await UserService.getUserByUsername(piUser.username);
+      }
+      
+      let dbUser: any;
+      if (existingUser) {
+        // Update existing user with latest data
+        console.log('🔄 Updating existing user in database');
+        dbUser = await UserService.updateUser((existingUser as any).id, {
+          username: piUser.username,
+          name: piUser.username,
+          email: piUser.profile?.email || '',
+          walletAddress: piUser.wallet_address || '',
+          lastActive: new Date().toISOString(),
+          accessToken: authResult.accessToken,
+          refreshToken: authResult.refreshToken,
+          tokenExpiresAt: authResult.expiresAt,
+        });
+      } else {
+        // Create new user
+        console.log('🆕 Creating new user in database');
+        dbUser = await UserService.createUser(user);
+      }
+      
+      console.log('✅ User saved to database:', {
+        userId: dbUser.id,
+        username: dbUser.username,
+        hasWalletAddress: !!dbUser.walletAddress
+      });
 
-    return NextResponse.json({
-      success: true,
-      user,
-      message: 'Authentication successful'
-    });
+      return NextResponse.json({
+        success: true,
+        user: dbUser,
+        message: 'Authentication successful'
+      });
+      
+    } catch (dbError) {
+      console.error('❌ Database error:', dbError);
+      // Return user data even if database save fails
+      console.log('⚠️ Database save failed, returning user data without persistence');
+      
+      return NextResponse.json({
+        success: true,
+        user,
+        message: 'Authentication successful (database save failed)'
+      });
+    }
 
   } catch (error) {
     console.error('❌ Authentication error:', error);

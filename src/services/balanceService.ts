@@ -6,6 +6,7 @@
  */
 
 import { getPiSDKInstance } from '@/lib/pi-network';
+import { authenticatedFetch } from '@/lib/api';
 
 export interface BalanceData {
   totalBalance: number;
@@ -31,7 +32,7 @@ export interface BalanceData {
  */
 export async function fetchUserBalance(): Promise<BalanceData> {
   try {
-    const res = await fetch('/api/user/me');
+    const res = await authenticatedFetch('/api/user/me');
     if (!res.ok) throw new Error('Failed to fetch balance');
     const data = await res.json();
     return data.user?.balanceBreakdown || {};

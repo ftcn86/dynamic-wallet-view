@@ -142,12 +142,10 @@ export default function DonatePage() {
                         const result = await response.json();
                         console.log('Payment approved on server:', paymentId, result);
                         
-                        // ✅ CORRECT: Call payment.approve() after server approval
-                        (payment as { approve: (id: string) => void }).approve(paymentId);
+                        // Payment is already approved by the server, no need to call payment.approve()
                     } catch (error) {
                         console.error('Server approval failed:', error);
-                        // Cancel the payment if server approval fails
-                        (payment as { cancel: (id: string) => void }).cancel(paymentId);
+                        // Server approval failed, but we don't need to cancel the payment object
                         throw error;
                     }
                 },
@@ -187,8 +185,7 @@ export default function DonatePage() {
                         const result = await response.json();
                         console.log('Payment completed on server:', paymentId, result);
                         
-                        // ✅ CORRECT: Call payment.complete() after server completion
-                        (payment as { complete: (id: string, txid: string) => void }).complete(paymentId, txid);
+                        // Payment is already completed by the server, no need to call payment.complete()
                         
                         // Add transaction to our app's history
                         addTransaction({

@@ -14,8 +14,32 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-    // TODO: Replace with real user/session extraction
-    const userId = 'mock_user_id'; // Replace with real user ID from session/JWT
+
+    const accessToken = authHeader.substring(7);
+    
+    // Validate Pi Network access token and get user
+    const { UserService } = await import('@/services/databaseService');
+    
+    let userId: string;
+    try {
+      // Find user by access token
+      const user = await UserService.getUserByAccessToken(accessToken);
+      
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Invalid access token' },
+          { status: 401 }
+        );
+      }
+      
+      userId = (user as any).id;
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -61,8 +85,32 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    // TODO: Replace with real user/session extraction
-    const userId = 'mock_user_id'; // Replace with real user ID from session/JWT
+
+    const accessToken = authHeader.substring(7);
+    
+    // Validate Pi Network access token and get user
+    const { UserService } = await import('@/services/databaseService');
+    
+    let userId: string;
+    try {
+      // Find user by access token
+      const user = await UserService.getUserByAccessToken(accessToken);
+      
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Invalid access token' },
+          { status: 401 }
+        );
+      }
+      
+      userId = (user as any).id;
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
 
     const { type, amount, status, from, to, description, blockExplorerUrl } = await request.json();
 

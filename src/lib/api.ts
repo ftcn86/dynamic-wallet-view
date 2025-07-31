@@ -37,3 +37,48 @@ export function mockApiCall<T>({
     }, latency);
   });
 }
+
+/**
+ * API utility functions for making authenticated requests
+ */
+
+/**
+ * Get authorization headers for API requests
+ */
+export function getAuthHeaders(): Record<string, string> {
+  // Try to get user from localStorage (same as AuthContext)
+  try {
+    const storedUserItem = localStorage.getItem('dynamic-wallet-user');
+    if (storedUserItem) {
+      const user = JSON.parse(storedUserItem);
+      if (user.accessToken) {
+        return {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.accessToken}`
+        };
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to get auth token:', error);
+  }
+  
+  // No fallback - let the API handle missing tokens properly
+  return {
+    'Content-Type': 'application/json'
+  };
+}
+
+/**
+ * Make an authenticated API request
+ */
+export async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = {
+    ...getAuthHeaders(),
+    ...options.headers
+  };
+  
+  return fetch(url, {
+    ...options,
+    headers
+  });
+}

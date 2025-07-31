@@ -7,6 +7,7 @@ import { getPiSDKInstance } from '@/lib/pi-network';
 import type { PiPayment, PiPaymentData } from '@/lib/pi-network';
 import { notifyA2UPaymentSent, notifyA2UPaymentFailed } from '@/services/notificationService';
 import { fetchUserBalance, type BalanceData } from '@/services/balanceService';
+import { authenticatedFetch } from '@/lib/api';
 
 // Payment callbacks interface
 export interface PaymentCallbacks {
@@ -110,8 +111,8 @@ function convertPiUserToAppUser(piUser: unknown, authResult?: unknown): User {
  * Authenticate user with Pi Network
  */
 export async function getAuthenticatedUser(): Promise<User> {
-  // Fetch from backend API
-  const res = await fetch('/api/user/me');
+  // Fetch from backend API with authentication
+  const res = await authenticatedFetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch user');
   const data = await res.json();
   return data.user;
@@ -408,8 +409,8 @@ export async function addTransaction(transaction: Omit<Transaction, 'id'> & { tx
  * Get notifications
  */
 export async function getNotifications(): Promise<Notification[]> {
-  // Fetch from real backend API
-  const res = await fetch('/api/notifications');
+  // Fetch from real backend API with authentication
+  const res = await authenticatedFetch('/api/notifications');
   if (!res.ok) throw new Error('Failed to fetch notifications');
   const data = await res.json();
   return data.notifications || [];
@@ -419,7 +420,7 @@ export async function getNotifications(): Promise<Notification[]> {
  * Get user badges
  */
 export async function getUserBadges(): Promise<unknown[]> {
-  const res = await fetch('/api/user/me');
+  const res = await authenticatedFetch('/api/user/me');
   if (!res.ok) throw new Error('Failed to fetch badges');
   const data = await res.json();
   return data.user?.badges || [];

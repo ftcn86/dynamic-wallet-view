@@ -65,16 +65,41 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Return notifications sorted by date (newest first)
-    const sortedNotifications = notifications.sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    const accessToken = authHeader.substring(7);
+    
+    // Validate Pi Network access token and get user
+    const { UserService, NotificationService } = await import('@/services/databaseService');
+    
+    let userId: string;
+    try {
+      // Find user by access token
+      const user = await UserService.getUserByAccessToken(accessToken);
+      
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Invalid access token' },
+          { status: 401 }
+        );
+      }
+      
+      userId = (user as any).id;
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
+
+    // Get notifications from database
+    const userNotifications = await NotificationService.getUserNotifications(userId);
+    const unreadCount = await NotificationService.getUnreadCount(userId);
 
     return NextResponse.json({
       success: true,
-      notifications: sortedNotifications,
-      count: sortedNotifications.length,
-      unreadCount: sortedNotifications.filter(n => !n.read).length,
+      notifications: userNotifications,
+      count: userNotifications.length,
+      unreadCount: unreadCount,
     });
   } catch (error) {
     console.error('Failed to fetch notifications:', error);

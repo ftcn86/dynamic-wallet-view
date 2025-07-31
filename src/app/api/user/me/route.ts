@@ -29,13 +29,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const sessionToken = authHeader.substring(7);
+    const accessToken = authHeader.substring(7);
     
-    // Mock user ID for development
-    const userId = 'mock_user_id';
+        // Validate Pi Network access token and get user
+    const { UserService } = await import('@/services/databaseService');
     
-    // For development, use a mock session token if none provided
-    const effectiveToken = sessionToken === 'mock-token' ? 'mock-token' : sessionToken;
+    let userId: string;
+    try {
+      // Find user by access token
+      const user = await UserService.getUserByAccessToken(accessToken);
+      
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Invalid access token' },
+          { status: 401 }
+        );
+      }
+      
+      userId = (user as any).id;
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
     
     // Fetch all user data
     const [balanceData, teamMembers, nodeData, transactions] = await Promise.all([

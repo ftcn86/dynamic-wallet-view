@@ -233,6 +233,22 @@ export class UserService {
     });
   }
 
+  static async getUserByAccessToken(accessToken: string): Promise<User | null> {
+    return await prisma.user.findFirst({
+      where: { accessToken },
+      include: {
+        settings: true,
+        balanceBreakdown: true,
+        unverifiedPiDetails: true,
+        badges: {
+          include: {
+            badge: true
+          }
+        }
+      }
+    });
+  }
+
   static async updateUser(id: string, userData: Partial<UserType>): Promise<User> {
     return await prisma.user.update({
       where: { id },

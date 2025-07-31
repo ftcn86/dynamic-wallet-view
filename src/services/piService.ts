@@ -149,11 +149,11 @@ export async function createPiPayment(
           console.log("Payment ready for server approval:", paymentId);
           
           // Store payment info
-          activePayments.set(paymentId, {
-            paymentId,
-            status: 'pending',
-            amount: paymentData.amount,
-            memo: paymentData.memo,
+        activePayments.set(paymentId, {
+          paymentId,
+          status: 'pending',
+          amount: paymentData.amount,
+          memo: paymentData.memo,
             createdAt: new Date().toISOString()
           });
           
@@ -167,7 +167,7 @@ export async function createPiPayment(
             
             if (response.ok) {
               console.log("✅ Payment approved by backend");
-              callbacks.onReadyForServerApproval(paymentId);
+        callbacks.onReadyForServerApproval(paymentId);
             } else {
               throw new Error(`Backend approval failed: ${response.status}`);
             }
@@ -201,7 +201,7 @@ export async function createPiPayment(
                 paymentInfo.status = 'completed';
                 paymentInfo.completedAt = new Date().toISOString();
               }
-              callbacks.onReadyForServerCompletion(paymentId, txid);
+        callbacks.onReadyForServerCompletion(paymentId, txid);
             } else {
               throw new Error(`Backend completion failed: ${response.status}`);
             }
@@ -228,9 +228,9 @@ export async function createPiPayment(
           }).catch(error => {
             console.error("❌ Backend cancellation failed:", error);
           });
-          
-          callbacks.onCancel(paymentId);
-        },
+        
+        callbacks.onCancel(paymentId);
+      },
         
         onError: (error: Error, payment: PiPayment) => {
           console.error("❌ Pi Network payment error:", error);
@@ -241,9 +241,9 @@ export async function createPiPayment(
             if (paymentInfo) {
               paymentInfo.status = 'failed';
             }
-          }
-          
-          callbacks.onError(error, payment);
+        }
+        
+        callbacks.onError(error, payment);
         }
       });
       

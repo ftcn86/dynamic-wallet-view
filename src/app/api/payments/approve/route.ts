@@ -35,19 +35,75 @@ export async function POST(request: NextRequest) {
       const currentPayment = await piPlatformClient.request(`/v2/payments/${paymentId}`);
       console.log(`[${now()}] 📋 Payment details:`, currentPayment);
 
-      // 3. Persist order/payment record in DB
-      // TODO: Replace with real user ID extraction
-      const userId = 'mock_user_id';
+      // 3. Get or create user for transaction
+      const { UserService } = await import('@/services/databaseService');
+      
+      // Try to get existing user or create default user
+      let user: any = await UserService.getUserById('default_user_id');
+      if (!user) {
+        // Create a default user if none exists
+        user = await UserService.createUser({
+          id: 'default_user_id',
+          username: 'default_user',
+          name: 'Default User',
+          avatar: '/default-avatar.png',
+          balance: 0,
+          miningRate: 0,
+          teamSize: 0,
+          isNodeOperator: false,
+          kycStatus: 'verified',
+          joinDate: new Date().toISOString(),
+          termsAccepted: true,
+          settings: {
+            theme: 'system',
+            language: 'en',
+            notifications: true,
+            emailNotifications: false,
+            remindersEnabled: false,
+            reminderHoursBefore: 1,
+          },
+          balanceBreakdown: {
+            transferableToMainnet: 0,
+            totalUnverifiedPi: 0,
+            currentlyInLockups: 0,
+          },
+          unverifiedPiDetails: {
+            fromReferralTeam: 0,
+            fromSecurityCircle: 0,
+            fromNodeRewards: 0,
+            fromOtherBonuses: 0,
+          },
+          badges: [],
+          userActiveMiningHours_LastWeek: 0,
+          userActiveMiningHours_LastMonth: 0,
+          activeMiningDays_LastWeek: 0,
+          activeMiningDays_LastMonth: 0,
+        });
+      }
+      
+      const userId = user.id;
       console.log(`[${now()}] 💾 Writing transaction to DB...`);
-      const orderRecord = await TransactionService.createTransaction(userId, {
-        type: 'sent',
-        amount: (currentPayment as { amount: number }).amount,
-        status: 'pending', // Use 'pending' for approval step
-        from: userId,
-        to: metadata?.to || 'Dynamic Wallet View',
-        description: (currentPayment as { memo?: string }).memo || 'Pi Payment',
-        blockExplorerUrl: undefined,
-      });
+      let orderRecord: any;
+      try {
+        orderRecord = await TransactionService.createTransaction(userId, {
+          type: 'sent',
+          amount: (currentPayment as { amount: number }).amount,
+          status: 'pending', // Use 'pending' for approval step
+          from: userId,
+          to: metadata?.to || 'Dynamic Wallet View',
+          description: (currentPayment as { memo?: string }).memo || 'Pi Payment',
+          blockExplorerUrl: undefined,
+        });
+      } catch (error: any) {
+        if (error.code === 'P2003') {
+          console.error(`[${now()}] ❌ User not found in database:`, userId);
+          return NextResponse.json(
+            { error: 'User account not found' },
+            { status: 404 }
+          );
+        }
+        throw error;
+      }
       console.log(`[${now()}] 💾 Transaction written to DB.`);
 
       // 4. Add notification for successful approval (optional)

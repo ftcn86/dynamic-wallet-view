@@ -43,8 +43,28 @@ model User {
   teamMembers TeamMember[]
   nodeData NodeData?
   balanceHistory BalanceHistory[]
+  sessions UserSession[]
 
   @@map("users")
+}
+
+model UserSession {
+  id String @id @default(cuid())
+  userId String
+  sessionToken String @unique
+  piAccessToken String
+  piRefreshToken String?
+  expiresAt DateTime
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionToken])
+  @@index([userId, isActive])
+  @@map("user_sessions")
 }
 
 model UserSettings {

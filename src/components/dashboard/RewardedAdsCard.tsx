@@ -18,32 +18,22 @@ import { LoadingSpinner } from '../shared/LoadingSpinner';
 export default function RewardedAdsCard() {
   const { user } = useAuth() as { user: User | null };
   const { toast } = useToast();
-  const [adsAvailable, setAdsAvailable] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [rewardProgress, setRewardProgress] = useState(0);
+  const [isAdReady, setIsAdReady] = useState(true);
   const [dailyWatches, setDailyWatches] = useState(0);
   const [lastRewardTime, setLastRewardTime] = useState<Date | null>(null);
-  const [isAdReady, setIsAdReady] = useState(false);
   const [canPayReward, setCanPayReward] = useState<{ canPay: boolean; reason: string }>({ canPay: false, reason: '' });
-  const MAX_DAILY_WATCHES = 5;
-  const REWARD_AMOUNT = 0.1; // 0.1 Pi per ad
+  const MAX_DAILY_WATCHES = 10;
+  const REWARD_AMOUNT = 0.01; // 0.01 Pi per ad
 
   useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-    // Simulate ad fetch
-    setTimeout(() => {
-      setAdsAvailable(false); // Simulate no ads for now
-      setIsLoading(false);
-    }, 1000);
-    // Also run the other setup logic here
-    checkAdReadiness();
-    loadDailyStats();
-    checkAppPaymentCapability();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (user) {
+      checkAdReadiness();
+      loadDailyStats();
+    }
+  }, [user]);
 
   if (isLoading) return (
     <Card className="shadow-lg flex items-center justify-center min-h-[120px]">
@@ -51,65 +41,124 @@ export default function RewardedAdsCard() {
     </Card>
   );
 
-  if (error) return (
-    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center bg-red-50 border border-red-200">
-      <span className="text-red-700 font-medium">{error}</span>
+  if (!user) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
+      <span className="text-gray-500">Please log in to watch ads.</span>
     </Card>
   );
 
-  if (!adsAvailable) return (
+  if (!isAdReady) return (
     <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
-      <span className="text-gray-500">No rewarded ads available at the moment.</span>
+      <span className="text-gray-500">Ads are not currently available. Please try again later.</span>
+    </Card>
+  );
+
+  if (dailyWatches >= MAX_DAILY_WATCHES) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
+      <span className="text-gray-500">You&apos;ve reached your daily limit. Come back tomorrow for more rewards!</span>
     </Card>
   );
 
   const checkAdReadiness = async () => {
     try {
-      // For development, simulate ad availability
-      setIsAdReady(Math.random() > 0.3); // 70% chance ad is ready
+      // Check if user can watch ads
+      const response = await fetch('/api/ads/readiness', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsAdReady(data.canWatch);
+      } else {
+        setIsAdReady(false);
+      }
     } catch (error) {
       console.error('Failed to check ad readiness:', error);
       setIsAdReady(false);
     }
   };
 
-  const loadDailyStats = () => {
-    // Load from localStorage
-    const today = new Date().toDateString();
-    const stored = localStorage.getItem('rewardedAdsStats');
-    
-    if (stored) {
-      const stats = JSON.parse(stored);
-      if (stats.date === today) {
-        setDailyWatches(stats.watches || 0);
-        setLastRewardTime(stats.lastReward ? new Date(stats.lastReward) : null);
+  const loadDailyStats = async () => {
+    try {
+      // Load from database via API
+      const response = await fetch('/api/ads/stats', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDailyWatches(data.dailyWatches || 0);
+        setLastRewardTime(data.lastRewardTime ? new Date(data.lastRewardTime) : null);
       } else {
-        // Reset for new day
-        setDailyWatches(0);
-        setLastRewardTime(null);
-        localStorage.setItem('rewardedAdsStats', JSON.stringify({
-          date: today,
-          watches: 0,
-          lastReward: null
-        }));
+        // Fallback to localStorage for backward compatibility
+        const today = new Date().toDateString();
+        const stored = localStorage.getItem('rewardedAdsStats');
+        
+        if (stored) {
+          const stats = JSON.parse(stored);
+          if (stats.date === today) {
+            setDailyWatches(stats.watches || 0);
+            setLastRewardTime(stats.lastReward ? new Date(stats.lastReward) : null);
+          } else {
+            setDailyWatches(0);
+            setLastRewardTime(null);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load daily stats:', error);
+      // Fallback to localStorage
+      const today = new Date().toDateString();
+      const stored = localStorage.getItem('rewardedAdsStats');
+      
+      if (stored) {
+        const stats = JSON.parse(stored);
+        if (stats.date === today) {
+          setDailyWatches(stats.watches || 0);
+          setLastRewardTime(stats.lastReward ? new Date(stats.lastReward) : null);
+        }
       }
     }
   };
 
-  const saveDailyStats = (rewarded: boolean) => {
-    const today = new Date().toDateString();
-    const newWatches = rewarded ? dailyWatches + 1 : dailyWatches;
-    const newLastReward = rewarded ? new Date().toISOString() : lastRewardTime?.toISOString();
-    
-    localStorage.setItem('rewardedAdsStats', JSON.stringify({
-      date: today,
-      watches: newWatches,
-      lastReward: newLastReward
-    }));
-    
-    setDailyWatches(newWatches);
-    if (rewarded) {
-      setLastRewardTime(new Date());
+  const saveDailyStats = async (rewarded: boolean) => {
+    try {
+      // Save to database via API
+      const newWatches = rewarded ? dailyWatches + 1 : dailyWatches;
+      const newLastReward = rewarded ? new Date().toISOString() : lastRewardTime?.toISOString();
+      
+      await fetch('/api/ads/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          dailyWatches: newWatches,
+          lastRewardTime: newLastReward,
+          rewarded
+        })
+      });
+      
+      setDailyWatches(newWatches);
+      if (rewarded) {
+        setLastRewardTime(new Date());
+      }
+    } catch (error) {
+      console.error('Failed to save daily stats:', error);
+      // Fallback to localStorage
+      const today = new Date().toDateString();
+      const newWatches = rewarded ? dailyWatches + 1 : dailyWatches;
+      const newLastReward = rewarded ? new Date().toISOString() : lastRewardTime?.toISOString();
+      
+      localStorage.setItem('rewardedAdsStats', JSON.stringify({
+        date: today,
+        watches: newWatches,
+        lastReward: newLastReward
+      }));
+      
+      setDailyWatches(newWatches);
+      if (rewarded) {
+        setLastRewardTime(new Date());
+      }
     }
   };
 

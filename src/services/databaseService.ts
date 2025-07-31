@@ -600,3 +600,60 @@ export class BalanceHistoryService {
     });
   }
 } 
+
+// Session Management
+export class SessionService {
+  static async createSession(sessionData: {
+    userId: string;
+    sessionToken: string;
+    piAccessToken: string;
+    piRefreshToken?: string;
+    expiresAt: Date;
+  }): Promise<unknown> {
+    return await prisma.userSession.create({
+      data: {
+        userId: sessionData.userId,
+        sessionToken: sessionData.sessionToken,
+        piAccessToken: sessionData.piAccessToken,
+        piRefreshToken: sessionData.piRefreshToken,
+        expiresAt: sessionData.expiresAt,
+      }
+    });
+  }
+
+  static async getSessionByToken(sessionToken: string): Promise<unknown> {
+    return await prisma.userSession.findUnique({
+      where: { sessionToken }
+    });
+  }
+
+  static async invalidateSession(sessionToken: string): Promise<void> {
+    await prisma.userSession.update({
+      where: { sessionToken },
+      data: { isActive: false }
+    });
+  }
+
+  static async invalidateAllUserSessions(userId: string): Promise<void> {
+    await prisma.userSession.updateMany({
+      where: { userId, isActive: true },
+      data: { isActive: false }
+    });
+  }
+
+  static async getActiveUserSessions(userId: string): Promise<unknown[]> {
+    return await prisma.userSession.findMany({
+      where: { userId, isActive: true }
+    });
+  }
+
+  static async cleanupExpiredSessions(): Promise<void> {
+    await prisma.userSession.updateMany({
+      where: {
+        expiresAt: { lt: new Date() },
+        isActive: true
+      },
+      data: { isActive: false }
+    });
+  }
+} 

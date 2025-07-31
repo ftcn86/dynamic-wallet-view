@@ -41,9 +41,6 @@ export type AuthContextType = Record<string, unknown>;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Storage key for user data
-const DYNAMIC_WALLET_USER_KEY = 'dynamic-wallet-user';
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,17 +52,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // Simple check for stored user session
-        const storedUserItem = localStorage.getItem(DYNAMIC_WALLET_USER_KEY);
-        if (storedUserItem) {
-          const storedUser = JSON.parse(storedUserItem) as User;
-          setUser(storedUser);
+        // Check if user is authenticated by calling the API
+        const response = await fetch('/api/user/me', {
+          credentials: 'include' // Include session cookies
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setUser(data.user);
+          }
         }
       } catch (error) {
         console.error("Error checking existing session:", error);
-        localStorage.removeItem(DYNAMIC_WALLET_USER_KEY);
       } finally {
-        // Complete loading state immediately
         setIsLoading(false);
       }
     };
@@ -79,15 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ? (newUserValue as (prevState: User | null) => User | null)(currentUser)
         : newUserValue;
 
-      try {
-        if (resolvedNewUser) {
-          localStorage.setItem(DYNAMIC_WALLET_USER_KEY, JSON.stringify(resolvedNewUser));
-        } else {
-          localStorage.removeItem(DYNAMIC_WALLET_USER_KEY);
-        }
-      } catch (error) {
-        console.error("Error saving user to localStorage:", error);
-      }
       return resolvedNewUser;
     });
   }, []);
@@ -244,7 +235,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const response = await fetch('/api/auth/signin', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ authResult })
+                  body: JSON.stringify({ authResult }),
+                  credentials: 'include' // Include session cookies
                 });
                 
                 if (!response.ok) {
@@ -298,10 +290,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [setUserInternal, handleIncompletePayment]); 
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     try {
-      // Clear stored user data
-      localStorage.removeItem(DYNAMIC_WALLET_USER_KEY);
+      // Call logout endpoint to invalidate session
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
       
       // If Pi SDK is available, logout from Pi Network
       if (typeof window !== 'undefined' && (window as Window & typeof globalThis & { Pi: PiSDK }).Pi && typeof (window as Window & typeof globalThis & { Pi: PiSDK }).Pi.logout === 'function') {
@@ -311,6 +306,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserInternal(null);
     } catch (error) {
       console.error('Logout error:', error);
+      // Still clear user state even if logout fails
+      setUserInternal(null);
     }
   }, [setUserInternal]);
 

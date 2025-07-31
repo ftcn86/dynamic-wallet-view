@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import { config } from '@/lib/config';
+import { createSession, setSessionCookie } from '@/lib/session';
 import type { User } from '@/data/schemas';
 
 /**
@@ -97,10 +98,10 @@ export async function POST(request: NextRequest) {
       userActiveMiningHours_LastMonth: 0,
       activeMiningDays_LastWeek: 0,
       activeMiningDays_LastMonth: 0,
-      // Store Pi Network tokens for API calls
-      accessToken: authResult.accessToken,
-      refreshToken: authResult.refreshToken,
-      tokenExpiresAt: authResult.expiresAt,
+      // Don't store tokens in user object anymore
+      accessToken: '',
+      refreshToken: '',
+      tokenExpiresAt: 0,
     };
 
     // Save user to database
@@ -125,9 +126,7 @@ export async function POST(request: NextRequest) {
           email: piUser.profile?.email || '',
           walletAddress: piUser.wallet_address || '',
           lastActive: new Date().toISOString(),
-          accessToken: authResult.accessToken,
-          refreshToken: authResult.refreshToken,
-          tokenExpiresAt: authResult.expiresAt,
+          // Don't store tokens in user table anymore
         });
       } else {
         // Create new user
@@ -141,22 +140,60 @@ export async function POST(request: NextRequest) {
         hasWalletAddress: !!dbUser.walletAddress
       });
 
-      return NextResponse.json({
+      // Create session
+      console.log('🔐 Creating session for user:', dbUser.id);
+      const { sessionToken, expiresAt } = await createSession(
+        dbUser.id,
+        authResult.accessToken,
+        authResult.refreshToken
+      );
+
+      // Create response
+      const response = NextResponse.json({
         success: true,
-        user: dbUser,
+        user: {
+          ...dbUser,
+          // Don't include sensitive tokens in response
+          accessToken: undefined,
+          refreshToken: undefined,
+          tokenExpiresAt: undefined,
+        },
         message: 'Authentication successful'
       });
+
+      // Set session cookie
+      setSessionCookie(response, sessionToken, expiresAt);
+
+      console.log('✅ Authentication completed successfully');
+      return response;
       
     } catch (dbError) {
       console.error('❌ Database error:', dbError);
-      // Return user data even if database save fails
-      console.log('⚠️ Database save failed, returning user data without persistence');
       
-      return NextResponse.json({
+      // Even if database save fails, create session for immediate use
+      console.log('⚠️ Database save failed, creating session anyway');
+      const { sessionToken, expiresAt } = await createSession(
+        user.id,
+        authResult.accessToken,
+        authResult.refreshToken
+      );
+
+      const response = NextResponse.json({
         success: true,
-        user,
+        user: {
+          ...user,
+          // Don't include sensitive tokens in response
+          accessToken: undefined,
+          refreshToken: undefined,
+          tokenExpiresAt: undefined,
+        },
         message: 'Authentication successful (database save failed)'
       });
+
+      // Set session cookie
+      setSessionCookie(response, sessionToken, expiresAt);
+      
+      return response;
     }
 
   } catch (error) {

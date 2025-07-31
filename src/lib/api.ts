@@ -44,25 +44,10 @@ export function mockApiCall<T>({
 
 /**
  * Get authorization headers for API requests
+ * Now uses session-based authentication instead of localStorage
  */
 export function getAuthHeaders(): Record<string, string> {
-  // Try to get user from localStorage (same as AuthContext)
-  try {
-    const storedUserItem = localStorage.getItem('dynamic-wallet-user');
-    if (storedUserItem) {
-      const user = JSON.parse(storedUserItem);
-      if (user.accessToken) {
-        return {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.accessToken}`
-        };
-      }
-    }
-  } catch (error) {
-    console.warn('Failed to get auth token:', error);
-  }
-  
-  // No fallback - let the API handle missing tokens properly
+  // Session-based authentication - cookies are automatically sent
   return {
     'Content-Type': 'application/json'
   };
@@ -70,6 +55,7 @@ export function getAuthHeaders(): Record<string, string> {
 
 /**
  * Make an authenticated API request
+ * Session cookies are automatically included by the browser
  */
 export async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = {
@@ -79,6 +65,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
   
   return fetch(url, {
     ...options,
-    headers
+    headers,
+    credentials: 'include' // Include cookies for session authentication
   });
 }

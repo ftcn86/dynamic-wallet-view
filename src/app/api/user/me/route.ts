@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserPiBalance, getTeamMembers, getNodeData, getTransactions } from '@/services/piService';
+import { getSessionFromRequest } from '@/lib/session';
 import type { User } from '@/data/schemas';
 
 /**
@@ -16,46 +17,40 @@ import type { User } from '@/data/schemas';
 
 export async function GET(request: NextRequest) {
   try {
-    // In a real app, you would:
-    // 1. Validate the session token from headers
-    // 2. Get user ID from the session
-    // 3. Fetch user data from database
+    // Get session from request cookies
+    const session = await getSessionFromRequest(request);
     
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!session) {
       return NextResponse.json(
-        { error: 'Authorization header required' },
+        { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const accessToken = authHeader.substring(7);
+    const userId = session.userId;
     
-        // Validate Pi Network access token and get user
-    const { UserService } = await import('@/services/databaseService');
+    // Get user from database
+    let userFromDb: any = null;
     
-    let userId: string;
     try {
-      // Find user by access token
-      const user = await UserService.getUserByAccessToken(accessToken);
-      
-      if (!user) {
-        return NextResponse.json(
-          { error: 'Invalid access token' },
-          { status: 401 }
-        );
-      }
-      
-      userId = (user as any).id;
-    } catch (error) {
-      console.error('❌ Token validation failed:', error);
+      const { UserService } = await import('@/services/databaseService');
+      userFromDb = await UserService.getUserById(userId);
+    } catch (dbError) {
+      console.error('❌ Database error:', dbError);
       return NextResponse.json(
-        { error: 'Invalid access token' },
-        { status: 401 }
+        { error: 'Failed to fetch user data' },
+        { status: 500 }
       );
     }
     
-    // Fetch all user data
+    if (!userFromDb) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Fetch all user data using session's Pi access token
     const [balanceData, teamMembers, nodeData, transactions] = await Promise.all([
       getUserPiBalance(),
       getTeamMembers(),
@@ -74,14 +69,14 @@ export async function GET(request: NextRequest) {
     const activeMiningDays_LastWeek = Math.floor(Math.random() * 7) + 1;
     const activeMiningDays_LastMonth = Math.floor(Math.random() * 30) + 7;
 
-    // Construct comprehensive user object
+    // Use database user data
     const userData: User = {
       id: userId,
-      username: 'mock_username',
-      name: 'Mock Pi User',
-      email: 'mock@example.com',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=mock_user',
-      bio: 'Pi Network Pioneer - Active miner and community member',
+      username: (userFromDb as any).username || 'unknown',
+      name: (userFromDb as any).name || 'Unknown User',
+      email: (userFromDb as any).email || '',
+      avatar: (userFromDb as any).avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=unknown',
+      bio: (userFromDb as any).bio || '',
       balance: (balanceData as { totalBalance: number }).totalBalance,
       miningRate: 0.0202, // Base rate + bonuses would be calculated
       isNodeOperator: nodeData.status !== 'offline',
@@ -110,7 +105,7 @@ export async function GET(request: NextRequest) {
       userActiveMiningHours_LastMonth,
       activeMiningDays_LastWeek,
       activeMiningDays_LastMonth,
-      termsAccepted: true, // Auto-accept terms for all users
+      termsAccepted: true,
       settings: {
         theme: 'system',
         language: 'en',
@@ -119,6 +114,14 @@ export async function GET(request: NextRequest) {
         remindersEnabled: true,
         reminderHoursBefore: 1,
       },
+      walletAddress: (userFromDb as any).walletAddress || '',
+      teamSize: (userFromDb as any).teamSize || 0,
+      kycStatus: (userFromDb as any).kycStatus || 'verified',
+      joinDate: (userFromDb as any).joinDate || new Date().toISOString(),
+      lastActive: (userFromDb as any).lastActive || new Date().toISOString(),
+      accessToken: '', // Don't include sensitive tokens
+      refreshToken: '', // Don't include sensitive tokens
+      tokenExpiresAt: 0, // Don't include sensitive tokens
     };
 
     return NextResponse.json({
@@ -149,20 +152,29 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Get session from request cookies
+    const session = await getSessionFromRequest(request);
+    
+    if (!session) {
       return NextResponse.json(
-        { error: 'Authorization header required' },
+        { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
     const { settings } = await request.json();
 
-    // In a real app, you would:
-    // 1. Validate the session token
-    // 2. Update user settings in database
-    // 3. Return updated user data
+    // Update user settings in database
+    try {
+      const { UserService } = await import('@/services/databaseService');
+      await UserService.updateUser(session.userId, { settings });
+    } catch (dbError) {
+      console.error('❌ Database error:', dbError);
+      return NextResponse.json(
+        { error: 'Failed to update settings' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

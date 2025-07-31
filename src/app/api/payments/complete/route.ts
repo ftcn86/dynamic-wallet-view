@@ -39,8 +39,11 @@ export async function POST(request: NextRequest) {
       // Try to get existing user or create default user
       let user: any = await UserService.getUserById('default_user_id');
       if (!user) {
-        // Create a default user if none exists
-        user = await UserService.createUser({
+        // Try to get by username first
+        user = await UserService.getUserByUsername('default_user');
+        if (!user) {
+          // Create a default user if none exists
+          user = await UserService.createUser({
           id: 'default_user_id',
           username: 'default_user',
           name: 'Default User',
@@ -77,6 +80,7 @@ export async function POST(request: NextRequest) {
           activeMiningDays_LastWeek: 0,
           activeMiningDays_LastMonth: 0,
         });
+        }
       }
       
       const userId = user.id;

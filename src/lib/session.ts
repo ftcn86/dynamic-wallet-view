@@ -109,10 +109,11 @@ export async function getSessionFromRequest(request: NextRequest): Promise<Sessi
 export function setSessionCookie(response: NextResponse, sessionToken: string, expiresAt: Date): NextResponse {
   response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true, // Always use secure in production
+    sameSite: 'lax', // Changed back to lax for Pi Browser compatibility
     expires: expiresAt,
     path: '/',
+    // Remove domain setting to let browser handle it automatically
   });
   
   return response;
@@ -122,7 +123,11 @@ export function setSessionCookie(response: NextResponse, sessionToken: string, e
  * Clear session cookie
  */
 export function clearSessionCookie(response: NextResponse): NextResponse {
-  response.cookies.delete(SESSION_COOKIE_NAME);
+  response.cookies.set(SESSION_COOKIE_NAME, '', {
+    expires: new Date(0),
+    path: '/',
+    // Remove domain setting to let browser handle it automatically
+  });
   return response;
 }
 

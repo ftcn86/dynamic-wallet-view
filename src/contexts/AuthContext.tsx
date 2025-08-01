@@ -52,20 +52,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // Check if user is authenticated by calling the API
-        const response = await fetch('/api/user/me', {
-          credentials: 'include' // Include session cookies
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.user) {
-            setUser(data.user);
+        // Check if user data exists in localStorage
+        if (typeof window !== 'undefined') {
+          const storedUser = localStorage.getItem('user');
+          const authTimestamp = localStorage.getItem('auth-timestamp');
+          
+          if (storedUser && authTimestamp) {
+            const user = JSON.parse(storedUser);
+            const timestamp = parseInt(authTimestamp);
+            const now = Date.now();
+            
+            // Check if session is still valid (24 hours)
+            if (now - timestamp < 24 * 60 * 60 * 1000) {
+              setUser(user);
+              setIsLoading(false);
+              return;
+            } else {
+              // Session expired, clear storage
+              localStorage.removeItem('user');
+              localStorage.removeItem('auth-timestamp');
+            }
           }
         }
+        
+        setIsLoading(false);
       } catch (error) {
         console.error("Error checking existing session:", error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -232,7 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
                 
                 // Send auth result to backend for processing (official demo pattern)
-                const response = await fetch('/api/auth/signin', {
+                const response = await fetch('/api/auth/pi', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ authResult }),

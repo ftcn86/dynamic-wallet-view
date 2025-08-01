@@ -36,28 +36,32 @@ PI_NETWORK_API_KEY="your-pi-api-key"
 
 ## Local Development Setup
 
-1. **Install Dependencies** (already done):
-   ```bash
+1. **Install Dependencies** (already done): ```bash
    npm install prisma @prisma/client @neondatabase/serverless bcryptjs jsonwebtoken
    npm install --save-dev @types/bcryptjs @types/jsonwebtoken
    ```
 
+
 2. **Initialize Prisma** (already done):
+
    ```bash
    npx prisma init
    ```
 
 3. **Generate Prisma Client**:
+
    ```bash
    npx prisma generate
    ```
 
 4. **Create Database Migration**:
+
    ```bash
    npx prisma migrate dev --name init
    ```
 
 5. **Seed Database** (optional):
+
    ```bash
    npx prisma db seed
    ```
@@ -103,4 +107,4 @@ npx prisma studio
 
 # Push schema changes (for development)
 npx prisma db push
-``` 
+```

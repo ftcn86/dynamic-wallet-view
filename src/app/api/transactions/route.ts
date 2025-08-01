@@ -1,65 +1,82 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTransactions } from '@/services/piService';
-import { getSessionFromRequest } from '@/lib/session';
+import { getPiPlatformAPIClient } from '@/lib/pi-network';
 
-/**
- * GET /api/transactions
- * Get transactions with pagination and sorting
- */
 export async function GET(request: NextRequest) {
   try {
-    // Get session from request cookies
-    const session = await getSessionFromRequest(request);
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
     
-    if (!session) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const userId = session.userId;
-
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-
-    // Fetch transactions from database
-    let transactions: any[] = [];
-    let total = 0;
+    const accessToken = authHeader.substring(7);
+    
+    // Validate token with Pi Network
+    const piPlatformClient = getPiPlatformAPIClient();
     
     try {
-      const { TransactionService } = await import('@/services/databaseService');
-      const result = await TransactionService.getUserTransactions(userId, page, limit);
-      transactions = result.transactions;
-      total = result.total;
+      await piPlatformClient.request('/v2/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
     } catch (error) {
-      console.log('⚠️ Using mock transactions due to error:', error);
-      const mockTransactions = await getTransactions();
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      transactions = mockTransactions.slice(startIndex, endIndex);
-      total = mockTransactions.length;
+      console.error('❌ Token validation failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
     }
 
-    const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    // Get user from database
+    const { UserService } = await import('@/services/databaseService');
+    const user = await UserService.getUserByAccessToken(accessToken);
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const userId = (user as any).id;
+
+    // Mock transaction data for now
+    const transactions = [
+      {
+        id: 'tx_001',
+        type: 'received',
+        amount: 10.5,
+        status: 'completed',
+        from: 'pi_network',
+        to: 'user_wallet',
+        description: 'Mining reward',
+        date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        blockExplorerUrl: 'https://explorer.minepi.com/tx/abc123',
+      },
+      {
+        id: 'tx_002',
+        type: 'sent',
+        amount: 5.0,
+        status: 'completed',
+        from: 'user_wallet',
+        to: 'merchant_wallet',
+        description: 'Payment for services',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        blockExplorerUrl: 'https://explorer.minepi.com/tx/def456',
+      },
+    ];
 
     return NextResponse.json({
       success: true,
       transactions,
-      pagination: {
-        page,
-        limit,
-        totalTransactions: total,
-        totalPages,
-        hasNextPage,
-        hasPrevPage,
-      },
     });
   } catch (error) {
-    console.error('Failed to fetch transactions:', error);
+    console.error('Transactions fetch error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch transactions' },
       { status: 500 }
@@ -67,70 +84,60 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * POST /api/transactions
- * Add a new transaction
- */
 export async function POST(request: NextRequest) {
   try {
-    // Get session from request cookies
-    const session = await getSessionFromRequest(request);
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
     
-    if (!session) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const userId = session.userId;
-
-    const { type, amount, status, from, to, description, blockExplorerUrl } = await request.json();
-
-    if (!type || !amount || !status || !description) {
+    const accessToken = authHeader.substring(7);
+    
+    // Validate token with Pi Network
+    const piPlatformClient = getPiPlatformAPIClient();
+    
+    try {
+      await piPlatformClient.request('/v2/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
       return NextResponse.json(
-        { error: 'Type, amount, status, and description are required' },
-        { status: 400 }
+        { error: 'Invalid access token' },
+        { status: 401 }
       );
     }
 
-    let newTransaction: any;
+    // Get user from database
+    const { UserService } = await import('@/services/databaseService');
+    const user = await UserService.getUserByAccessToken(accessToken);
     
-    try {
-      const { TransactionService } = await import('@/services/databaseService');
-      newTransaction = await TransactionService.createTransaction(userId, {
-        type,
-        amount: parseFloat(amount),
-        status,
-        from,
-        to,
-        description,
-        blockExplorerUrl: blockExplorerUrl || undefined,
-      });
-    } catch (error) {
-      console.log('⚠️ Using mock transaction due to error:', error);
-      newTransaction = {
-        id: `mock-${Date.now()}`,
-        userId,
-        date: new Date(),
-        type,
-        amount: parseFloat(amount),
-        status,
-        from,
-        to,
-        description,
-        blockExplorerUrl: blockExplorerUrl || undefined,
-      };
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
     }
 
-    console.log('Transaction created:', newTransaction);
+    const { transactionData } = await request.json();
+
+    // Create transaction in database
+    const { TransactionService } = await import('@/services/databaseService');
+    const transaction = await TransactionService.createTransaction((user as any).id, transactionData);
 
     return NextResponse.json({
       success: true,
-      transaction: newTransaction,
+      transaction,
     });
   } catch (error) {
-    console.error('Failed to create transaction:', error);
+    console.error('Transaction creation error:', error);
     return NextResponse.json(
       { error: 'Failed to create transaction' },
       { status: 500 }

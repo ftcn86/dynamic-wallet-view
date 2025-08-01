@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserPiBalance, getTeamMembers, getNodeData, getTransactions } from '@/services/piService';
-import { getSessionFromRequest } from '@/lib/session';
+import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import type { User } from '@/data/schemas';
 
 /**
@@ -17,24 +17,42 @@ import type { User } from '@/data/schemas';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get session from request cookies
-    const session = await getSessionFromRequest(request);
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
     
-    if (!session) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const userId = session.userId;
+    const accessToken = authHeader.substring(7);
     
-    // Get user from database
+    // Validate token with Pi Network
+    const piPlatformClient = getPiPlatformAPIClient();
+    let me;
+    
+    try {
+      me = await piPlatformClient.request('/v2/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
+
+    // Get user from database using access token
     let userFromDb: any = null;
     
     try {
       const { UserService } = await import('@/services/databaseService');
-      userFromDb = await UserService.getUserById(userId);
+      userFromDb = await UserService.getUserByAccessToken(accessToken);
     } catch (dbError) {
       console.error('❌ Database error:', dbError);
       return NextResponse.json(
@@ -49,6 +67,8 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const userId = (userFromDb as any).id;
     
     // Fetch all user data using session's Pi access token
     const [balanceData, teamMembers, nodeData, transactions] = await Promise.all([
@@ -152,13 +172,43 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Get session from request cookies
-    const session = await getSessionFromRequest(request);
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
     
-    if (!session) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
+      );
+    }
+
+    const accessToken = authHeader.substring(7);
+    
+    // Validate token with Pi Network
+    const piPlatformClient = getPiPlatformAPIClient();
+    
+    try {
+      await piPlatformClient.request('/v2/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Token validation failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
+
+    // Get user from database
+    const { UserService } = await import('@/services/databaseService');
+    const user = await UserService.getUserByAccessToken(accessToken);
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
 
@@ -166,8 +216,7 @@ export async function PUT(request: NextRequest) {
 
     // Update user settings in database
     try {
-      const { UserService } = await import('@/services/databaseService');
-      await UserService.updateUser(session.userId, { settings });
+      await UserService.updateUser((user as any).id, { settings });
     } catch (dbError) {
       console.error('❌ Database error:', dbError);
       return NextResponse.json(

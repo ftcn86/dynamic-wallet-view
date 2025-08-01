@@ -1,62 +1,115 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validatePiToken } from '@/services/piService';
+import { getPiPlatformAPIClient } from '@/lib/pi-network';
 
 /**
  * Pi Network Authentication API Endpoint
  * 
- * This endpoint validates Pi Network access tokens and creates user sessions.
- * In a real production app, this would:
- * 1. Validate the token with Pi Network's servers
- * 2. Create or update user in database
- * 3. Generate a JWT session token
- * 4. Return user data and session token
+ * Following the official Pi Network demo pattern:
+ * 1. Accept full authResult from frontend
+ * 2. Validate token with /v2/me endpoint
+ * 3. Create or update user in database
+ * 4. Return success response
  */
 
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken, user } = await request.json();
+    const { authResult } = await request.json();
 
-    if (!accessToken) {
+    if (!authResult || !authResult.accessToken) {
       return NextResponse.json(
-        { error: 'Access token is required' },
+        { error: 'Auth result with access token is required' },
         { status: 400 }
       );
     }
 
-    // Validate the Pi Network access token
-    const isValidToken = await validatePiToken(accessToken);
+    const { accessToken, user } = authResult;
+
+    console.log('🔍 Validating Pi Network access token...');
+    console.log('🔧 User UID:', user?.uid);
+    console.log('🔧 Username:', user?.username);
+
+    // Use Pi Platform API client to verify the token with /v2/me endpoint
+    const piPlatformClient = getPiPlatformAPIClient();
     
-    if (!isValidToken) {
+    try {
+      // Follow official demo pattern: use /v2/me endpoint directly
+      const me = await piPlatformClient.request('/v2/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      
+      console.log('✅ Pi Network token validation successful');
+      console.log('🔧 User data from /v2/me:', me);
+
+      // Create or update user in database
+      const { UserService } = await import('@/services/databaseService');
+      
+      let currentUser = await UserService.getUserByAccessToken(accessToken);
+      
+      if (currentUser) {
+        // Update existing user
+        currentUser = await UserService.updateUser((currentUser as any).id, {
+          accessToken,
+          lastActive: new Date().toISOString(),
+        });
+      } else {
+        // Create new user
+        currentUser = await UserService.createUser({
+          username: user.username,
+          name: user.profile ? `${user.profile.firstname || ''} ${user.profile.lastname || ''}`.trim() || user.username : user.username,
+          email: user.profile?.email,
+          walletAddress: user.wallet_address,
+          accessToken,
+          termsAccepted: true,
+          joinDate: new Date().toISOString(),
+          settings: {
+            theme: 'system',
+            language: 'en',
+            notifications: true,
+            emailNotifications: false,
+            remindersEnabled: false,
+            reminderHoursBefore: 1,
+          },
+          balanceBreakdown: {
+            transferableToMainnet: 0,
+            totalUnverifiedPi: 0,
+            currentlyInLockups: 0,
+          },
+          unverifiedPiDetails: {
+            fromReferralTeam: 0,
+            fromSecurityCircle: 0,
+            fromNodeRewards: 0,
+            fromOtherBonuses: 0,
+          },
+        });
+      }
+
+      console.log('✅ User authenticated successfully');
+      console.log('🔧 User ID:', (currentUser as any).id);
+
+      return NextResponse.json({
+        success: true,
+        message: "User signed in",
+        user: {
+          id: (currentUser as any).id,
+          username: (currentUser as any).username,
+          name: (currentUser as any).name,
+          email: (currentUser as any).email,
+          walletAddress: (currentUser as any).walletAddress,
+        }
+      });
+
+    } catch (platformError) {
+      console.error('❌ Pi Platform API validation failed:', platformError);
       return NextResponse.json(
-        { error: 'Invalid Pi Network access token' },
+        { error: 'Invalid access token' },
         { status: 401 }
       );
     }
 
-    // In a real app, you would:
-    // 1. Fetch or create user in your database
-    // 2. Generate a JWT session token
-    // 3. Store session information
-    
-    // For now, we'll return a mock session
-    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const response = {
-      success: true,
-      sessionToken,
-      user: {
-        id: user?.uid || 'mock_user_id',
-        username: user?.username || 'mock_username',
-        name: user?.profile ? `${user.profile.firstname} ${user.profile.lastname}` : 'Mock User',
-        email: user?.profile?.email || 'mock@example.com',
-        // Add other user fields as needed
-      },
-      expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours from now
-    };
-
-    return NextResponse.json(response);
   } catch (error) {
-    console.error('Pi Network authentication error:', error);
+    console.error('❌ Pi Network auth API error:', error);
     return NextResponse.json(
       { error: 'Authentication failed' },
       { status: 500 }
@@ -69,37 +122,52 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const sessionToken = searchParams.get('token');
-
-    if (!sessionToken) {
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Session token is required' },
-        { status: 400 }
+        { error: 'No valid authorization header' },
+        { status: 401 }
       );
     }
 
-    // In a real app, you would validate the session token
-    // For now, we'll return a mock validation
-    const isValidSession = sessionToken.startsWith('session_');
+    const accessToken = authHeader.substring(7);
+    
+    // Validate token with /v2/me endpoint
+    const piPlatformClient = getPiPlatformAPIClient();
+    const me = await piPlatformClient.request('/v2/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
 
-    if (!isValidSession) {
+    // Get user from database
+    const { UserService } = await import('@/services/databaseService');
+    const user = await UserService.getUserByAccessToken(accessToken);
+
+    if (!user) {
       return NextResponse.json(
-        { error: 'Invalid session token' },
-        { status: 401 }
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      valid: true,
-      // Add user data if needed
+      user: {
+        id: (user as any).id,
+        username: (user as any).username,
+        name: (user as any).name,
+        email: (user as any).email,
+        walletAddress: (user as any).walletAddress,
+      }
     });
+
   } catch (error) {
-    console.error('Session validation error:', error);
+    console.error('❌ Session validation error:', error);
     return NextResponse.json(
-      { error: 'Session validation failed' },
-      { status: 500 }
+      { error: 'Invalid session' },
+      { status: 401 }
     );
   }
 } 

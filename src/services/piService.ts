@@ -111,8 +111,31 @@ function convertPiUserToAppUser(piUser: unknown, authResult?: unknown): User {
  * Authenticate user with Pi Network
  */
 export async function getAuthenticatedUser(): Promise<User> {
+  // Get access token from localStorage
+  if (typeof window === 'undefined') {
+    throw new Error('Cannot access localStorage on server side');
+  }
+  
+  const storedUser = localStorage.getItem('user');
+  if (!storedUser) {
+    throw new Error('No authenticated user found');
+  }
+  
+  const user = JSON.parse(storedUser);
+  const accessToken = user.accessToken;
+  
+  if (!accessToken) {
+    throw new Error('No access token found');
+  }
+  
   // Fetch from backend API with authentication
-  const res = await authenticatedFetch('/api/user/me');
+  const res = await fetch('/api/user/me', {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
   if (!res.ok) throw new Error('Failed to fetch user');
   const data = await res.json();
   return data.user;

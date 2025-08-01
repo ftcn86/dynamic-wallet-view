@@ -1,44 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest, clearSessionCookie, invalidateSession } from '@/lib/session';
 
 /**
- * Logout Endpoint
+ * Logout API Endpoint
  * 
- * This endpoint invalidates the user's session and clears the session cookie.
+ * This endpoint handles user logout by clearing the user's session
+ * and invalidating their authentication.
  */
 
 export async function POST(request: NextRequest) {
   try {
-    // Get session from request cookies
-    const session = await getSessionFromRequest(request);
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
     
-    if (session) {
-      // Invalidate the session in database
-      await invalidateSession(session.sessionId);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'No valid authorization header' },
+        { status: 401 }
+      );
     }
 
-    // Create response
-    const response = NextResponse.json({
+    const accessToken = authHeader.substring(7);
+    
+    // Get user from database
+    const { UserService } = await import('@/services/databaseService');
+    const user = await UserService.getUserByAccessToken(accessToken);
+    
+    if (user) {
+      // Clear access token from user record
+      await UserService.updateUser((user as any).id, {
+        accessToken: undefined,
+        refreshToken: undefined,
+        tokenExpiresAt: undefined,
+      });
+    }
+
+    return NextResponse.json({
       success: true,
-      message: 'Logged out successfully'
+      message: 'User logged out successfully',
     });
-
-    // Clear session cookie
-    clearSessionCookie(response);
-
-    return response;
   } catch (error) {
     console.error('Logout error:', error);
-    
-    // Create response even if session invalidation fails
-    const response = NextResponse.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-
-    // Clear session cookie anyway
-    clearSessionCookie(response);
-
-    return response;
+    return NextResponse.json(
+      { error: 'Logout failed' },
+      { status: 500 }
+    );
   }
 } 

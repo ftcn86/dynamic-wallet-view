@@ -393,37 +393,23 @@ export async function addTransaction(transaction: Omit<Transaction, 'id'> & { tx
   // Add to mock data (in real app, this would save to database)
   mockTransactions.unshift(newTransaction);
   
-  // Add notification for new transaction
-  const { addNotification } = await import('@/services/notificationService');
-  
-  let notificationTitle = '';
-  let notificationDescription = '';
+  // Add notification for new transaction using Pi Network native notifications
+  const { notifyPaymentEvent, notifyMiningReward } = await import('@/services/piNotificationService');
   
   switch (transaction.type) {
     case 'sent':
-      notificationTitle = 'Payment Sent';
-      notificationDescription = `Successfully sent ${transaction.amount}π to ${transaction.to}`;
+      await notifyPaymentEvent('sent', transaction.amount, transaction.to);
       break;
     case 'received':
-      notificationTitle = 'Payment Received';
-      notificationDescription = `Received ${transaction.amount}π from ${transaction.from}`;
+      await notifyPaymentEvent('received', transaction.amount, undefined, transaction.from);
       break;
     case 'mining_reward':
-      notificationTitle = 'Mining Reward';
-      notificationDescription = `Earned ${transaction.amount}π from mining`;
+      await notifyMiningReward(transaction.amount);
       break;
     case 'node_bonus':
-      notificationTitle = 'Node Bonus';
-      notificationDescription = `Received ${transaction.amount}π node operation bonus`;
+      await notifyMiningReward(transaction.amount); // Treat as mining reward for notifications
       break;
   }
-  
-  addNotification(
-    'announcement',
-    notificationTitle,
-    notificationDescription,
-    '/dashboard/transactions'
-  );
   
   return newTransaction;
 }
@@ -432,8 +418,10 @@ export async function addTransaction(transaction: Omit<Transaction, 'id'> & { tx
  * Get notifications
  */
 export async function getNotifications(): Promise<Notification[]> {
-  // Fetch from real backend API with authentication
-  const res = await authenticatedFetch('/api/notifications');
+  // Fetch from real backend API with session cookies
+  const res = await fetch('/api/notifications', {
+    credentials: 'include' // Include session cookies
+  });
   if (!res.ok) throw new Error('Failed to fetch notifications');
   const data = await res.json();
   return data.notifications || [];

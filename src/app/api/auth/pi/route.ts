@@ -58,10 +58,13 @@ export async function POST(request: NextRequest) {
       hasWalletAddress: !!user.wallet_address
     });
 
-    // Save user to database (following demo pattern)
-    const { UserService } = await import('@/services/databaseService');
+    // Try to save user to database (with fallback)
+    let dbUser: any = null;
+    let useFallback = false;
     
     try {
+      const { UserService } = await import('@/services/databaseService');
+      
       // Check if user already exists
       let existingUser = await UserService.getUserById(user.uid);
       
@@ -70,7 +73,6 @@ export async function POST(request: NextRequest) {
         existingUser = await UserService.getUserByUsername(user.username);
       }
       
-      let dbUser: any;
       if (existingUser) {
         // Update existing user with latest data
         console.log('🔄 Updating existing user in database');
@@ -133,43 +135,50 @@ export async function POST(request: NextRequest) {
         username: dbUser.username,
         hasWalletAddress: !!dbUser.walletAddress
       });
-
-      // Create response (following demo pattern)
-      const response = NextResponse.json({
-        success: true,
-        user: {
-          id: dbUser.id,
-          username: dbUser.username,
-          name: dbUser.name,
-          email: dbUser.email,
-          walletAddress: dbUser.walletAddress,
-        },
-        message: 'Authentication successful'
-      });
-
-      // Set session cookie (following demo pattern)
-      response.cookies.set('pi-session', JSON.stringify({
-        userId: dbUser.id,
-        username: dbUser.username,
-        accessToken: accessToken,
-      }), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        path: '/',
-      });
-
-      console.log('✅ Authentication completed successfully');
-      return response;
       
     } catch (dbError) {
-      console.error('❌ Database error:', dbError);
-      return NextResponse.json(
-        { success: false, message: 'Database error occurred' },
-        { status: 500 }
-      );
+      console.error('❌ Database error, using fallback:', dbError);
+      useFallback = true;
+      
+      // Create fallback user object
+      dbUser = {
+        id: user.uid,
+        username: user.username,
+        name: user.username,
+        email: user.profile?.email || '',
+        walletAddress: user.wallet_address || '',
+      };
     }
+
+    // Create response (following demo pattern)
+    const response = NextResponse.json({
+      success: true,
+      user: {
+        id: dbUser.id,
+        username: dbUser.username,
+        name: dbUser.name,
+        email: dbUser.email,
+        walletAddress: dbUser.walletAddress,
+      },
+      message: 'Authentication successful',
+      useFallback: useFallback
+    });
+
+    // Set session cookie (following demo pattern)
+    response.cookies.set('pi-session', JSON.stringify({
+      userId: dbUser.id,
+      username: dbUser.username,
+      accessToken: accessToken,
+    }), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/',
+    });
+
+    console.log('✅ Authentication completed successfully');
+    return response;
 
   } catch (error) {
     console.error('❌ Authentication error:', error);

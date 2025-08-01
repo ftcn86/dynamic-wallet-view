@@ -57,39 +57,37 @@ let notifications: Notification[] = [
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Use session-based authentication (following demo pattern)
+    const sessionCookie = request.cookies.get('pi-session');
+    if (!sessionCookie?.value) {
       return NextResponse.json(
-        { error: 'Authorization header required' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    const accessToken = authHeader.substring(7);
-    
-    // Validate Pi Network access token and get user
-    const { UserService, NotificationService } = await import('@/services/databaseService');
-    
-    let userId: string;
+    let sessionData;
     try {
-      // Find user by access token
-      const user = await UserService.getUserByAccessToken(accessToken);
-      
-      if (!user) {
-        return NextResponse.json(
-          { error: 'Invalid access token' },
-          { status: 401 }
-        );
-      }
-      
-      userId = (user as any).id;
+      sessionData = JSON.parse(sessionCookie.value);
     } catch (error) {
-      console.error('❌ Token validation failed:', error);
+      console.error('❌ Invalid session cookie:', error);
       return NextResponse.json(
-        { error: 'Invalid access token' },
+        { error: 'Invalid session' },
         { status: 401 }
       );
     }
+
+    if (!sessionData.userId) {
+      return NextResponse.json(
+        { error: 'Invalid session data' },
+        { status: 401 }
+      );
+    }
+
+    const userId = sessionData.userId;
+    
+    // Get notifications from database
+    const { UserService, NotificationService } = await import('@/services/databaseService');
 
     // Get notifications from database
     const userNotifications = await NotificationService.getUserNotifications(userId);
@@ -116,10 +114,29 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Use session-based authentication (following demo pattern)
+    const sessionCookie = request.cookies.get('pi-session');
+    if (!sessionCookie?.value) {
       return NextResponse.json(
-        { error: 'Authorization header required' },
+        { error: 'No session found' },
+        { status: 401 }
+      );
+    }
+
+    let sessionData;
+    try {
+      sessionData = JSON.parse(sessionCookie.value);
+    } catch (error) {
+      console.error('❌ Invalid session cookie:', error);
+      return NextResponse.json(
+        { error: 'Invalid session' },
+        { status: 401 }
+      );
+    }
+
+    if (!sessionData.userId) {
+      return NextResponse.json(
+        { error: 'Invalid session data' },
         { status: 401 }
       );
     }

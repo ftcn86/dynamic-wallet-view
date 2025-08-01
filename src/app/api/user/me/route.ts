@@ -5,10 +5,10 @@ import type { User } from '@/data/schemas';
 /**
  * User Data API Endpoint
  * 
- * Following the official demo repository pattern:
+ * Following the official demo repository pattern with fallback support:
  * 1. Get user from session cookie
  * 2. Return user data with Pi Network information
- * 3. No token validation needed (session-based)
+ * 3. Fallback to mock data if database is unavailable
  */
 
 export async function GET(request: NextRequest) {
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const sessionCookie = request.cookies.get('pi-session');
     
     if (!sessionCookie?.value) {
+      console.log('❌ No session cookie found');
       return NextResponse.json(
         { error: 'No session found' },
         { status: 401 }
@@ -35,24 +36,80 @@ export async function GET(request: NextRequest) {
     }
 
     if (!sessionData.userId) {
+      console.log('❌ No userId in session data');
       return NextResponse.json(
         { error: 'Invalid session data' },
         { status: 401 }
       );
     }
 
-    // Get user from database
-    const { UserService } = await import('@/services/databaseService');
-    const user = await UserService.getUserById(sessionData.userId);
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+    console.log('✅ Session validated, userId:', sessionData.userId);
+
+    // Try to get user from database first
+    let user: any = null;
+    let useFallback = false;
+
+    try {
+      const { UserService } = await import('@/services/databaseService');
+      user = await UserService.getUserById(sessionData.userId);
+      
+      if (!user) {
+        console.log('⚠️ User not found in database, using fallback data');
+        useFallback = true;
+      } else {
+        console.log('✅ User found in database:', user.username);
+      }
+    } catch (dbError) {
+      console.error('❌ Database error, using fallback data:', dbError);
+      useFallback = true;
     }
 
-    // Get additional Pi Network data
+    // Fallback to session data if database is unavailable
+    if (useFallback) {
+      user = {
+        id: sessionData.userId,
+        username: sessionData.username || 'user',
+        name: sessionData.username || 'User',
+        email: '',
+        walletAddress: '',
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${sessionData.username || 'user'}`,
+        bio: '',
+        balance: 0,
+        miningRate: 0,
+        teamSize: 0,
+        isNodeOperator: false,
+        kycStatus: 'verified',
+        joinDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        termsAccepted: true,
+        settings: {
+          theme: 'system',
+          language: 'en',
+          notifications: true,
+          emailNotifications: false,
+          remindersEnabled: false,
+          reminderHoursBefore: 1,
+        },
+        balanceBreakdown: {
+          transferableToMainnet: 0,
+          totalUnverifiedPi: 0,
+          currentlyInLockups: 0,
+        },
+        unverifiedPiDetails: {
+          fromReferralTeam: 0,
+          fromSecurityCircle: 0,
+          fromNodeRewards: 0,
+          fromOtherBonuses: 0,
+        },
+        badges: [],
+        userActiveMiningHours_LastWeek: 0,
+        userActiveMiningHours_LastMonth: 0,
+        activeMiningDays_LastWeek: 0,
+        activeMiningDays_LastMonth: 0,
+      };
+    }
+
+    // Get additional Pi Network data (with fallback)
     let piBalance = 0;
     let teamMembers: any[] = [];
     let nodeData: any = null;
@@ -61,11 +118,13 @@ export async function GET(request: NextRequest) {
     try {
       // Use access token from session for Pi Network API calls
       if (sessionData.accessToken) {
+        console.log('🔍 Fetching Pi Network data...');
         const balanceResult = await getUserPiBalance();
         piBalance = typeof balanceResult === 'number' ? balanceResult : 0;
         teamMembers = await getTeamMembers();
         nodeData = await getNodeData();
         transactions = await getTransactions();
+        console.log('✅ Pi Network data fetched successfully');
       }
     } catch (error) {
       console.error('⚠️ Pi Network API error (using fallback data):', error);
@@ -73,44 +132,53 @@ export async function GET(request: NextRequest) {
     }
 
     // Return comprehensive user data
-    return NextResponse.json({
+    const responseData = {
       success: true,
       user: {
-        id: (user as any).id,
-        username: (user as any).username,
-        name: (user as any).name,
-        email: (user as any).email,
-        walletAddress: (user as any).walletAddress,
-        avatar: (user as any).avatar,
-        bio: (user as any).bio,
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        walletAddress: user.walletAddress,
+        avatar: user.avatar,
+        bio: user.bio,
         balance: piBalance,
-        miningRate: (user as any).miningRate || 0,
+        miningRate: user.miningRate || 0,
         teamSize: teamMembers.length,
-        isNodeOperator: (user as any).isNodeOperator || false,
-        kycStatus: (user as any).kycStatus || 'verified',
-        joinDate: (user as any).joinDate,
-        lastActive: (user as any).lastActive,
-        termsAccepted: (user as any).termsAccepted,
-        settings: (user as any).settings,
-        balanceBreakdown: (user as any).balanceBreakdown,
-        unverifiedPiDetails: (user as any).unverifiedPiDetails,
-        badges: (user as any).badges || [],
-        userActiveMiningHours_LastWeek: (user as any).userActiveMiningHours_LastWeek || 0,
-        userActiveMiningHours_LastMonth: (user as any).userActiveMiningHours_LastMonth || 0,
-        activeMiningDays_LastWeek: (user as any).activeMiningDays_LastWeek || 0,
-        activeMiningDays_LastMonth: (user as any).activeMiningDays_LastMonth || 0,
+        isNodeOperator: user.isNodeOperator || false,
+        kycStatus: user.kycStatus || 'verified',
+        joinDate: user.joinDate,
+        lastActive: user.lastActive,
+        termsAccepted: user.termsAccepted,
+        settings: user.settings,
+        balanceBreakdown: user.balanceBreakdown,
+        unverifiedPiDetails: user.unverifiedPiDetails,
+        badges: user.badges || [],
+        userActiveMiningHours_LastWeek: user.userActiveMiningHours_LastWeek || 0,
+        userActiveMiningHours_LastMonth: user.userActiveMiningHours_LastMonth || 0,
+        activeMiningDays_LastWeek: user.activeMiningDays_LastWeek || 0,
+        activeMiningDays_LastMonth: user.activeMiningDays_LastMonth || 0,
       },
       piData: {
         balance: piBalance,
-        teamMembers,
-        nodeData,
-        transactions: transactions.slice(0, 10), // Limit to recent transactions
-      }
-    });
+        teamMembers: teamMembers,
+        nodeData: nodeData,
+        transactions: transactions,
+      },
+      useFallback: useFallback
+    };
+
+    console.log('✅ User data returned successfully');
+    return NextResponse.json(responseData);
+
   } catch (error) {
-    console.error('User data fetch error:', error);
+    console.error('❌ User data API error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch user data' },
+      { 
+        success: false, 
+        error: 'Failed to fetch user data',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

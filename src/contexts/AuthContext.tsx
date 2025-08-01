@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
+        console.log('🔍 Checking existing session...');
         // Check if user is authenticated by calling the API
         const response = await fetch('/api/user/me', {
           credentials: 'include' // Include session cookies
@@ -31,11 +32,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.user) {
+            console.log('✅ Existing session found:', data.user.username);
             setUser(data.user);
+          } else {
+            console.log('⚠️ No valid session found');
           }
+        } else {
+          console.log('❌ Session check failed:', response.status);
         }
       } catch (error) {
-        console.error("Error checking existing session:", error);
+        console.error("❌ Error checking existing session:", error);
       } finally {
         setIsLoading(false);
       }
@@ -59,11 +65,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Authentication timeout')), 30000); // 30 seconds
+      });
+
       // Follow official demo pattern: use window.Pi.authenticate directly
       const scopes = ['username', 'payments', 'wallet_address'];
       console.log('🔍 Authenticating with scopes:', scopes);
       
-      const authResult = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
+      const authResult = await Promise.race([
+        window.Pi.authenticate(scopes, onIncompletePaymentFound),
+        timeoutPromise
+      ]);
+      
       console.log('✅ Pi Network authentication successful:', authResult);
 
       // Send auth result to backend for processing (following demo pattern)

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPiPlatformAPIClient } from '@/lib/pi-network';
 
 /**
  * Pi Network Authentication API Endpoint
  * 
- * Following the official Pi Network demo repository pattern:
+ * Following the pure user app pattern:
  * 1. Accept authResult from frontend
- * 2. Validate with /v2/me endpoint
- * 3. Store user in session (not tokens)
+ * 2. Store minimal user data (no token validation)
+ * 3. Set simple session cookie
  * 4. Return success response
  */
 
@@ -18,12 +17,11 @@ export async function POST(request: NextRequest) {
 
     console.log('📋 Auth result received:', {
       hasAuthResult: !!authResult,
-      hasAccessToken: !!authResult?.accessToken,
       hasUser: !!authResult?.user,
       username: authResult?.user?.username
     });
 
-    if (!authResult || !authResult.accessToken || !authResult.user) {
+    if (!authResult || !authResult.user) {
       console.error('❌ Invalid authentication data');
       return NextResponse.json(
         { success: false, message: 'Invalid authentication data' },
@@ -31,26 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { accessToken, user } = authResult;
-
-    // Validate with Pi Platform API (following official docs)
-    console.log('🔍 Validating with Pi Platform API...');
-    const piPlatformClient = getPiPlatformAPIClient();
-    
-    try {
-      const me = await piPlatformClient.request('/v2/me', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      console.log('✅ Pi Platform API validation successful');
-    } catch (error) {
-      console.error('❌ Pi Platform API validation failed:', error);
-      return NextResponse.json(
-        { success: false, message: 'Invalid access token' },
-        { status: 401 }
-      );
-    }
+    const { user } = authResult;
 
     console.log('👤 Processing user data:', {
       username: user.username,
@@ -58,7 +37,7 @@ export async function POST(request: NextRequest) {
       hasWalletAddress: !!user.wallet_address
     });
 
-    // Try to save user to database (with fallback)
+    // Store minimal user data in database (optional)
     let dbUser: any = null;
     let useFallback = false;
     
@@ -84,7 +63,7 @@ export async function POST(request: NextRequest) {
           lastActive: new Date().toISOString(),
         });
       } else {
-        // Create new user
+        // Create new user with minimal data
         console.log('🆕 Creating new user in database');
         const newUser = {
           id: user.uid,
@@ -94,11 +73,6 @@ export async function POST(request: NextRequest) {
           walletAddress: user.wallet_address || '',
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
           bio: '',
-          balance: 0,
-          miningRate: 0,
-          teamSize: 0,
-          isNodeOperator: false,
-          kycStatus: 'verified' as const,
           joinDate: new Date().toISOString(),
           lastActive: new Date().toISOString(),
           termsAccepted: true,
@@ -110,22 +84,6 @@ export async function POST(request: NextRequest) {
             remindersEnabled: false,
             reminderHoursBefore: 1,
           },
-          balanceBreakdown: {
-            transferableToMainnet: 0,
-            totalUnverifiedPi: 0,
-            currentlyInLockups: 0,
-          },
-          unverifiedPiDetails: {
-            fromReferralTeam: 0,
-            fromSecurityCircle: 0,
-            fromNodeRewards: 0,
-            fromOtherBonuses: 0,
-          },
-          badges: [],
-          userActiveMiningHours_LastWeek: 0,
-          userActiveMiningHours_LastMonth: 0,
-          activeMiningDays_LastWeek: 0,
-          activeMiningDays_LastMonth: 0,
         };
         dbUser = await UserService.createUser(newUser);
       }
@@ -150,7 +108,7 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Create response (following demo pattern)
+    // Create response (pure user app pattern)
     const response = NextResponse.json({
       success: true,
       user: {
@@ -164,11 +122,10 @@ export async function POST(request: NextRequest) {
       useFallback: useFallback
     });
 
-    // Set session cookie (following demo pattern)
+    // Set simple session cookie (no access token needed)
     response.cookies.set('pi-session', JSON.stringify({
       userId: dbUser.id,
       username: dbUser.username,
-      accessToken: accessToken,
     }), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -193,32 +150,39 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Validate session token
+ * Simple session validation (no token needed)
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const sessionCookie = request.cookies.get('pi-session');
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!sessionCookie?.value) {
       return NextResponse.json(
-        { error: 'No valid authorization header' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    const accessToken = authHeader.substring(7);
-    
-    // Validate token with /v2/me endpoint
-    const piPlatformClient = getPiPlatformAPIClient();
-    const me = await piPlatformClient.request('/v2/me', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
+    let sessionData;
+    try {
+      sessionData = JSON.parse(sessionCookie.value);
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid session' },
+        { status: 401 }
+      );
+    }
+
+    if (!sessionData.userId) {
+      return NextResponse.json(
+        { error: 'Invalid session data' },
+        { status: 401 }
+      );
+    }
 
     // Get user from database
     const { UserService } = await import('@/services/databaseService');
-    const user = await UserService.getUserByAccessToken(accessToken);
+    const user = await UserService.getUserById(sessionData.userId);
 
     if (!user) {
       return NextResponse.json(

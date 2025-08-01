@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserPiBalance, getTeamMembers, getNodeData, getTransactions } from '@/services/piService';
 import type { User } from '@/data/schemas';
 
 /**
  * User Data API Endpoint
  * 
- * Following the official demo repository pattern with fallback support:
- * 1. Get user from session cookie
- * 2. Return user data with Pi Network information
- * 3. Fallback to mock data if database is unavailable
+ * Following the pure user app pattern:
+ * 1. Get basic user profile from session
+ * 2. Return minimal user data (no Pi Network API calls)
+ * 3. Let frontend handle Pi Network data via SDK
  */
 
 export async function GET(request: NextRequest) {
   try {
-    // Get session from cookie (following demo pattern)
+    // Get session from cookie
     const sessionCookie = request.cookies.get('pi-session');
     
     if (!sessionCookie?.value) {
@@ -45,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Session validated, userId:', sessionData.userId);
 
-    // Try to get user from database first
+    // Get user from database (basic profile only)
     let user: any = null;
     let useFallback = false;
 
@@ -74,64 +73,21 @@ export async function GET(request: NextRequest) {
         walletAddress: '',
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${sessionData.username || 'user'}`,
         bio: '',
-        balance: 0,
-        miningRate: 0,
-        teamSize: 0,
-        isNodeOperator: false,
-        kycStatus: 'verified',
         joinDate: new Date().toISOString(),
         lastActive: new Date().toISOString(),
         termsAccepted: true,
         settings: {
-          theme: 'system',
+          theme: 'system' as const,
           language: 'en',
           notifications: true,
           emailNotifications: false,
           remindersEnabled: false,
           reminderHoursBefore: 1,
         },
-        balanceBreakdown: {
-          transferableToMainnet: 0,
-          totalUnverifiedPi: 0,
-          currentlyInLockups: 0,
-        },
-        unverifiedPiDetails: {
-          fromReferralTeam: 0,
-          fromSecurityCircle: 0,
-          fromNodeRewards: 0,
-          fromOtherBonuses: 0,
-        },
-        badges: [],
-        userActiveMiningHours_LastWeek: 0,
-        userActiveMiningHours_LastMonth: 0,
-        activeMiningDays_LastWeek: 0,
-        activeMiningDays_LastMonth: 0,
       };
     }
 
-    // Get additional Pi Network data (with fallback)
-    let piBalance = 0;
-    let teamMembers: any[] = [];
-    let nodeData: any = null;
-    let transactions: any[] = [];
-
-    try {
-      // Use access token from session for Pi Network API calls
-      if (sessionData.accessToken) {
-        console.log('🔍 Fetching Pi Network data...');
-        const balanceResult = await getUserPiBalance();
-        piBalance = typeof balanceResult === 'number' ? balanceResult : 0;
-        teamMembers = await getTeamMembers();
-        nodeData = await getNodeData();
-        transactions = await getTransactions();
-        console.log('✅ Pi Network data fetched successfully');
-      }
-    } catch (error) {
-      console.error('⚠️ Pi Network API error (using fallback data):', error);
-      // Continue with fallback data
-    }
-
-    // Return comprehensive user data
+    // Return basic user data (no Pi Network data)
     const responseData = {
       success: true,
       user: {
@@ -142,30 +98,13 @@ export async function GET(request: NextRequest) {
         walletAddress: user.walletAddress,
         avatar: user.avatar,
         bio: user.bio,
-        balance: piBalance,
-        miningRate: user.miningRate || 0,
-        teamSize: teamMembers.length,
-        isNodeOperator: user.isNodeOperator || false,
-        kycStatus: user.kycStatus || 'verified',
         joinDate: user.joinDate,
         lastActive: user.lastActive,
         termsAccepted: user.termsAccepted,
         settings: user.settings,
-        balanceBreakdown: user.balanceBreakdown,
-        unverifiedPiDetails: user.unverifiedPiDetails,
-        badges: user.badges || [],
-        userActiveMiningHours_LastWeek: user.userActiveMiningHours_LastWeek || 0,
-        userActiveMiningHours_LastMonth: user.userActiveMiningHours_LastMonth || 0,
-        activeMiningDays_LastWeek: user.activeMiningDays_LastWeek || 0,
-        activeMiningDays_LastMonth: user.activeMiningDays_LastMonth || 0,
       },
-      piData: {
-        balance: piBalance,
-        teamMembers: teamMembers,
-        nodeData: nodeData,
-        transactions: transactions,
-      },
-      useFallback: useFallback
+      useFallback: useFallback,
+      message: 'Use Pi Browser for real-time balance and transaction data'
     };
 
     console.log('✅ User data returned successfully');
@@ -189,7 +128,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Get session from cookie (following demo pattern)
+    // Get session from cookie
     const sessionCookie = request.cookies.get('pi-session');
     
     if (!sessionCookie?.value) {

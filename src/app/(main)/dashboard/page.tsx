@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,13 +48,40 @@ import {
 const TABS = ['overview', 'portfolio', 'achievements', 'analysis'];
 
 export default function DashboardPage() {
-  const { user: rawUser } = useAuth();
+  const { user: rawUser, getPiBalance, isPiBrowserAvailable } = useAuth();
   const user = rawUser as User | null;
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  const [piBalance, setPiBalance] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  
   const initialTab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(TABS.includes(initialTab as string) ? initialTab as string : 'overview');
+
+  // Fetch real-time Pi balance from SDK
+  useEffect(() => {
+    const fetchPiBalance = async () => {
+      if (!isPiBrowserAvailable) {
+        console.log('⚠️ Pi Browser not available, using fallback data');
+        return;
+      }
+
+      try {
+        setBalanceLoading(true);
+        const balance = await getPiBalance();
+        setPiBalance(balance);
+        console.log('✅ Pi balance fetched:', balance);
+      } catch (error) {
+        console.error('❌ Error fetching Pi balance:', error);
+        setPiBalance(null);
+      } finally {
+        setBalanceLoading(false);
+      }
+    };
+
+    fetchPiBalance();
+  }, [getPiBalance, isPiBrowserAvailable]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -73,6 +100,10 @@ export default function DashboardPage() {
     );
   }
 
+  // Use real-time Pi balance if available, otherwise fallback to user data
+  const displayBalance = piBalance !== null ? piBalance : (user.balance || 0);
+  const balanceStatus = piBalance !== null ? 'live' : 'fallback';
+
   // TODO: Replace mockTeam with real API data
   // const { team, isLoading: teamLoading } = useTeam();
   // const activeTeamMembers = team?.filter(m => m.status === 'active').length || 0;
@@ -88,9 +119,17 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 auto-rows-fr min-w-0">
         <KPICard
           title="Total Pi Balance"
-          value={(user.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}) + ' π'}
+          value={
+            balanceLoading 
+              ? 'Loading...' 
+              : displayBalance.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}) + ' π'
+          }
           icon={<WalletIcon />}
-          footerValue={`~$${((user.balance || 0) * 0.042).toFixed(2)} USD`}
+          footerValue={
+            balanceStatus === 'live' 
+              ? `~$${(displayBalance * 0.042).toFixed(2)} USD (Live)` 
+              : `~$${(displayBalance * 0.042).toFixed(2)} USD (Fallback)`
+          }
           change="+2.3%"
         />
 

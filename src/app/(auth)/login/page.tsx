@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 import type { User } from '@/data/schemas';
 
 export default function LoginPage() {
@@ -62,8 +63,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
-            <span className="text-2xl font-bold text-white">P</span>
+          <div className="mx-auto mb-4 flex justify-center">
+            <Image
+              src="/logo.png"
+              alt="Pi Network"
+              width={80}
+              height={80}
+              className="rounded-full"
+              priority
+            />
           </div>
           <CardTitle className="text-2xl font-bold">Dynamic Wallet View</CardTitle>
           <CardDescription>

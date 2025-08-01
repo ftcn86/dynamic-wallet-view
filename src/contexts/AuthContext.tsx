@@ -10,6 +10,10 @@ interface AuthContextType {
   error: string | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  getPiUserData: () => Promise<any>;
+  getPiBalance: () => Promise<number | null>;
+  getPiTransactions: () => Promise<any[]>;
+  isPiBrowserAvailable: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,8 +22,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPiBrowserAvailable, setIsPiBrowserAvailable] = useState(false);
 
-  // Check for existing session on mount (following demo pattern)
+  // Check for existing session on mount
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
@@ -47,6 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    // Check Pi Browser availability
+    if (typeof window !== 'undefined' && window.Pi) {
+      setIsPiBrowserAvailable(true);
+      console.log('✅ Pi Browser detected');
+    } else {
+      console.log('⚠️ Pi Browser not available');
+    }
+
     checkExistingSession();
   }, []);
 
@@ -70,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => reject(new Error('Authentication timeout')), 30000); // 30 seconds
       });
 
-      // Follow official demo pattern: use window.Pi.authenticate directly
+      // Use Pi SDK for authentication (pure user app pattern)
       const scopes = ['username', 'payments', 'wallet_address'];
       console.log('🔍 Authenticating with scopes:', scopes);
       
@@ -81,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log('✅ Pi Network authentication successful:', authResult);
 
-      // Send auth result to backend for processing (following demo pattern)
+      // Send auth result to backend for basic profile storage
       const response = await fetch('/api/auth/pi', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,33 +126,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      setIsLoading(true);
+      console.log('🚪 Signing out...');
       
-      // Call logout endpoint to invalidate session
+      // Clear session on backend
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
       
+      // Clear local state
       setUser(null);
       setError(null);
-      console.log('✅ User signed out successfully');
       
+      console.log('✅ Sign out completed');
     } catch (error) {
       console.error('❌ Sign out error:', error);
-      // Even if logout fails, clear local state
-      setUser(null);
-      setError(null);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Handle incomplete payments (following demo pattern)
+  // Get real-time Pi Network user data from SDK
+  const getPiUserData = async () => {
+    try {
+      if (typeof window === 'undefined' || !window.Pi) {
+        throw new Error('Pi Network SDK not available');
+      }
+
+      const currentUser = window.Pi.currentUser();
+      if (!currentUser) {
+        throw new Error('No authenticated user found');
+      }
+
+      return currentUser;
+    } catch (error) {
+      console.error('❌ Error getting Pi user data:', error);
+      throw error;
+    }
+  };
+
+  // Get real-time balance from Pi SDK
+  const getPiBalance = async (): Promise<number | null> => {
+    try {
+      if (typeof window === 'undefined' || !window.Pi) {
+        return null;
+      }
+
+      const currentUser = window.Pi.currentUser();
+      if (!currentUser) {
+        return null;
+      }
+
+      // Try to get balance from current user
+      if (currentUser.balance) {
+        return currentUser.balance;
+      }
+
+      // If not available, return null (will be handled by UI)
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting Pi balance:', error);
+      return null;
+    }
+  };
+
+  // Get transactions from Pi SDK
+  const getPiTransactions = async (): Promise<any[]> => {
+    try {
+      if (typeof window === 'undefined' || !window.Pi) {
+        return [];
+      }
+
+      // Pi SDK doesn't provide direct transaction access
+      // This would need to be implemented based on available SDK methods
+      return [];
+    } catch (error) {
+      console.error('❌ Error getting Pi transactions:', error);
+      return [];
+    }
+  };
+
   const onIncompletePaymentFound = (payment: any) => {
-    console.log('⚠️ Incomplete payment found:', payment);
-    // Handle incomplete payment - you might want to show a modal or redirect
-    // For now, just log it
+    console.log('💰 Incomplete payment found:', payment);
+    // Handle incomplete payment
   };
 
   const value: AuthContextType = {
@@ -148,6 +215,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     signIn,
     signOut,
+    getPiUserData,
+    getPiBalance,
+    getPiTransactions,
+    isPiBrowserAvailable,
   };
 
   return (
@@ -165,6 +236,7 @@ export function useAuth(): AuthContextType {
   return context;
 }
 
+// Global type declaration for Pi Network SDK
 declare global {
   interface Window {
     Pi?: any;

@@ -1,151 +1,139 @@
 
 "use client"
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, AlertCircle } from 'lucide-react';
 import type { User } from '@/data/schemas';
 
 export default function LoginPage() {
-  const { user, login, isLoading: isAuthContextLoading, error, status } = useAuth() as { user: User | null, login: () => Promise<User | null>, isLoading: boolean, error: string | null, status: string | null };
+  const { user, signIn, isLoading: isAuthContextLoading, error } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Redirect if already authenticated
   useEffect(() => {
-    if (!isAuthContextLoading && user) {
-      // All users now have terms accepted, go directly to dashboard
-      router.replace('/dashboard');
+    if (user && !isAuthContextLoading) {
+      router.push('/dashboard');
     }
   }, [user, isAuthContextLoading, router]);
 
-  const handleLogin = async () => {
-    setIsLoggingIn(true);
-    
+  const handleSignIn = async () => {
     try {
-      const loggedInUser = await login();
+      setIsLoggingIn(true);
+      await signIn();
       
-      if (loggedInUser) {
-        // All users now have terms accepted, go directly to dashboard
-        router.push('/dashboard');
-      } else {
-        toast({
-          title: "Authentication failed",
-          description: "Could not authenticate with Pi Network. Please try again.",
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Login error:', error);
       toast({
-        title: "Authentication error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred during authentication.",
-        variant: 'destructive',
+        title: "Success!",
+        description: "You have been signed in successfully.",
+      });
+      
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Sign in error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to sign in",
+        variant: "destructive",
       });
     } finally {
       setIsLoggingIn(false);
     }
   };
-  
-  if (isAuthContextLoading || (!isAuthContextLoading && user)) {
+
+  if (isAuthContextLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-        <LoadingSpinner size={48} />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-purple-600" />
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* App Logo and Title */}
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative h-16 w-16">
-            <Image
-              src="/logo.png"
-              alt="Dynamic Wallet View Logo"
-              fill
-              sizes="64px"
-              className="object-contain"
-              priority
-            />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+            <span className="text-2xl font-bold text-white">P</span>
           </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight">Dynamic Wallet View</h1>
-            <p className="text-muted-foreground">
-              Your comprehensive Pi Network dashboard
+          <CardTitle className="text-2xl font-bold">Dynamic Wallet View</CardTitle>
+          <CardDescription>
+            Your comprehensive Pi Network dashboard
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="text-center space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Welcome Back</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Sign in to your Pi Network account to continue
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <Button
+                onClick={handleSignIn}
+                disabled={isLoggingIn}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                size="lg"
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Authenticating with Pi Network...
+                  </>
+                ) : (
+                  'Sign in with Pi Network'
+                )}
+              </Button>
+              
+              {error && (
+                <Button
+                  variant="outline"
+                  onClick={handleSignIn}
+                  disabled={isLoggingIn}
+                  className="w-full"
+                >
+                  Authentication timeout. Please try again.
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          <div className="text-center pt-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Sign in to access your Pi Network dashboard
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+              By signing in, you agree to our{' '}
+              <a href="/legal/terms" className="underline hover:text-purple-600">
+                Terms of Service
+              </a>{' '}
+              and{' '}
+              <a href="/legal/privacy" className="underline hover:text-purple-600">
+                Privacy Policy
+              </a>
             </p>
           </div>
-        </div>
-
-        {/* Login Card */}
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
-            <CardDescription className="text-center">
-              Sign in to your Pi Network account to continue
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Status Messages */}
-            {status && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-800">{status}</p>
-              </div>
-            )}
-            
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            )}
-            
-            {/* Authentication will be handled automatically by Pi SDK */}
-          </CardContent>
-          <CardFooter>
-            <Button 
-              onClick={handleLogin} 
-              disabled={isLoggingIn}
-              className="w-full"
-            >
-              {isLoggingIn ? (
-                <>
-                  <LoadingSpinner size={16} className="mr-2" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign in with Pi Network'
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
-
-        {/* Environment Info */}
-        <div className="text-center text-xs text-muted-foreground space-y-1">
-          <p>
-            Sign in to access your Pi Network dashboard
-          </p>
-        </div>
-
-        {/* Legal Links */}
-        <div className="text-center text-xs text-muted-foreground">
-          <p>
-            By signing in, you agree to our{' '}
-            <a href="/legal/terms" className="underline hover:text-primary">
-              Terms of Service
-            </a>{' '}
-            and{' '}
-            <a href="/legal/privacy" className="underline hover:text-primary">
-              Privacy Policy
-            </a>
-          </p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

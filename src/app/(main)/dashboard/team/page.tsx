@@ -271,7 +271,7 @@ export default function TeamInsightsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState<React.SortConfig<TeamMember>>({ key: 'name', direction: 'ascending' });
-  const { dataVersion } = useAuth(); // Listen to data changes
+  // Data changes handled by session-based authentication
 
   useEffect(() => {
     async function fetchData() {
@@ -290,7 +290,7 @@ export default function TeamInsightsPage() {
       }
     }
     fetchData();
-  }, [dataVersion]); // Re-fetch when dataVersion changes
+  }, []); // Fetch data on mount
 
   const requestSort = (key: keyof TeamMember) => {
     let direction: 'ascending' | 'descending' = 'ascending';

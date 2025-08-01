@@ -1,40 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPiPlatformAPIClient } from '@/lib/pi-network';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get access token from Authorization header
-    const authHeader = request.headers.get('authorization');
+    // Get session from cookie (following demo pattern)
+    const sessionCookie = request.cookies.get('pi-session');
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!sessionCookie?.value) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    const accessToken = authHeader.substring(7);
-    
-    // Validate token with Pi Network
-    const piPlatformClient = getPiPlatformAPIClient();
-    
+    let sessionData;
     try {
-      await piPlatformClient.request('/v2/me', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
+      sessionData = JSON.parse(sessionCookie.value);
     } catch (error) {
-      console.error('❌ Token validation failed:', error);
+      console.error('❌ Invalid session cookie:', error);
       return NextResponse.json(
-        { error: 'Invalid access token' },
+        { error: 'Invalid session' },
+        { status: 401 }
+      );
+    }
+
+    if (!sessionData.userId) {
+      return NextResponse.json(
+        { error: 'Invalid session data' },
         { status: 401 }
       );
     }
 
     // Get user from database
     const { UserService } = await import('@/services/databaseService');
-    const user = await UserService.getUserByAccessToken(accessToken);
+    const user = await UserService.getUserById(sessionData.userId);
     
     if (!user) {
       return NextResponse.json(
@@ -42,8 +40,6 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
-
-    const userId = (user as any).id;
 
     // Mock transaction data for now
     const transactions = [
@@ -86,38 +82,37 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get access token from Authorization header
-    const authHeader = request.headers.get('authorization');
+    // Get session from cookie (following demo pattern)
+    const sessionCookie = request.cookies.get('pi-session');
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!sessionCookie?.value) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    const accessToken = authHeader.substring(7);
-    
-    // Validate token with Pi Network
-    const piPlatformClient = getPiPlatformAPIClient();
-    
+    let sessionData;
     try {
-      await piPlatformClient.request('/v2/me', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
+      sessionData = JSON.parse(sessionCookie.value);
     } catch (error) {
-      console.error('❌ Token validation failed:', error);
+      console.error('❌ Invalid session cookie:', error);
       return NextResponse.json(
-        { error: 'Invalid access token' },
+        { error: 'Invalid session' },
+        { status: 401 }
+      );
+    }
+
+    if (!sessionData.userId) {
+      return NextResponse.json(
+        { error: 'Invalid session data' },
         { status: 401 }
       );
     }
 
     // Get user from database
     const { UserService } = await import('@/services/databaseService');
-    const user = await UserService.getUserByAccessToken(accessToken);
+    const user = await UserService.getUserById(sessionData.userId);
     
     if (!user) {
       return NextResponse.json(

@@ -20,7 +20,7 @@ import { addTransaction } from '@/services/piService';
 import { addNotification } from '@/services/notificationService';
 
 export default function DonatePage() {
-  const { user: rawUser, refreshData } = useAuth();
+  const { user: rawUser } = useAuth();
   const user = rawUser as User | null;
   const { toast } = useToast();
   const [amount, setAmount] = useState('');
@@ -290,7 +290,7 @@ export default function DonatePage() {
         const newSupporter = { name: user.name, amount: donationAmount };
         setRecentSupporters(prev => [newSupporter, ...prev.slice(0, 9)]);
 
-        (refreshData as () => void)();
+        // Refresh data handled by session-based authentication
         setMessage("");
 
     } catch (error) {

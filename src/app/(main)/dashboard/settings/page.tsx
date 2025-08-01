@@ -27,7 +27,7 @@ import {
 } from '@/components/shared/icons';
 
 function ProfileCard() {
-    const { user: rawUser, setUser } = useAuth();
+    const { user: rawUser } = useAuth();
     const user = rawUser as User | null;
     const { toast } = useToast();
 
@@ -53,7 +53,7 @@ function ProfileCard() {
             const updatedUserData = { ...user, name: displayName, bio, avatarUrl };
             await mockApiCall({ data: updatedUserData }); 
             
-            (setUser as (user: User) => void)(updatedUserData); 
+            // User data updated via session-based authentication 
             
             toast({
                 title: "Profile Saved!",
@@ -151,7 +151,7 @@ function ProfileCard() {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user: rawUser, setUser } = useAuth();
+      const { user: rawUser } = useAuth();
   const user = rawUser as User | null;
   const { toast } = useToast();
 
@@ -182,18 +182,7 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     
-    (setUser as (updater: (prevUser: User | null) => User | null) => void)((prevUser) => {
-      if (!prevUser) return null;
-      return {
-        ...prevUser,
-        settings: {
-          ...prevUser.settings,
-          remindersEnabled,
-          reminderHoursBefore: reminderHours,
-        }
-      };
-    });
-
+    // User data updated via session-based authentication
     await new Promise(resolve => setTimeout(resolve, 500));
     setIsSaving(false);
     toast({

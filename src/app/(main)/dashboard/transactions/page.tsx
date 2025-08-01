@@ -144,7 +144,7 @@ export default function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<React.SortConfig<Transaction>>({ key: 'date', direction: 'descending' });
-  const { dataVersion } = useAuth(); // Listen to data changes
+  const { user: rawUser } = useAuth(); // Data changes handled by session-based authentication
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -160,7 +160,7 @@ export default function TransactionsPage() {
       }
     }
     fetchTransactions();
-  }, [dataVersion]); // Re-fetch when dataVersion changes
+  }, []); // Fetch data on mount
 
   const requestSort = (key: SortableKeys) => {
     let direction: 'ascending' | 'descending' = 'ascending';

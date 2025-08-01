@@ -65,7 +65,7 @@ const notificationColors: Record<NotificationType, string> = {
 
 
 function NotificationsDropdown() {
-    const { user, dataVersion, refreshData } = useAuth(); // Listen for data changes
+    const { user } = useAuth(); // Data changes handled by session-based authentication
     const router = useRouter();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -86,7 +86,7 @@ function NotificationsDropdown() {
             }
         }
         fetchNotifications();
-    }, [user, dataVersion]); // Re-fetch when dataVersion changes
+    }, [user]); // Re-fetch when user changes
 
     const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
     
@@ -94,7 +94,7 @@ function NotificationsDropdown() {
         if (!notification.read) {
             try {
               await markNotificationAsRead(notification.id);
-              (refreshData as () => void)(); // Trigger a global refresh
+              // (refreshData as () => void)(); // Trigger a global refresh - REMOVED
             } catch (err) {
               setError('Failed to mark notification as read.');
             }
@@ -108,7 +108,7 @@ function NotificationsDropdown() {
         e.stopPropagation(); // Prevent the dropdown from closing
         try {
           await markAllNotificationsAsRead();
-          (refreshData as () => void)(); // Trigger a global refresh
+          // (refreshData as () => void)(); // Trigger a global refresh - REMOVED
         } catch (err) {
           setError('Failed to mark all notifications as read.');
         }
@@ -194,17 +194,17 @@ function NotificationsDropdown() {
 }
 
 export function Header({children}: {children?: React.ReactNode}) {
-  const { user: rawUser, logout, refreshData } = useAuth();
+  const { user: rawUser, signOut } = useAuth();
   const user = rawUser as User | null;
   const router = useRouter();
 
-  const handleLogout = () => {
-    (logout as () => void)();
+  const handleLogout = async () => {
+    await signOut();
     router.push('/login');
   };
 
   const handleRefresh = () => {
-    (refreshData as () => void)();
+    // (refreshData as () => void)(); // REMOVED
     window.location.reload();
   };
 

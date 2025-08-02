@@ -36,23 +36,10 @@ export async function POST(request: NextRequest) {
     // CRITICAL: Verify with Pi Platform API (Official Demo Pattern)
     console.log('🔍 Verifying with Pi Platform API...');
     try {
-      const piPlatformResponse = await fetch(`${config.piNetwork.platformApiUrl}/v2/me`, {
-        method: 'GET',
-        headers: { 
-          'Authorization': `Bearer ${authResult.accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { getPiPlatformAPIClient } = await import('@/lib/pi-network');
+      const piPlatformClient = getPiPlatformAPIClient();
       
-      if (!piPlatformResponse.ok) {
-        console.error('❌ Pi Platform API verification failed:', piPlatformResponse.status);
-        return NextResponse.json(
-          { success: false, message: 'Invalid access token - verification failed' },
-          { status: 401 }
-        );
-      }
-      
-      const piUserData = await piPlatformResponse.json();
+      const piUserData = await piPlatformClient.verifyUser(authResult.accessToken);
       console.log('✅ Pi Platform API verification successful:', {
         uid: piUserData.uid,
         username: piUserData.username,

@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
       // 2. Fetch payment details (optional, for DB)
       console.log(`[${now()}] 🔗 Fetching payment details from Pi Platform API...`);
-      const currentPayment = await piPlatformClient.request(`/v2/payments/${paymentId}`);
+      const currentPayment = await piPlatformClient.getPayment(paymentId);
       console.log(`[${now()}] 📋 Payment details:`, currentPayment);
 
       // 3. Get authenticated user for transaction

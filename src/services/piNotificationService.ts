@@ -16,30 +16,30 @@ interface PiNotificationOptions {
 
 /**
  * Send a native Pi Network notification
- * This will appear in Pi Browser and other Pi Network apps
+ * Note: Pi.notify method doesn't exist in the official SDK
+ * Using console logging as fallback
  */
 export async function sendPiNotification(options: PiNotificationOptions): Promise<void> {
   try {
     // Check if Pi SDK is available
     if (typeof window === 'undefined' || !(window as any).Pi) {
-      console.log('⚠️ Pi SDK not available, falling back to console log');
+      console.log('⚠️ Pi SDK not available, using console log');
       console.log('📢 Notification:', options);
       return;
     }
 
-    const Pi = (window as any).Pi;
-    
-    // Use Pi Network's native notification system
-    await Pi.notify({
+    // Pi.notify method doesn't exist in the official SDK
+    // Using console logging as the primary method
+    console.log('📢 Pi Network Notification:', {
       title: options.title,
       description: options.description,
       link: options.link || window.location.href,
       type: options.type || 'info'
     });
 
-    console.log('✅ Pi Network notification sent:', options);
+    console.log('✅ Notification logged successfully');
   } catch (error) {
-    console.error('❌ Failed to send Pi Network notification:', error);
+    console.error('❌ Failed to log notification:', error);
     
     // Fallback to console log
     console.log('📢 Notification (fallback):', options);

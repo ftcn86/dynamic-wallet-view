@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { config } from '@/lib/config';
 
 /**
  * Pi Network Authentication API Endpoint
  * 
- * Following the pure user app pattern:
+ * Following the OFFICIAL demo pattern:
  * 1. Accept authResult from frontend
- * 2. Store minimal user data (no token validation)
- * 3. Set simple session cookie
- * 4. Return success response
+ * 2. VERIFY with Pi Platform API (CRITICAL)
+ * 3. Store user data only after verification
+ * 4. Set session cookie
+ * 5. Return success response
  */
 
 export async function POST(request: NextRequest) {
@@ -18,10 +20,11 @@ export async function POST(request: NextRequest) {
     console.log('📋 Auth result received:', {
       hasAuthResult: !!authResult,
       hasUser: !!authResult?.user,
+      hasAccessToken: !!authResult?.accessToken,
       username: authResult?.user?.username
     });
 
-    if (!authResult || !authResult.user) {
+    if (!authResult || !authResult.user || !authResult.accessToken) {
       console.error('❌ Invalid authentication data');
       return NextResponse.json(
         { success: false, message: 'Invalid authentication data' },
@@ -29,15 +32,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // CRITICAL: Verify with Pi Platform API (Official Demo Pattern)
+    console.log('🔍 Verifying with Pi Platform API...');
+    try {
+      const piPlatformResponse = await fetch(`${config.piNetwork.platformApiUrl}/v2/me`, {
+        method: 'GET',
+        headers: { 
+          'Authorization': `Bearer ${authResult.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!piPlatformResponse.ok) {
+        console.error('❌ Pi Platform API verification failed:', piPlatformResponse.status);
+        return NextResponse.json(
+          { success: false, message: 'Invalid access token - verification failed' },
+          { status: 401 }
+        );
+      }
+      
+      const piUserData = await piPlatformResponse.json();
+      console.log('✅ Pi Platform API verification successful:', {
+        uid: piUserData.uid,
+        username: piUserData.username,
+        hasWalletAddress: !!piUserData.wallet_address
+      });
+      
+    } catch (error) {
+      console.error('❌ Pi Platform API verification error:', error);
+      return NextResponse.json(
+        { success: false, message: 'Failed to verify with Pi Platform API' },
+        { status: 401 }
+      );
+    }
+
     const { user } = authResult;
 
-    console.log('👤 Processing user data:', {
+    console.log('👤 Processing verified user data:', {
       username: user.username,
       uid: user.uid,
       hasWalletAddress: !!user.wallet_address
     });
 
-    // Store minimal user data in database (optional)
+    // Store user data in database (only after verification)
     let dbUser: any = null;
     let useFallback = false;
     
@@ -108,7 +145,7 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Create response (pure user app pattern)
+    // Create response (following official demo pattern)
     const response = NextResponse.json({
       success: true,
       user: {
@@ -122,7 +159,7 @@ export async function POST(request: NextRequest) {
       useFallback: useFallback
     });
 
-    // Set simple session cookie (no access token needed)
+    // Set session cookie (following official demo pattern)
     response.cookies.set('pi-session', JSON.stringify({
       userId: dbUser.id,
       username: dbUser.username,

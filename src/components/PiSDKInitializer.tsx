@@ -5,9 +5,8 @@ import { useEffect } from 'react';
 /**
  * Pi SDK Initializer Component
  * 
- * Initializes the Pi Network SDK following the official demo pattern.
- * The Pi SDK handles browser detection internally, so we don't need 
- * complex environment detection logic.
+ * Initializes the Pi Network SDK following the OFFICIAL demo pattern.
+ * Uses environment-based sandbox configuration like the official demo.
  */
 export default function PiSDKInitializer() {
   useEffect(() => {
@@ -25,10 +24,25 @@ export default function PiSDKInitializer() {
             console.log('✅ Pi Network SDK already initialized');
             return;
           }
-          // Add sandbox: true for testnet
-          (window as unknown as { Pi: { init: (opts: { version: string; sandbox: boolean }) => void } }).Pi.init({ version: "2.0", sandbox: true });
+
+          // Environment-based sandbox decision (Official Demo Pattern)
+          const isSandbox = process.env.NEXT_PUBLIC_SANDBOX === 'true' || 
+                           window.location.hostname.includes('sandbox.minepi.com') ||
+                           window.location.hostname.includes('localhost');
           
-          console.log('✅ Pi Network SDK initialized successfully (sandbox mode)');
+          console.log('🔧 Environment detected:', {
+            isSandbox,
+            hostname: window.location.hostname,
+            env: process.env.NEXT_PUBLIC_SANDBOX
+          });
+          
+          // Initialize with environment-based sandbox setting
+          (window as unknown as { Pi: { init: (opts: { version: string; sandbox: boolean }) => void } }).Pi.init({ 
+            version: "2.0", 
+            sandbox: isSandbox 
+          });
+          
+          console.log(`✅ Pi Network SDK initialized successfully (${isSandbox ? 'sandbox' : 'production'} mode)`);
         } catch (error) {
           console.error('❌ Failed to initialize Pi Network SDK:', error);
         }

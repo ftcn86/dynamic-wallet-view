@@ -13,7 +13,7 @@ export class AuthService {
   private static readonly REQUIRED_SCOPES = ['username', 'payments', 'wallet_address'];
 
   /**
-   * Authenticate with Pi Network following official patterns
+   * Authenticate with Pi Network following OFFICIAL demo pattern
    */
   static async authenticate(): Promise<AuthResult> {
     try {
@@ -27,7 +27,7 @@ export class AuthService {
         };
       }
 
-      // Use official authentication pattern
+      // Use official authentication pattern (exactly like demo)
       const authResult = await sdk.authenticate(this.REQUIRED_SCOPES, this.handleIncompletePayment);
       
       console.log('✅ Pi Network authentication successful');
@@ -39,7 +39,8 @@ export class AuthService {
         };
       }
 
-      // Send auth result to backend for session management
+      // Send auth result to backend for verification (Official Demo Pattern)
+      console.log('📡 Sending auth result to backend for verification...');
       const response = await fetch('/api/auth/pi', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,12 +50,14 @@ export class AuthService {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ Backend verification failed:', errorData);
         throw new Error(errorData.message || 'Backend authentication failed');
       }
 
       const data = await response.json();
       
       if (data.success && data.user) {
+        console.log('✅ Backend verification successful');
         return {
           success: true,
           user: data.user

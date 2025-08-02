@@ -5,8 +5,8 @@ import { useEffect } from 'react';
 /**
  * Pi SDK Initializer Component
  * 
- * Initializes the Pi Network SDK following the OFFICIAL demo pattern.
- * Uses environment-based sandbox configuration like the official demo.
+ * Initializes the Pi Network SDK following the OFFICIAL Pi Network documentation.
+ * Uses the recommended sandbox configuration: sandbox: process.env.NODE_ENV !== 'production'
  */
 export default function PiSDKInitializer() {
   useEffect(() => {
@@ -25,18 +25,16 @@ export default function PiSDKInitializer() {
             return;
           }
 
-          // Environment-based sandbox decision (Official Demo Pattern)
-          const isSandbox = process.env.NEXT_PUBLIC_SANDBOX === 'true' || 
-                           window.location.hostname.includes('sandbox.minepi.com') ||
-                           window.location.hostname.includes('localhost');
+          // OFFICIAL Pi Network recommendation: sandbox: process.env.NODE_ENV !== 'production'
+          const isSandbox = process.env.NODE_ENV !== 'production';
           
           console.log('🔧 Environment detected:', {
             isSandbox,
-            hostname: window.location.hostname,
-            env: process.env.NEXT_PUBLIC_SANDBOX
+            NODE_ENV: process.env.NODE_ENV,
+            hostname: window.location.hostname
           });
           
-          // Initialize with environment-based sandbox setting
+          // Initialize with official recommended configuration
           (window as unknown as { Pi: { init: (opts: { version: string; sandbox: boolean }) => void } }).Pi.init({ 
             version: "2.0", 
             sandbox: isSandbox 

@@ -1,15 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { invalidateSession } from '@/lib/session';
 
 /**
  * Logout API Endpoint
  * 
- * Clears the session cookie to log out the user
+ * Following the official demo pattern:
+ * 1. Invalidate session in database
+ * 2. Clear session cookie
+ * 3. Return success response
  */
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🚪 Logout endpoint called');
     
+    // Get session token from cookie
+    const sessionToken = request.cookies.get('session-token')?.value;
+    
+    if (sessionToken) {
+      // Invalidate session in database
+      await invalidateSession(sessionToken);
+      console.log('✅ Session invalidated in database');
+    }
+
     // Create response
     const response = NextResponse.json({
       success: true,
@@ -17,7 +30,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Clear session cookie
-    response.cookies.set('pi-session', '', {
+    response.cookies.set('session-token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

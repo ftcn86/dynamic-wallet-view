@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Notification, NotificationType } from '@/data/schemas';
+import { getSessionUser } from '@/lib/session';
 
 // In-memory storage for notifications (in production, this would be a database)
 // eslint-disable-next-line prefer-const
@@ -57,34 +58,16 @@ let notifications: Notification[] = [
  */
 export async function GET(request: NextRequest) {
   try {
-    // Use session-based authentication (following demo pattern)
-    const sessionCookie = request.cookies.get('pi-session');
-    if (!sessionCookie?.value) {
+    // Get user from database session (NEW: Proper session management)
+    const user = await getSessionUser(request);
+    if (!user) {
       return NextResponse.json(
         { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      console.error('❌ Invalid session cookie:', error);
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      );
-    }
-
-    if (!sessionData.userId) {
-      return NextResponse.json(
-        { error: 'Invalid session data' },
-        { status: 401 }
-      );
-    }
-
-    const userId = sessionData.userId;
+    const userId = user.id;
     
     // Get notifications from database
     const { UserService, NotificationService } = await import('@/services/databaseService');
@@ -114,29 +97,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Use session-based authentication (following demo pattern)
-    const sessionCookie = request.cookies.get('pi-session');
-    if (!sessionCookie?.value) {
+    // Get user from database session (NEW: Proper session management)
+    const user = await getSessionUser(request);
+    if (!user) {
       return NextResponse.json(
         { error: 'No session found' },
-        { status: 401 }
-      );
-    }
-
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      console.error('❌ Invalid session cookie:', error);
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      );
-    }
-
-    if (!sessionData.userId) {
-      return NextResponse.json(
-        { error: 'Invalid session data' },
         { status: 401 }
       );
     }

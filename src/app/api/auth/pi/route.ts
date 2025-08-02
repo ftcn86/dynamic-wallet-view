@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
+import { createSession } from '@/lib/session';
 
 /**
  * Pi Network Authentication API Endpoint
@@ -8,7 +9,7 @@ import { config } from '@/lib/config';
  * 1. Accept authResult from frontend
  * 2. VERIFY with Pi Platform API (CRITICAL)
  * 3. Store user data only after verification
- * 4. Set session cookie
+ * 4. Create database session
  * 5. Return success response
  */
 
@@ -145,6 +146,10 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // Create database session (NEW: Proper session management)
+    console.log('🔑 Creating database session...');
+    const sessionToken = await createSession(dbUser.id, authResult.accessToken);
+    
     // Create response (following official demo pattern)
     const response = NextResponse.json({
       success: true,
@@ -159,11 +164,8 @@ export async function POST(request: NextRequest) {
       useFallback: useFallback
     });
 
-    // Set session cookie (following official demo pattern)
-    response.cookies.set('pi-session', JSON.stringify({
-      userId: dbUser.id,
-      username: dbUser.username,
-    }), {
+    // Set session cookie with database token (NEW: Proper session token)
+    response.cookies.set('session-token', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

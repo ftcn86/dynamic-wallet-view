@@ -1,93 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { User } from '@/data/schemas';
+import { getSessionUser } from '@/lib/session';
 
 /**
  * User Data API Endpoint
  * 
- * Following the pure user app pattern:
- * 1. Get basic user profile from session
- * 2. Return minimal user data (no Pi Network API calls)
- * 3. Let frontend handle Pi Network data via SDK
+ * Following the official demo pattern:
+ * 1. Get user from database session
+ * 2. Return user data
+ * 3. No cookie parsing needed
  */
 
 export async function GET(request: NextRequest) {
   try {
-    // Get session from cookie
-    const sessionCookie = request.cookies.get('pi-session');
+    // Get user from database session (NEW: Proper session management)
+    const user = await getSessionUser(request);
     
-    if (!sessionCookie?.value) {
-      console.log('❌ No session cookie found');
+    if (!user) {
+      console.log('❌ No valid session found');
       return NextResponse.json(
         { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      console.error('❌ Invalid session cookie:', error);
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      );
-    }
+    console.log('✅ Session validated, userId:', user.id);
 
-    if (!sessionData.userId) {
-      console.log('❌ No userId in session data');
-      return NextResponse.json(
-        { error: 'Invalid session data' },
-        { status: 401 }
-      );
-    }
-
-    console.log('✅ Session validated, userId:', sessionData.userId);
-
-    // Get user from database (basic profile only)
-    let user: any = null;
-    let useFallback = false;
-
-    try {
-      const { UserService } = await import('@/services/databaseService');
-      user = await UserService.getUserById(sessionData.userId);
-      
-      if (!user) {
-        console.log('⚠️ User not found in database, using fallback data');
-        useFallback = true;
-      } else {
-        console.log('✅ User found in database:', user.username);
-      }
-    } catch (dbError) {
-      console.error('❌ Database error, using fallback data:', dbError);
-      useFallback = true;
-    }
-
-    // Fallback to session data if database is unavailable
-    if (useFallback) {
-      user = {
-        id: sessionData.userId,
-        username: sessionData.username || 'user',
-        name: sessionData.username || 'User',
-        email: '',
-        walletAddress: '',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${sessionData.username || 'user'}`,
-        bio: '',
-        joinDate: new Date().toISOString(),
-        lastActive: new Date().toISOString(),
-        termsAccepted: true,
-        settings: {
-          theme: 'system' as const,
-          language: 'en',
-          notifications: true,
-          emailNotifications: false,
-          remindersEnabled: false,
-          reminderHoursBefore: 1,
-        },
-      };
-    }
-
-    // Return basic user data (no Pi Network data)
+    // Return user data from session
     const responseData = {
       success: true,
       user: {
@@ -96,15 +34,8 @@ export async function GET(request: NextRequest) {
         name: user.name,
         email: user.email,
         walletAddress: user.walletAddress,
-        avatar: user.avatar,
-        bio: user.bio,
-        joinDate: user.joinDate,
-        lastActive: user.lastActive,
-        termsAccepted: user.termsAccepted,
-        settings: user.settings,
       },
-      useFallback: useFallback,
-      message: 'Use Pi Browser for real-time balance and transaction data'
+      message: 'User data retrieved successfully'
     };
 
     console.log('✅ User data returned successfully');
@@ -128,39 +59,21 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Get session from cookie
-    const sessionCookie = request.cookies.get('pi-session');
+    // Get user from database session (NEW: Proper session management)
+    const user = await getSessionUser(request);
     
-    if (!sessionCookie?.value) {
+    if (!user) {
       return NextResponse.json(
         { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      console.error('❌ Invalid session cookie:', error);
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      );
-    }
-
-    if (!sessionData.userId) {
-      return NextResponse.json(
-        { error: 'Invalid session data' },
-        { status: 401 }
-      );
-    }
-
     // Get user from database
     const { UserService } = await import('@/services/databaseService');
-    const user = await UserService.getUserById(sessionData.userId);
+    const dbUser = await UserService.getUserById(user.id);
     
-    if (!user) {
+    if (!dbUser) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -171,7 +84,7 @@ export async function PUT(request: NextRequest) {
 
     // Update user settings in database
     try {
-      await UserService.updateUser((user as any).id, { settings });
+      await UserService.updateUser((dbUser as any).id, { settings });
     } catch (dbError) {
       console.error('❌ Database error:', dbError);
       return NextResponse.json(

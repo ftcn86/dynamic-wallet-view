@@ -39,7 +39,7 @@ export function TeamActivityCard() {
 
   if (!user) return (
      <Card className={cn("shadow-lg")}>
-      <CardHeader>
+      <CardHeader className="pb-4">
         <Skeleton className="h-6 w-1/2" />
         <Skeleton className="h-4 w-3/4" />
       </CardHeader>
@@ -47,7 +47,7 @@ export function TeamActivityCard() {
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-16 w-full" />
       </CardContent>
-      <CardFooter>
+      <CardFooter className="pt-4">
         <Skeleton className="h-10 w-full" />
       </CardFooter>
     </Card>
@@ -91,11 +91,11 @@ export function TeamActivityCard() {
 
   return (
     <Card className={cn("shadow-lg")}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl break-words">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
           <span>Team Activity</span>
         </CardTitle>
-        <CardDescription className="text-xs sm:text-sm lg:text-base break-words">
+        <CardDescription className="text-sm text-muted-foreground">
           {t('teamInsights.description')}
         </CardDescription>
       </CardHeader>
@@ -113,22 +113,23 @@ export function TeamActivityCard() {
 
         {earnedGamificationBadges.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-sm font-medium">Recent Team Achievements</h3>
+            <h3 className="text-sm font-medium text-foreground">Recent Team Achievements</h3>
             <div className="flex flex-wrap gap-2">
               {earnedGamificationBadges.map((badge) => (
-                <BadgeIcon
-                  key={badge.id}
-                  badgeId={badge.id}
-                  earned={badge.earned}
-                  size="sm"
-                />
+                <div key={badge.id} className="flex items-center gap-1">
+                  <BadgeIcon
+                    badgeId={badge.id}
+                    earned={badge.earned}
+                    size="sm"
+                  />
+                </div>
               ))}
             </div>
           </div>
         )}
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="pt-4">
         <Link href="/dashboard/team" className="w-full">
           <Button variant="outline" className="w-full">
             View Full Team

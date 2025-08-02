@@ -177,33 +177,41 @@ export async function POST(request: NextRequest) {
 
     // Create database session (NEW: Proper session management)
     console.log('🔑 Creating database session...');
-    const sessionToken = await createSession(dbUser.id, authResult.accessToken);
-    
-    // Create response (following official demo pattern)
-    const response = NextResponse.json({
-      success: true,
-      user: {
-        id: dbUser.id,
-        username: dbUser.username,
-        name: dbUser.name,
-        email: dbUser.email,
-        walletAddress: dbUser.walletAddress,
-      },
-      message: 'Authentication successful',
-      useFallback: useFallback
-    });
+    try {
+      const sessionToken = await createSession(dbUser.id, authResult.accessToken);
+      
+      // Create response (following official demo pattern)
+      const response = NextResponse.json({
+        success: true,
+        user: {
+          id: dbUser.id,
+          username: dbUser.username,
+          name: dbUser.name,
+          email: dbUser.email,
+          walletAddress: dbUser.walletAddress,
+        },
+        message: 'Authentication successful',
+        useFallback: useFallback
+      });
 
-    // Set session cookie with database token (NEW: Proper session token)
-    response.cookies.set('session-token', sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/',
-    });
+      // Set session cookie with database token (NEW: Proper session token)
+      response.cookies.set('session-token', sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/',
+      });
 
-    console.log('✅ Authentication completed successfully');
-    return response;
+      console.log('✅ Authentication completed successfully');
+      return response;
+    } catch (sessionError) {
+      console.error('❌ Failed to create session:', sessionError);
+      return NextResponse.json(
+        { error: 'Failed to create user session' },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
     console.error('❌ Authentication error:', error);

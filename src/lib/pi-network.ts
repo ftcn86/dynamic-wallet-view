@@ -214,7 +214,7 @@ export class PiPlatformAPIClient {
       ...(options.headers as Record<string, string>),
     };
     if (!headers['Authorization']) {
-      headers['Authorization'] = `Key ${this.apiKey}`;
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
     // Debug log
     console.log('[PiPlatformAPIClient] Request to', url, 'with headers:', headers);

@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
-import { createSession, getSessionUser } from '@/lib/session';
 
 /**
  * Pi Network Authentication API Endpoint
  * 
- * Following the OFFICIAL demo pattern:
+ * OFFICIAL Pi Network Demo Pattern:
  * 1. Accept authResult from frontend
- * 2. VERIFY with Pi Platform API (CRITICAL)
- * 3. Store user data only after verification
- * 4. Create database session
- * 5. Return success response
+ * 2. Verify with Pi Platform API
+ * 3. Return simple success response
+ * 4. No complex database operations
  */
 
 export async function POST(request: NextRequest) {
@@ -62,143 +60,32 @@ export async function POST(request: NextRequest) {
       hasWalletAddress: !!user.wallet_address
     });
 
-    // Store user data in database (only after verification)
-    let dbUser: any = null;
-    let useFallback = false;
+    // OFFICIAL PATTERN: Simple response with user data (no database operations)
+    console.log('✅ Creating simple authentication response...');
     
-    try {
-      const { UserService } = await import('@/services/databaseService');
-      
-      // Check if user already exists
-      let existingUser = await UserService.getUserById(user.uid);
-      
-      if (!existingUser) {
-        // Check by username as well
-        existingUser = await UserService.getUserByUsername(user.username);
-      }
-      
-      if (existingUser) {
-        // Update existing user with latest data
-        console.log('🔄 Updating existing user in database');
-        dbUser = await UserService.updateUser((existingUser as any).id, {
-          username: user.username,
-          name: user.username,
-          email: user.profile?.email || '',
-          walletAddress: user.wallet_address || '',
-          lastActive: new Date().toISOString(),
-        });
-      } else {
-        // Create new user with complete data (FIXED: Added all required fields)
-        console.log('🆕 Creating new user in database with complete data');
-        const newUser = {
-          id: user.uid,
-          username: user.username,
-          name: user.username,
-          email: user.profile?.email || '',
-          walletAddress: user.wallet_address || '',
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
-          bio: '',
-          balance: 0,
-          miningRate: 0,
-          teamSize: 0,
-          isNodeOperator: false,
-          nodeUptimePercentage: 0,
-          kycStatus: 'not_completed' as const,
-          joinDate: new Date().toISOString(),
-          lastActive: new Date().toISOString(),
-          termsAccepted: true,
-          accessToken: '',
-          refreshToken: '',
-          tokenExpiresAt: undefined,
-          // CRITICAL: Add all required fields for settings page
-          settings: {
-            theme: 'system' as const,
-            language: 'en',
-            notifications: true,
-            emailNotifications: false,
-            remindersEnabled: true,
-            reminderHoursBefore: 1,
-          },
-          // CRITICAL: Add balance breakdown for dashboard
-          balanceBreakdown: {
-            transferableToMainnet: 0,
-            totalUnverifiedPi: 0,
-            currentlyInLockups: 0,
-          },
-          // CRITICAL: Add unverified Pi details
-          unverifiedPiDetails: {
-            fromReferralTeam: 0,
-            fromSecurityCircle: 0,
-            fromNodeRewards: 0,
-            fromOtherBonuses: 0,
-          },
-          // CRITICAL: Add empty arrays for badges and other relations
-          badges: [],
-          transactions: [],
-          notifications: [],
-          teamMembers: [],
-          balanceHistory: [],
-        };
-        dbUser = await UserService.createUser(newUser);
-      }
-      
-      console.log('✅ User saved to database:', {
-        userId: dbUser.id,
-        username: dbUser.username,
-        hasWalletAddress: !!dbUser.walletAddress
-      });
-      
-    } catch (dbError) {
-      console.error('❌ Database error, using fallback:', dbError);
-      useFallback = true;
-      
-      // Create fallback user object
-      dbUser = {
+    const response = NextResponse.json({
+      success: true,
+      user: {
         id: user.uid,
         username: user.username,
         name: user.username,
         email: user.profile?.email || '',
         walletAddress: user.wallet_address || '',
-      };
-    }
+      },
+      message: 'Authentication successful'
+    });
 
-    // Create database session (NEW: Proper session management)
-    console.log('🔑 Creating database session...');
-    try {
-      const sessionToken = await createSession(dbUser.id, authResult.accessToken);
-      
-      // Create response (following official demo pattern)
-      const response = NextResponse.json({
-        success: true,
-        user: {
-          id: dbUser.id,
-          username: dbUser.username,
-          name: dbUser.name,
-          email: dbUser.email,
-          walletAddress: dbUser.walletAddress,
-        },
-        message: 'Authentication successful',
-        useFallback: useFallback
-      });
+    // Set simple session cookie with access token (Official Demo Pattern)
+    response.cookies.set('pi-access-token', authResult.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/',
+    });
 
-      // Set session cookie with database token (NEW: Proper session token)
-      response.cookies.set('session-token', sessionToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        path: '/',
-      });
-
-      console.log('✅ Authentication completed successfully');
-      return response;
-    } catch (sessionError) {
-      console.error('❌ Failed to create session:', sessionError);
-      return NextResponse.json(
-        { error: 'Failed to create user session' },
-        { status: 500 }
-      );
-    }
+    console.log('✅ Authentication completed successfully');
+    return response;
 
   } catch (error) {
     console.error('❌ Authentication error:', error);
@@ -213,30 +100,43 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Simple session validation (no token needed)
+ * Simple session validation (Official Demo Pattern)
  */
 export async function GET(request: NextRequest) {
   try {
-    // FIXED: Use proper session management
-    const user = await getSessionUser(request);
+    const accessToken = request.cookies.get('pi-access-token')?.value;
     
-    if (!user) {
+    if (!accessToken) {
       return NextResponse.json(
-        { error: 'No session found' },
+        { error: 'No access token found' },
         { status: 401 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        walletAddress: user.walletAddress,
-      }
-    });
+    // Verify token with Pi Platform API
+    try {
+      const { getPiPlatformAPIClient } = await import('@/lib/pi-network');
+      const piPlatformClient = getPiPlatformAPIClient();
+      
+      const userData = await piPlatformClient.verifyUser(accessToken);
+      
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: userData.uid,
+          username: userData.username,
+          name: userData.username,
+          email: userData.profile?.email || '',
+          walletAddress: userData.wallet_address || '',
+        }
+      });
+    } catch (error) {
+      console.error('❌ Token verification failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
 
   } catch (error) {
     console.error('❌ Session validation error:', error);

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import { config } from '@/lib/config';
-import { TransactionService } from '@/services/databaseService';
 
 function now() {
   return new Date().toISOString();
@@ -24,64 +23,61 @@ export async function POST(request: NextRequest) {
     console.log(`[${now()}] 🔍 [APPROVE] Request received for paymentId:`, paymentId);
     const piPlatformClient = getPiPlatformAPIClient();
 
-    // 1. Approve the payment with Pi Network IMMEDIATELY
+    // 1. Get authenticated user from access token (Official Demo Pattern)
+    const accessToken = request.cookies.get('pi-access-token')?.value;
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: 'No access token found' },
+        { status: 401 }
+      );
+    }
+
+    // Verify user with Pi Platform API
+    let userData;
+    try {
+      userData = await piPlatformClient.verifyUser(accessToken);
+      console.log(`[${now()}] ✅ User verified:`, userData.uid);
+    } catch (error) {
+      console.error(`[${now()}] ❌ User verification failed:`, error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Approve the payment with Pi Network IMMEDIATELY
     try {
       console.log(`[${now()}] 🔗 Calling piPlatformClient.approvePayment...`);
       await piPlatformClient.approvePayment(paymentId);
       console.log(`[${now()}] ✅ Payment approved successfully`);
 
-      // 2. Fetch payment details (optional, for DB)
+      // 3. Fetch payment details (optional, for DB)
       console.log(`[${now()}] 🔗 Fetching payment details from Pi Platform API...`);
       const currentPayment = await piPlatformClient.getPayment(paymentId);
       console.log(`[${now()}] 📋 Payment details:`, currentPayment);
 
-      // 3. Get authenticated user for transaction
-      const { UserService } = await import('@/services/databaseService');
-      const { getSessionUser } = await import('@/lib/session');
-      
-      // FIXED: Use real authenticated user instead of default user
-      const sessionUser = await getSessionUser(request);
-      if (!sessionUser) {
-        return NextResponse.json(
-          { error: 'No session found' },
-          { status: 401 }
-        );
-      }
-      
-      let user: any = await UserService.getUserById(sessionUser.id);
-      if (!user) {
-        return NextResponse.json(
-          { error: 'User not found in database' },
-          { status: 404 }
-        );
-      }
-      
-      const userId = user.id;
+      // 4. Store transaction in database (simplified)
       console.log(`[${now()}] 💾 Writing transaction to DB...`);
-      let orderRecord: any;
       try {
-        orderRecord = await TransactionService.createTransaction(userId, {
+        const { TransactionService } = await import('@/services/databaseService');
+        
+        const orderRecord = await TransactionService.createTransaction(userData.uid, {
           type: 'sent',
           amount: (currentPayment as { amount: number }).amount,
           status: 'pending', // Use 'pending' for approval step
-          from: userId,
+          from: userData.uid,
           to: metadata?.to || 'Dynamic Wallet View',
           description: (currentPayment as { memo?: string }).memo || 'Pi Payment',
           blockExplorerUrl: undefined,
         });
-      } catch (error: any) {
-        if (error.code === 'P2003') {
-          console.error(`[${now()}] ❌ User not found in database:`, userId);
-          return NextResponse.json(
-            { error: 'User account not found' },
-            { status: 404 }
-          );
-        }
-        throw error;
+        
+        console.log(`[${now()}] 💾 Transaction written to DB.`);
+      } catch (dbError) {
+        console.warn(`[${now()}] ⚠️ Failed to write transaction to DB:`, dbError);
+        // Continue with payment approval even if DB write fails
       }
-      console.log(`[${now()}] 💾 Transaction written to DB.`);
 
-      // 4. Add notification for successful approval (optional)
+      // 5. Add notification for successful approval (optional)
       try {
         const { addNotification } = await import('@/services/notificationService');
         addNotification(
@@ -98,43 +94,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: `Payment ${paymentId} approved successfully`,
-        order: orderRecord,
-        payment: {
-          id: paymentId,
-          amount: (currentPayment as { amount: number }).amount,
-          memo: (currentPayment as { memo?: string }).memo,
-          status: 'approved'
-        }
+        payment: currentPayment
       });
 
-    } catch (platformError) {
-      console.error(`[${now()}] ❌ Payment approval failed:`, platformError);
-      // Add error notification
-      try {
-        const { addNotification } = await import('@/services/notificationService');
-        addNotification(
-          'announcement',
-          'Payment Approval Failed',
-          `Failed to approve payment ${paymentId}. Please try again.`,
-          '/dashboard/transactions'
-        );
-      } catch (notificationError) {
-        console.warn(`[${now()}] ⚠️ Failed to add error notification:`, notificationError);
-      }
-
+    } catch (approvalError) {
+      console.error(`[${now()}] ❌ Payment approval failed:`, approvalError);
       return NextResponse.json(
         { 
+          success: false, 
           error: 'Payment approval failed',
-          details: platformError instanceof Error ? platformError.message : 'Unknown error'
+          message: approvalError instanceof Error ? approvalError.message : 'Unknown error'
         },
         { status: 500 }
       );
     }
 
   } catch (error) {
-    console.error(`[${now()}] ❌ Payment approval API error:`, error);
+    console.error(`[${now()}] ❌ Payment approval endpoint error:`, error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false, 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

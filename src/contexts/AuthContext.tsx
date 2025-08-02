@@ -31,8 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (AuthService.isAuthenticated()) {
           console.log('✅ User already authenticated with Pi Network');
           
-          // Get current user from Pi Network
-          const currentUser = AuthService.getCurrentUser();
+          // Get current user from backend (Official Demo Pattern)
+          const currentUser = await AuthService.getCurrentUser();
           if (currentUser) {
             setUser(currentUser);
             console.log('✅ User session restored:', currentUser);
@@ -102,14 +102,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      if (AuthService.isAuthenticated()) {
-        const currentUser = AuthService.getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
-        }
+      setIsLoading(true);
+      setError(null);
+
+      // Get fresh user data from backend
+      const currentUser = await AuthService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        console.log('✅ User data refreshed:', currentUser);
+      } else {
+        // If no user data, user might be logged out
+        setUser(null);
+        console.log('⚠️ No user data found during refresh');
       }
     } catch (error) {
       console.error('❌ User refresh failed:', error);
+      setError('Failed to refresh user data');
+    } finally {
+      setIsLoading(false);
     }
   };
 

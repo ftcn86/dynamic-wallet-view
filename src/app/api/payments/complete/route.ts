@@ -1,141 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
-import { config } from '@/lib/config';
-import { TransactionService } from '@/services/databaseService';
+
+function now() {
+  return new Date().toISOString();
+}
 
 /**
  * Payment Completion Endpoint (Following Official Demo Pattern)
- * 
- * This endpoint completes payments and updates order records.
- * It follows the exact same pattern as the official Pi Network demo.
  */
-
 export async function POST(request: NextRequest) {
   try {
     const { paymentId, txid } = await request.json();
 
-    if (!paymentId || !txid) {
+    if (!paymentId) {
       return NextResponse.json(
-        { error: 'Payment ID and transaction ID are required' },
+        { error: 'Payment ID is required' },
         { status: 400 }
       );
     }
 
-    console.log('🔍 Completing payment:', paymentId);
-    console.log('🔗 Transaction ID:', txid);
+    if (!txid) {
+      return NextResponse.json(
+        { error: 'Transaction ID is required' },
+        { status: 400 }
+      );
+    }
 
+    console.log(`[${now()}] 🔍 [COMPLETE] Request received for paymentId:`, paymentId, 'txid:', txid);
     const piPlatformClient = getPiPlatformAPIClient();
 
+    // 1. Get authenticated user from access token (Official Demo Pattern)
+    const accessToken = request.cookies.get('pi-access-token')?.value;
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: 'No access token found' },
+        { status: 401 }
+      );
+    }
+
+    // Verify user with Pi Platform API
+    let userData;
     try {
-      // TODO: Implement real blockchain verification if possible
-      const transactionVerified = true;
-      if (!transactionVerified) {
-        throw new Error('Transaction verification failed');
-      }
+      userData = await piPlatformClient.verifyUser(accessToken);
+      console.log(`[${now()}] ✅ User verified:`, userData.uid);
+    } catch (error) {
+      console.error(`[${now()}] ❌ User verification failed:`, error);
+      return NextResponse.json(
+        { error: 'Invalid access token' },
+        { status: 401 }
+      );
+    }
 
-      // Get authenticated user for transaction
-      const { UserService } = await import('@/services/databaseService');
-      const { getSessionUser } = await import('@/lib/session');
-      
-      // FIXED: Use real authenticated user instead of default user
-      const sessionUser = await getSessionUser(request);
-      if (!sessionUser) {
-        return NextResponse.json(
-          { error: 'No session found' },
-          { status: 401 }
-        );
-      }
-      
-      let user: any = await UserService.getUserById(sessionUser.id);
-      if (!user) {
-        return NextResponse.json(
-          { error: 'User not found in database' },
-          { status: 404 }
-        );
-      }
-      
-      const userId = user.id;
-      
-      // Create transaction with real user ID
-      let updatedOrder: any;
-      try {
-        updatedOrder = await TransactionService.createTransaction(userId, {
-          type: 'sent',
-          amount: 0, // Should be updated with actual amount from payment/order
-          status: 'completed',
-          from: userId,
-          to: 'Dynamic Wallet View',
-          description: 'Payment completed',
-          blockExplorerUrl: `https://api.minepi.com/blockchain/transactions/${txid}`,
-        });
-      } catch (error: any) {
-        if (error.code === 'P2003') {
-          console.error('❌ User not found in database:', userId);
-          return NextResponse.json(
-            { error: 'User account not found' },
-            { status: 404 }
-          );
-        }
-        throw error;
-      }
+    // 2. Complete the payment with Pi Network
+    try {
+      console.log(`[${now()}] 🔗 Calling piPlatformClient.completePayment...`);
+      const completedPayment = await piPlatformClient.completePayment(paymentId, txid);
+      console.log(`[${now()}] ✅ Payment completed successfully`);
 
-      // Complete the payment with Pi Network
-      await piPlatformClient.completePayment(paymentId, txid);
-      console.log('✅ Payment completed successfully');
+      // 3. Update transaction in database (simplified)
+      console.log(`[${now()}] 💾 Payment completed, skipping DB update for now...`);
+      // Note: In a full implementation, you would update the transaction status here
+      // For now, we focus on the core payment completion functionality
 
-      // Add notification for successful completion (optional)
+      // 4. Add notification for successful completion
       try {
         const { addNotification } = await import('@/services/notificationService');
         addNotification(
           'announcement',
           'Payment Completed',
-          `Payment has been completed successfully. Transaction ID: ${txid}`,
+          `Payment of ${(completedPayment as { amount: number }).amount}π has been completed successfully.`,
           '/dashboard/transactions'
         );
       } catch (notificationError) {
-        console.warn('⚠️ Failed to add notification:', notificationError);
+        console.warn(`[${now()}] ⚠️ Failed to add notification:`, notificationError);
       }
 
+      console.log(`[${now()}] 🚀 Responding to frontend with success.`);
       return NextResponse.json({
         success: true,
         message: `Payment ${paymentId} completed successfully`,
-        order: updatedOrder,
-        transaction: {
-          id: txid,
-          verified: true,
-          blockExplorerUrl: `https://api.minepi.com/blockchain/transactions/${txid}`
-        }
+        payment: completedPayment
       });
 
-    } catch (platformError) {
-      console.error('❌ Payment completion failed:', platformError);
-      
-      // Add error notification
-      try {
-        const { addNotification } = await import('@/services/notificationService');
-        addNotification(
-          'announcement',
-          'Payment Completion Failed',
-          `Failed to complete payment ${paymentId}. Please contact support.`,
-          '/dashboard/transactions'
-        );
-      } catch (notificationError) {
-        console.warn('⚠️ Failed to add error notification:', notificationError);
-      }
-
+    } catch (completionError) {
+      console.error(`[${now()}] ❌ Payment completion failed:`, completionError);
       return NextResponse.json(
         { 
+          success: false, 
           error: 'Payment completion failed',
-          details: platformError instanceof Error ? platformError.message : 'Unknown error'
+          message: completionError instanceof Error ? completionError.message : 'Unknown error'
         },
         { status: 500 }
       );
     }
 
   } catch (error) {
-    console.error('❌ Payment completion API error:', error);
+    console.error(`[${now()}] ❌ Payment completion endpoint error:`, error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false, 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

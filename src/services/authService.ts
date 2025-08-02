@@ -88,65 +88,29 @@ export class AuthService {
   }
 
   /**
-   * Get current user
+   * Get current user from backend (Official Demo Pattern)
    */
-  static getCurrentUser(): User | null {
+  static async getCurrentUser(): Promise<User | null> {
     try {
-      const sdk = getPiSDKInstance();
-      const currentUser = sdk?.currentUser();
-      
-      if (!currentUser) return null;
+      const response = await fetch('/api/auth/pi', {
+        method: 'GET',
+        credentials: 'include'
+      });
 
-      // Convert Pi user to our User format
-      return {
-        id: currentUser.uid || '',
-        username: currentUser.username || '',
-        name: this.getDisplayName(currentUser),
-        email: currentUser.profile?.email || '',
-        avatar: '',
-        bio: '',
-        balance: 0,
-        miningRate: 0,
-        isNodeOperator: false,
-        nodeUptimePercentage: 0,
-        balanceBreakdown: {
-          transferableToMainnet: 0,
-          totalUnverifiedPi: 0,
-          currentlyInLockups: 0,
-        },
-        unverifiedPiDetails: {
-          fromReferralTeam: 0,
-          fromSecurityCircle: 0,
-          fromNodeRewards: 0,
-          fromOtherBonuses: 0,
-        },
-        badges: [],
-        userActiveMiningHours_LastWeek: 0,
-        userActiveMiningHours_LastMonth: 0,
-        activeMiningDays_LastWeek: 0,
-        weeklyMiningDaysTarget: 7,
-        activeMiningDays_LastMonth: 0,
-        monthlyMiningDaysTarget: 30,
-        termsAccepted: true,
-        settings: {
-          theme: 'system',
-          language: 'en',
-          notifications: true,
-          emailNotifications: false,
-          remindersEnabled: true,
-          reminderHoursBefore: 1,
-        },
-        walletAddress: currentUser.wallet_address || '',
-        accessToken: '',
-        tokenExpiresAt: undefined
-      };
-    } catch {
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      return data.user || null;
+    } catch (error) {
+      console.error('❌ Error getting current user:', error);
       return null;
     }
   }
 
   /**
-   * Logout user
+   * Logout user (Official Demo Pattern)
    */
   static async logout(): Promise<void> {
     try {
@@ -166,15 +130,5 @@ export class AuthService {
   private static handleIncompletePayment(payment: unknown): void {
     console.log('⚠️ Incomplete payment found during authentication:', payment);
     // You can implement custom logic here to handle incomplete payments
-  }
-
-  /**
-   * Get display name from Pi user
-   */
-  private static getDisplayName(piUser: any): string {
-    if (piUser.profile?.firstname && piUser.profile?.lastname) {
-      return `${piUser.profile.firstname} ${piUser.profile.lastname}`.trim();
-    }
-    return piUser.username || 'Pi User';
   }
 } 

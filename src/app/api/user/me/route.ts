@@ -1,107 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionUser } from '@/lib/session';
 
 /**
- * User Data API Endpoint
+ * Get Current User API Endpoint
  * 
  * Following the official demo pattern:
- * 1. Get user from database session
- * 2. Return user data
- * 3. No cookie parsing needed
+ * 1. Get access token from cookie
+ * 2. Verify with Pi Platform API
+ * 3. Return user data
  */
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user from database session (NEW: Proper session management)
-    const user = await getSessionUser(request);
+    console.log('👤 User/me endpoint called');
+
+    const accessToken = request.cookies.get('pi-access-token')?.value;
     
-    if (!user) {
-      console.log('❌ No valid session found');
+    if (!accessToken) {
       return NextResponse.json(
-        { error: 'No session found' },
+        { error: 'No access token found' },
         { status: 401 }
       );
     }
 
-    console.log('✅ Session validated, userId:', user.id);
-
-    // Return user data from session
-    const responseData = {
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        walletAddress: user.walletAddress,
-      },
-      message: 'User data retrieved successfully'
-    };
-
-    console.log('✅ User data returned successfully');
-    return NextResponse.json(responseData);
-
-  } catch (error) {
-    console.error('❌ User data API error:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch user data',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Update user settings
- */
-export async function PUT(request: NextRequest) {
-  try {
-    // Get user from database session (NEW: Proper session management)
-    const user = await getSessionUser(request);
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: 'No session found' },
-        { status: 401 }
-      );
-    }
-
-    // Get user from database
-    const { UserService } = await import('@/services/databaseService');
-    const dbUser = await UserService.getUserById(user.id);
-    
-    if (!dbUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    const { settings } = await request.json();
-
-    // Update user settings in database
+    // Verify token with Pi Platform API
     try {
-      await UserService.updateUser((dbUser as any).id, { settings });
-    } catch (dbError) {
-      console.error('❌ Database error:', dbError);
+      const { getPiPlatformAPIClient } = await import('@/lib/pi-network');
+      const piPlatformClient = getPiPlatformAPIClient();
+      
+      const userData = await piPlatformClient.verifyUser(accessToken);
+      
+      console.log('✅ User data retrieved successfully:', {
+        uid: userData.uid,
+        username: userData.username
+      });
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: userData.uid,
+          username: userData.username,
+          name: userData.username,
+          email: userData.profile?.email || '',
+          walletAddress: userData.wallet_address || '',
+        }
+      });
+    } catch (error) {
+      console.error('❌ Token verification failed:', error);
       return NextResponse.json(
-        { error: 'Failed to update settings' },
-        { status: 500 }
+        { error: 'Invalid access token' },
+        { status: 401 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Settings updated successfully',
-      settings,
-    });
   } catch (error) {
-    console.error('Settings update error:', error);
+    console.error('❌ User/me error:', error);
     return NextResponse.json(
-      { error: 'Failed to update settings' },
+      { error: 'Failed to get user data' },
       { status: 500 }
     );
   }

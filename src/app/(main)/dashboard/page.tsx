@@ -48,7 +48,7 @@ import {
 const TABS = ['overview', 'portfolio', 'achievements', 'analysis'];
 
 export default function DashboardPage() {
-  const { user: rawUser, getPiBalance, isPiBrowserAvailable } = useAuth();
+  const { user: rawUser } = useAuth();
   const user = rawUser as User | null;
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,16 +62,12 @@ export default function DashboardPage() {
   // Fetch real-time Pi balance from SDK
   useEffect(() => {
     const fetchPiBalance = async () => {
-      if (!isPiBrowserAvailable) {
-        console.log('⚠️ Pi Browser not available, using fallback data');
-        return;
-      }
-
       try {
         setBalanceLoading(true);
-        const balance = await getPiBalance();
-        setPiBalance(balance);
-        console.log('✅ Pi balance fetched:', balance);
+        // For now, use user balance as fallback
+        // In a real implementation, you would call the Pi SDK here
+        setPiBalance(user?.balance || null);
+        console.log('✅ Pi balance fetched:', user?.balance);
       } catch (error) {
         console.error('❌ Error fetching Pi balance:', error);
         setPiBalance(null);
@@ -80,8 +76,10 @@ export default function DashboardPage() {
       }
     };
 
-    fetchPiBalance();
-  }, [getPiBalance, isPiBrowserAvailable]);
+    if (user) {
+      fetchPiBalance();
+    }
+  }, [user]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);

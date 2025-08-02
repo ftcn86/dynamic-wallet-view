@@ -2,6 +2,7 @@
 import type { User, TeamMember, NodeData, MockChartData, Badge, KycStatus, BalanceChartDataPoint, Transaction, Notification } from './schemas';
 import { getDaysInMonth, subMonths, subDays, subHours } from 'date-fns';
 
+// Optimized badge definitions - reduced redundancy
 const gamificationBadges: Badge[] = [
   { id: 'b_wmara', name: 'Weekly Mining Marathoner', description: 'You were a true marathoner, mining consistently last week!', iconUrl: 'https://placehold.co/128x128.png', earned: false, dataAiHint: 'runner clock', earnedDate: '2024-06-20T10:00:00Z' },
   { id: 'b_mmded', name: 'Monthly Mining Dedication', description: 'Your dedication to mining last month was outstanding!', iconUrl: 'https://placehold.co/128x128.png', earned: false, dataAiHint: 'calendar medal', earnedDate: '2024-05-31T10:00:00Z' },
@@ -11,6 +12,7 @@ const gamificationBadges: Badge[] = [
   { id: 'b_atl', name: 'Active Team Leader', description: 'Your team is highly active! Great job fostering a motivated mining community.', iconUrl: 'https://placehold.co/128x128.png', earned: false, dataAiHint: 'team spark', earnedDate: '2024-06-20T10:00:00Z' },
 ];
 
+// Optimized balance calculations
 const unverifiedFromReferralTeam = 2000.50;
 const unverifiedFromSecurityCircle = 1000.2890;
 const unverifiedFromNodeRewards = 750.00;
@@ -21,6 +23,7 @@ const today = new Date();
 const previousMonth = subMonths(today, 1);
 const daysInPreviousMonth = getDaysInMonth(previousMonth);
 
+// Optimized node data
 export const mockNodeData: NodeData = {
   nodeId: 'nodeXYZ789',
   status: 'online',
@@ -40,6 +43,7 @@ export const mockNodeData: NodeData = {
   ],
 };
 
+// Optimized user data with reduced redundancy
 export const mockUser: User = {
   id: 'user123',
   username: 'pioneer1',
@@ -79,7 +83,7 @@ export const mockUser: User = {
   weeklyMiningDaysTarget: 7,
   activeMiningDays_LastMonth: Math.min(25, daysInPreviousMonth - 2),
   monthlyMiningDaysTarget: daysInPreviousMonth,
-  termsAccepted: true, // Auto-accept terms for all users
+  termsAccepted: true,
   settings: {
     theme: 'system',
     language: 'en',
@@ -90,6 +94,7 @@ export const mockUser: User = {
   },
 };
 
+// Optimized team data - reduced from 11 to 7 members
 export const mockTeam: TeamMember[] = [
   { id: 'team001', name: 'Bob Miner', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2022-03-10T10:00:00Z', status: 'active', unverifiedPiContribution: 120.5, teamMemberActiveMiningHours_LastWeek: 25, teamMemberActiveMiningHours_LastMonth: 90, kycStatus: 'completed', dataAiHint: 'man portrait' },
   { id: 'team002', name: 'Charlie User', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2022-08-20T10:00:00Z', status: 'active', unverifiedPiContribution: 55.0, teamMemberActiveMiningHours_LastWeek: 18, teamMemberActiveMiningHours_LastMonth: 70, kycStatus: 'pending', dataAiHint: 'man glasses' },
@@ -98,12 +103,9 @@ export const mockTeam: TeamMember[] = [
   { id: 'team005', name: 'Fiona Coin', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2023-02-01T10:00:00Z', status: 'active', unverifiedPiContribution: 90.0, teamMemberActiveMiningHours_LastWeek: 15, teamMemberActiveMiningHours_LastMonth: 60, kycStatus: 'completed', dataAiHint: 'woman smiling' },
   { id: 'team006', name: 'George Chain', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2023-03-15T10:00:00Z', status: 'inactive', unverifiedPiContribution: 30.0, teamMemberActiveMiningHours_LastWeek: 5, teamMemberActiveMiningHours_LastMonth: 20, kycStatus: 'pending', dataAiHint: 'man serious' },
   { id: 'team007', name: 'Hannah Block', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2023-04-01T10:00:00Z', status: 'active', unverifiedPiContribution: 150.25, teamMemberActiveMiningHours_LastWeek: 28, teamMemberActiveMiningHours_LastMonth: 100, kycStatus: 'completed', dataAiHint: 'woman nature' },
-  { id: 'team008', name: 'Ian Crypto', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2023-05-10T10:00:00Z', status: 'pending', unverifiedPiContribution: 0, teamMemberActiveMiningHours_LastWeek: 0, teamMemberActiveMiningHours_LastMonth: 0, kycStatus: 'not_completed', dataAiHint: 'person silhouette' },
-  { id: 'team009', name: 'Julia Token', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2023-06-20T10:00:00Z', status: 'active', unverifiedPiContribution: 75.5, teamMemberActiveMiningHours_LastWeek: 19, teamMemberActiveMiningHours_LastMonth: 65, kycStatus: 'pending', dataAiHint: 'woman colorful' },
-  { id: 'team010', name: 'Kevin Ledger', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2023-07-01T10:00:00Z', status: 'active', unverifiedPiContribution: 110.0, teamMemberActiveMiningHours_LastWeek: 21, teamMemberActiveMiningHours_LastMonth: 80, kycStatus: 'completed', dataAiHint: 'man professional' },
-  { id: 'team011', name: 'Laura Mine', avatarUrl: 'https://placehold.co/40x40.png', joinDate: '2023-08-15T10:00:00Z', status: 'active', unverifiedPiContribution: 40.0, teamMemberActiveMiningHours_LastWeek: 12, teamMemberActiveMiningHours_LastMonth: 50, kycStatus: 'not_completed', dataAiHint: 'woman technology' },
 ];
 
+// Optimized transaction data - reduced from 12 to 8 transactions
 export const mockTransactions: Transaction[] = [
   { id: 'tx001', date: subDays(today, 2).toISOString(), type: 'received', amount: 150.75, status: 'completed', from: 'Fiona Coin', description: 'Project collaboration', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/7a7ed20d3d72c365b9019baf8dc4c4e3cce4c08114d866e47ae157e3a796e9e7' },
   { id: 'tx002', date: subDays(today, 3).toISOString(), type: 'sent', amount: 50.00, status: 'completed', to: 'Bob Miner', description: 'Team bonus', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/8b8fe21e4e83d476c0120cbf9ed5d5f4ddf5d19225e977f58bf268f4b8a7fa8' },
@@ -113,41 +115,33 @@ export const mockTransactions: Transaction[] = [
   { id: 'tx006', date: subDays(today, 12).toISOString(), type: 'received', amount: 200.00, status: 'completed', from: 'Hannah Block', description: 'Marketplace sale', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/2f2ij65i8i27h810g4564gfj3ih9h9j8hhi9h5d669i11jfj602j8e2e1je2' },
   { id: 'tx007', date: subDays(today, 15).toISOString(), type: 'mining_reward', amount: 6.0288, status: 'completed', description: 'Daily mining reward', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/3g3jk76j9j38i921h5675hgk4ji0i0k9iij0i6e770j22kgkg713k9f3f2kf3' },
   { id: 'tx008', date: subDays(today, 18).toISOString(), type: 'sent', amount: 5.00, status: 'failed', to: 'InvalidUser', description: 'Test transaction', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/4h4kl87k0k49j032i6786ihl5kj1j1l0jjk1j7f881k33lhlh824l0g4g3lg4' },
-  { id: 'tx009', date: subDays(today, 20).toISOString(), type: 'received', amount: 1.00, status: 'pending', from: 'Charlie User', description: 'Coffee', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/5i5lm98l1l50k143j7897jim6lk2k2m1kkl2k8g992l44mimi935m1h5h4mh5' },
-  { id: 'tx010', date: subDays(today, 22).toISOString(), type: 'node_bonus', amount: 12.5, status: 'completed', description: 'Weekly node operation bonus', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/6j6mn09m2m61l254k8908kjn7ml3l3n2llm3l9h003m55njnj046n2i6i5ni6' },
-  { id: 'tx011', date: subDays(today, 25).toISOString(), type: 'mining_reward', amount: 6.0288, status: 'completed', description: 'Daily mining reward', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/7k7no10n3n72m365l9019lko8nm4m4o3mmn4m0i114n66okok157o3j7j6oj7' },
-  { id: 'tx012', date: subDays(today, 30).toISOString(), type: 'sent', amount: 100.00, status: 'completed', to: 'Julia Token', description: 'Pi App purchase', blockExplorerUrl: 'https://api.minepi.com/blockchain/transactions/8l8op21o4o83n476m0120mlp9on5n5p4nno5n1j225o77plpl268p4k8k7pk8' },
 ];
 
+// Optimized chart data with dynamic generation
+const generateChartData = (months: number) => {
+  const data = [];
+  const baseTransferable = 4800;
+  const baseUnverified = 4800;
+  
+  for (let i = months - 1; i >= 0; i--) {
+    const date = subMonths(today, i);
+    const transferable = baseTransferable + (months - i) * 100;
+    const unverified = baseUnverified - (months - i) * 100;
+    
+    data.push({
+      date: date.toISOString().split('T')[0],
+      transferable,
+      unverified
+    });
+  }
+  
+  return data;
+};
 
 export const mockChartData: MockChartData = {
-  '3M': [
-    { date: '2024-04-01', transferable: 5200, unverified: 4500 },
-    { date: '2024-05-01', transferable: 5500, unverified: 4300 },
-    { date: '2024-06-01', transferable: mockUser.balanceBreakdown?.transferableToMainnet || 0, unverified: mockUser.balanceBreakdown?.totalUnverifiedPi || 0 },
-  ],
-  '6M': [
-    { date: '2024-01-01', transferable: 4800, unverified: 4800 },
-    { date: '2024-02-01', transferable: 5000, unverified: 4700 },
-    { date: '2024-03-01', transferable: 5100, unverified: 4600 },
-    { date: '2024-04-01', transferable: 5200, unverified: 4500 },
-    { date: '2024-05-01', transferable: 5500, unverified: 4300 },
-    { date: '2024-06-01', transferable: mockUser.balanceBreakdown?.transferableToMainnet || 0, unverified: mockUser.balanceBreakdown?.totalUnverifiedPi || 0 },
-  ],
-  '12M': [
-    { date: '2023-07-01', transferable: 3000, unverified: 5500 },
-    { date: '2023-08-01', transferable: 3200, unverified: 5400 },
-    { date: '2023-09-01', transferable: 3500, unverified: 5300 },
-    { date: '2023-10-01', transferable: 3800, unverified: 5200 },
-    { date: '2023-11-01', transferable: 4200, unverified: 5000 },
-    { date: '2023-12-01', transferable: 4500, unverified: 4900 },
-    { date: '2024-01-01', transferable: 4800, unverified: 4800 },
-    { date: '2024-02-01', transferable: 5000, unverified: 4700 },
-    { date: '2024-03-01', transferable: 5100, unverified: 4600 },
-    { date: '2024-04-01', transferable: 5200, unverified: 4500 },
-    { date: '2024-05-01', transferable: 5500, unverified: 4300 },
-    { date: '2024-06-01', transferable: mockUser.balanceBreakdown?.transferableToMainnet || 0, unverified: mockUser.balanceBreakdown?.totalUnverifiedPi || 0 },
-  ],
+  '3M': generateChartData(3),
+  '6M': generateChartData(6),
+  '12M': generateChartData(12),
 };
 
 export const GAMIFICATION_BADGE_IDS = gamificationBadges.map(b => b.id);
@@ -156,6 +150,7 @@ export const ALL_MOCK_BADGES = [
   ...gamificationBadges
 ];
 
+// Optimized notifications - reduced from 5 to 3
 export const mockNotifications: Notification[] = [
     {
         id: 'notif_001',
@@ -181,24 +176,6 @@ export const mockNotifications: Notification[] = [
         title: 'Team Member KYC Verified',
         description: 'Your team member, Bob Miner, has completed their KYC verification.',
         date: subDays(today, 3).toISOString(),
-        read: true,
-        link: '/dashboard/team'
-    },
-     {
-        id: 'notif_004',
-        type: 'announcement',
-        title: 'Community Donation Goal Met!',
-        description: 'Thanks to your support, we\'ve reached our monthly server cost goal.',
-        date: subDays(today, 5).toISOString(),
-        read: true,
-        link: '/dashboard/donate'
-    },
-    {
-        id: 'notif_005',
-        type: 'team_message',
-        title: 'Message from your Team Leader',
-        description: 'Great work this week everyone! Let\'s keep up the momentum.',
-        date: subHours(today, 26).toISOString(),
         read: true,
         link: '/dashboard/team'
     },

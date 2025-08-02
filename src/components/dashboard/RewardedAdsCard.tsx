@@ -2,31 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { getPiSDKInstance } from '@/lib/pi-network';
 import { sendA2UPayment } from '@/services/piService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User } from '@/data/schemas';
-import { Play, Gift, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Gift } from 'lucide-react';
 import { notifyAdRewardEarned, notifyAdNotAvailable } from '@/services/notificationService';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
+import { AdPlayer } from './ads/AdPlayer';
+import { AdRewardDisplay } from './ads/AdRewardDisplay';
+import { AdStats } from './ads/AdStats';
+
+const MAX_DAILY_WATCHES = 10;
+const REWARD_AMOUNT = 0.01; // 0.01 Pi per ad
 
 export default function RewardedAdsCard() {
   const { user } = useAuth() as { user: User | null };
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const [rewardProgress, setRewardProgress] = useState(0);
   const [isAdReady, setIsAdReady] = useState(true);
   const [dailyWatches, setDailyWatches] = useState(0);
   const [lastRewardTime, setLastRewardTime] = useState<Date | null>(null);
-  const [canPayReward, setCanPayReward] = useState<{ canPay: boolean; reason: string }>({ canPay: false, reason: '' });
-  const MAX_DAILY_WATCHES = 10;
-  const REWARD_AMOUNT = 0.01; // 0.01 Pi per ad
 
   useEffect(() => {
     if (user) {
@@ -35,33 +32,8 @@ export default function RewardedAdsCard() {
     }
   }, [user]);
 
-  if (isLoading) return (
-    <Card className="shadow-lg flex items-center justify-center min-h-[120px]">
-      <LoadingSpinner size={24} />
-    </Card>
-  );
-
-  if (!user) return (
-    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
-      <span className="text-gray-500">Please log in to watch ads.</span>
-    </Card>
-  );
-
-  if (!isAdReady) return (
-    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
-      <span className="text-gray-500">Ads are not currently available. Please try again later.</span>
-    </Card>
-  );
-
-  if (dailyWatches >= MAX_DAILY_WATCHES) return (
-    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
-      <span className="text-gray-500">You&apos;ve reached your daily limit. Come back tomorrow for more rewards!</span>
-    </Card>
-  );
-
   const checkAdReadiness = async () => {
     try {
-      // Check if user can watch ads
       const response = await fetch('/api/ads/readiness', {
         credentials: 'include'
       });
@@ -80,7 +52,6 @@ export default function RewardedAdsCard() {
 
   const loadDailyStats = async () => {
     try {
-      // Load from database via API
       const response = await fetch('/api/ads/stats', {
         credentials: 'include'
       });
@@ -90,7 +61,7 @@ export default function RewardedAdsCard() {
         setDailyWatches(data.dailyWatches || 0);
         setLastRewardTime(data.lastRewardTime ? new Date(data.lastRewardTime) : null);
       } else {
-        // Fallback to localStorage for backward compatibility
+        // Fallback to localStorage
         const today = new Date().toDateString();
         const stored = localStorage.getItem('rewardedAdsStats');
         
@@ -98,132 +69,61 @@ export default function RewardedAdsCard() {
           const stats = JSON.parse(stored);
           if (stats.date === today) {
             setDailyWatches(stats.watches || 0);
-            setLastRewardTime(stats.lastReward ? new Date(stats.lastReward) : null);
-          } else {
-            setDailyWatches(0);
-            setLastRewardTime(null);
+            setLastRewardTime(stats.lastRewardTime ? new Date(stats.lastRewardTime) : null);
           }
         }
       }
     } catch (error) {
       console.error('Failed to load daily stats:', error);
-      // Fallback to localStorage
-      const today = new Date().toDateString();
-      const stored = localStorage.getItem('rewardedAdsStats');
-      
-      if (stored) {
-        const stats = JSON.parse(stored);
-        if (stats.date === today) {
-          setDailyWatches(stats.watches || 0);
-          setLastRewardTime(stats.lastReward ? new Date(stats.lastReward) : null);
-        }
-      }
     }
   };
 
-  const saveDailyStats = async (rewarded: boolean) => {
-    try {
-      // Save to database via API
-      const newWatches = rewarded ? dailyWatches + 1 : dailyWatches;
-      const newLastReward = rewarded ? new Date().toISOString() : lastRewardTime?.toISOString();
-      
-      await fetch('/api/ads/stats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          dailyWatches: newWatches,
-          lastRewardTime: newLastReward,
-          rewarded
-        })
-      });
-      
-      setDailyWatches(newWatches);
-      if (rewarded) {
-        setLastRewardTime(new Date());
-      }
-    } catch (error) {
-      console.error('Failed to save daily stats:', error);
-      // Fallback to localStorage
-      const today = new Date().toDateString();
-      const newWatches = rewarded ? dailyWatches + 1 : dailyWatches;
-      const newLastReward = rewarded ? new Date().toISOString() : lastRewardTime?.toISOString();
-      
-      localStorage.setItem('rewardedAdsStats', JSON.stringify({
-        date: today,
-        watches: newWatches,
-        lastReward: newLastReward
-      }));
-      
-      setDailyWatches(newWatches);
-      if (rewarded) {
-        setLastRewardTime(new Date());
-      }
-    }
-  };
-
-  const handleWatchAd = async () => {
-    if (!user || dailyWatches >= MAX_DAILY_WATCHES) return;
-
-    setIsLoading(true);
-    setIsWatchingAd(true);
-    setRewardProgress(0);
+  const handleAdComplete = async (rewarded: boolean) => {
+    if (!user) return;
 
     try {
-      const sdk = getPiSDKInstance();
+      // Update daily stats
+      const newWatches = dailyWatches + 1;
+      setDailyWatches(newWatches);
       
-      // Simulate ad progress
-      const progressInterval = setInterval(() => {
-        setRewardProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 500);
-
-      // Simulate ad watching for development
-      const result = { result: Math.random() > 0.2 ? 'AD_REWARDED' : 'AD_FAILED' };
-      
-      clearInterval(progressInterval);
-      setRewardProgress(100);
-
-      if (result.result === 'AD_REWARDED') {
-        // Grant reward
+      if (rewarded) {
+        setLastRewardTime(new Date());
         await grantReward();
-        saveDailyStats(true);
-        
         toast({
-          title: "Reward earned! 🎉",
-          description: `You earned ${REWARD_AMOUNT} Pi for watching the ad.`,
+          title: "Reward earned!",
+          description: `You've earned ${REWARD_AMOUNT} π for watching the ad.`,
         });
         notifyAdRewardEarned(REWARD_AMOUNT);
       } else {
-        saveDailyStats(false);
         toast({
           title: "Ad completed",
           description: "Thanks for watching! No reward this time.",
         });
       }
 
+      // Save stats
+      await saveDailyStats(rewarded);
+      
       // Check ad readiness for next time
       setTimeout(checkAdReadiness, 1000);
       
     } catch (error) {
-      console.error('Ad watching failed:', error);
+      console.error('Ad completion failed:', error);
       toast({
-        title: "Ad failed",
-        description: "Unable to display ad. Please try again later.",
+        title: "Error",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
-      notifyAdNotAvailable();
-      saveDailyStats(false);
-    } finally {
-      setIsLoading(false);
-      setIsWatchingAd(false);
-      setRewardProgress(0);
     }
+  };
+
+  const handleAdError = (error: string) => {
+    toast({
+      title: "Ad failed",
+      description: error,
+      variant: "destructive",
+    });
+    notifyAdNotAvailable();
   };
 
   const grantReward = async () => {
@@ -243,31 +143,50 @@ export default function RewardedAdsCard() {
       console.log('✅ Reward granted successfully');
     } catch (error) {
       console.error('❌ Failed to grant reward:', error);
-      // Don't show error to user as the ad was still watched
     }
   };
 
-  const checkAppPaymentCapability = async () => {
+  const saveDailyStats = async (rewarded: boolean) => {
     try {
-      // For now, assume we can't pay rewards (this would be implemented with app balance checking)
-      setCanPayReward({ 
-        canPay: false, 
-        reason: 'App currently cannot pay rewards. This is normal for development/testing.' 
+      const today = new Date().toDateString();
+      const newWatches = dailyWatches + 1;
+      
+      // Save to API
+      await fetch('/api/ads/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          dailyWatches: newWatches,
+          lastRewardTime: rewarded ? new Date().toISOString() : lastRewardTime?.toISOString(),
+          rewarded
+        })
       });
+
+      // Fallback to localStorage
+      localStorage.setItem('rewardedAdsStats', JSON.stringify({
+        date: today,
+        watches: newWatches,
+        lastRewardTime: rewarded ? new Date().toISOString() : lastRewardTime?.toISOString()
+      }));
     } catch (error) {
-      console.error('Failed to check app payment capability:', error);
-      setCanPayReward({ canPay: false, reason: 'Unable to check payment capability' });
+      console.error('Failed to save daily stats:', error);
     }
   };
+
+  if (isLoading) return (
+    <Card className="shadow-lg flex items-center justify-center min-h-[120px]">
+      <LoadingSpinner size={24} />
+    </Card>
+  );
+
+  if (!user) return (
+    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
+      <span className="text-gray-500">Please log in to watch ads.</span>
+    </Card>
+  );
 
   const canWatchAd = isAdReady && !isLoading && dailyWatches < MAX_DAILY_WATCHES;
-  const timeUntilReset = () => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    return tomorrow.getTime() - now.getTime();
-  };
 
   return (
     <Card>
@@ -277,75 +196,26 @@ export default function RewardedAdsCard() {
             <Gift className="h-5 w-5" />
             <span>Watch Ads for Pi</span>
           </div>
-          <Badge variant="secondary" className="text-xs w-fit">
-            {dailyWatches}/{MAX_DAILY_WATCHES} today
-          </Badge>
+          <AdStats 
+            dailyWatches={dailyWatches}
+            maxDailyWatches={MAX_DAILY_WATCHES}
+            lastRewardTime={lastRewardTime}
+          />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!isAdReady && (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Ads are not currently available. Please try again later.
-            </AlertDescription>
-          </Alert>
-        )}
+        <AdRewardDisplay
+          dailyWatches={dailyWatches}
+          maxDailyWatches={MAX_DAILY_WATCHES}
+          rewardAmount={REWARD_AMOUNT}
+          isAdReady={isAdReady}
+        />
 
-        {dailyWatches >= MAX_DAILY_WATCHES && (
-          <Alert>
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>
-              You&apos;ve reached your daily limit. Come back tomorrow for more rewards!
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {isWatchingAd && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Watching ad...</span>
-              <span>{rewardProgress}%</span>
-            </div>
-            <Progress value={rewardProgress} className="w-full" />
-          </div>
-        )}
-
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted rounded-lg gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="font-medium">Reward per ad</div>
-              <div className="text-sm text-muted-foreground">Watch a short video</div>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <div className="font-bold text-lg">{REWARD_AMOUNT} π</div>
-              <div className="text-xs text-muted-foreground">Pi Network</div>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleWatchAd}
-            disabled={!canWatchAd}
-            className="w-full"
-            size="lg"
-          >
-            {isLoading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-            <span className="ml-2">
-              {isLoading ? 'Loading Ad...' : 'Watch Ad for Pi'}
-            </span>
-          </Button>
-        </div>
-
-        <div className="text-xs text-muted-foreground space-y-1">
-          <p>• Watch ads to earn Pi rewards</p>
-          <p>• Limited to {MAX_DAILY_WATCHES} ads per day</p>
-          <p>• Rewards are sent directly to your Pi wallet</p>
-          <p>• Ads must be watched completely to earn rewards</p>
-        </div>
+        <AdPlayer
+          onAdComplete={handleAdComplete}
+          onAdError={handleAdError}
+          disabled={!canWatchAd}
+        />
       </CardContent>
     </Card>
   );

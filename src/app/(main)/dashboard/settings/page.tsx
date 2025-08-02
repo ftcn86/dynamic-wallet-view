@@ -151,22 +151,33 @@ function ProfileCard() {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-      const { user: rawUser } = useAuth();
+  const { user: rawUser } = useAuth();
   const user = rawUser as User | null;
   const { toast } = useToast();
 
+  // FIXED: Add fallback for missing settings (moved before usage)
+  const defaultSettings = {
+    theme: 'system' as const,
+    language: 'en',
+    notifications: true,
+    emailNotifications: false,
+    remindersEnabled: true,
+    reminderHoursBefore: 1,
+  };
+
+  // Use user settings or fallback to defaults
+  const userSettings = user?.settings || defaultSettings;
+
   const [isSaving, setIsSaving] = useState(false);
-  const [remindersEnabled, setRemindersEnabled] = useState(user?.settings?.remindersEnabled || false);
-  const [reminderHours, setReminderHours] = useState(user?.settings?.reminderHoursBefore || 1);
+  const [remindersEnabled, setRemindersEnabled] = useState(userSettings.remindersEnabled);
+  const [reminderHours, setReminderHours] = useState(userSettings.reminderHoursBefore);
 
   useEffect(() => {
-    if (user?.settings) {
-      setRemindersEnabled(user.settings.remindersEnabled ?? true);
-      setReminderHours(user.settings.reminderHoursBefore ?? 1);
-    }
-  }, [user?.settings]);
-  
-  if (!user || !user.settings) {
+    setRemindersEnabled(userSettings.remindersEnabled);
+    setReminderHours(userSettings.reminderHoursBefore);
+  }, [userSettings]);
+
+  if (!user) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <LoadingSpinner size={32} />

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
-import { createSession } from '@/lib/session';
+import { createSession, getSessionUser } from '@/lib/session';
 
 /**
  * Pi Network Authentication API Endpoint
@@ -101,8 +101,8 @@ export async function POST(request: NextRequest) {
           lastActive: new Date().toISOString(),
         });
       } else {
-        // Create new user with minimal data
-        console.log('🆕 Creating new user in database');
+        // Create new user with complete data (FIXED: Added all required fields)
+        console.log('🆕 Creating new user in database with complete data');
         const newUser = {
           id: user.uid,
           username: user.username,
@@ -111,17 +111,46 @@ export async function POST(request: NextRequest) {
           walletAddress: user.wallet_address || '',
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
           bio: '',
+          balance: 0,
+          miningRate: 0,
+          teamSize: 0,
+          isNodeOperator: false,
+          nodeUptimePercentage: 0,
+          kycStatus: 'not_completed' as const,
           joinDate: new Date().toISOString(),
           lastActive: new Date().toISOString(),
           termsAccepted: true,
+          accessToken: '',
+          refreshToken: '',
+          tokenExpiresAt: undefined,
+          // CRITICAL: Add all required fields for settings page
           settings: {
             theme: 'system' as const,
             language: 'en',
             notifications: true,
             emailNotifications: false,
-            remindersEnabled: false,
+            remindersEnabled: true,
             reminderHoursBefore: 1,
           },
+          // CRITICAL: Add balance breakdown for dashboard
+          balanceBreakdown: {
+            transferableToMainnet: 0,
+            totalUnverifiedPi: 0,
+            currentlyInLockups: 0,
+          },
+          // CRITICAL: Add unverified Pi details
+          unverifiedPiDetails: {
+            fromReferralTeam: 0,
+            fromSecurityCircle: 0,
+            fromNodeRewards: 0,
+            fromOtherBonuses: 0,
+          },
+          // CRITICAL: Add empty arrays for badges and other relations
+          badges: [],
+          transactions: [],
+          notifications: [],
+          teamMembers: [],
+          balanceHistory: [],
         };
         dbUser = await UserService.createUser(newUser);
       }
@@ -193,51 +222,24 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const sessionCookie = request.cookies.get('pi-session');
+    // FIXED: Use proper session management
+    const user = await getSessionUser(request);
     
-    if (!sessionCookie?.value) {
+    if (!user) {
       return NextResponse.json(
         { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      );
-    }
-
-    if (!sessionData.userId) {
-      return NextResponse.json(
-        { error: 'Invalid session data' },
-        { status: 401 }
-      );
-    }
-
-    // Get user from database
-    const { UserService } = await import('@/services/databaseService');
-    const user = await UserService.getUserById(sessionData.userId);
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json({
       success: true,
       user: {
-        id: (user as any).id,
-        username: (user as any).username,
-        name: (user as any).name,
-        email: (user as any).email,
-        walletAddress: (user as any).walletAddress,
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        walletAddress: user.walletAddress,
       }
     });
 

@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserService } from '@/services/databaseService';
+import { getSessionUser } from '@/lib/session';
 import type { User } from '@/data/schemas';
 
 // GET - Retrieve user settings
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
+    // FIXED: Use proper session management
+    const user = await getSessionUser(request);
+    if (!user) {
       return NextResponse.json(
-        { success: false, message: 'User ID is required' },
-        { status: 400 }
+        { success: false, message: 'No session found' },
+        { status: 401 }
       );
     }
 
-    const user = await UserService.getUserById(userId);
-    if (!user) {
+    const dbUser = await UserService.getUserById(user.id);
+    if (!dbUser) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: 404 }
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      settings: (user as User).settings
+      settings: (dbUser as User).settings
     });
 
   } catch (error) {
@@ -44,14 +44,16 @@ export async function GET(request: NextRequest) {
 // PUT - Update user settings
 export async function PUT(request: NextRequest) {
   try {
-    const { userId, settings } = await request.json();
-
-    if (!userId) {
+    // FIXED: Use proper session management
+    const user = await getSessionUser(request);
+    if (!user) {
       return NextResponse.json(
-        { success: false, message: 'User ID is required' },
-        { status: 400 }
+        { success: false, message: 'No session found' },
+        { status: 401 }
       );
     }
+
+    const { settings } = await request.json();
 
     if (!settings) {
       return NextResponse.json(
@@ -61,7 +63,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate that user exists
-    const existingUser = await UserService.getUserById(userId);
+    const existingUser = await UserService.getUserById(user.id);
     if (!existingUser) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
@@ -70,7 +72,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update user settings
-    const updatedUser = await UserService.updateUser(userId, { settings });
+    const updatedUser = await UserService.updateUser(user.id, { settings });
 
     return NextResponse.json({
       success: true,

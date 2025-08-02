@@ -33,54 +33,25 @@ export async function POST(request: NextRequest) {
         throw new Error('Transaction verification failed');
       }
 
-      // Get or create user for transaction
+      // Get authenticated user for transaction
       const { UserService } = await import('@/services/databaseService');
+      const { getSessionUser } = await import('@/lib/session');
       
-      // Try to get existing user or create default user
-      let user: any = await UserService.getUserById('default_user_id');
+      // FIXED: Use real authenticated user instead of default user
+      const sessionUser = await getSessionUser(request);
+      if (!sessionUser) {
+        return NextResponse.json(
+          { error: 'No session found' },
+          { status: 401 }
+        );
+      }
+      
+      let user: any = await UserService.getUserById(sessionUser.id);
       if (!user) {
-        // Try to get by username first
-        user = await UserService.getUserByUsername('default_user');
-        if (!user) {
-          // Create a default user if none exists
-          user = await UserService.createUser({
-          id: 'default_user_id',
-          username: 'default_user',
-          name: 'Default User',
-          avatar: '/default-avatar.png',
-          balance: 0,
-          miningRate: 0,
-          teamSize: 0,
-          isNodeOperator: false,
-          kycStatus: 'verified',
-          joinDate: new Date().toISOString(),
-          termsAccepted: true,
-          settings: {
-            theme: 'system',
-            language: 'en',
-            notifications: true,
-            emailNotifications: false,
-            remindersEnabled: false,
-            reminderHoursBefore: 1,
-          },
-          balanceBreakdown: {
-            transferableToMainnet: 0,
-            totalUnverifiedPi: 0,
-            currentlyInLockups: 0,
-          },
-          unverifiedPiDetails: {
-            fromReferralTeam: 0,
-            fromSecurityCircle: 0,
-            fromNodeRewards: 0,
-            fromOtherBonuses: 0,
-          },
-          badges: [],
-          userActiveMiningHours_LastWeek: 0,
-          userActiveMiningHours_LastMonth: 0,
-          activeMiningDays_LastWeek: 0,
-          activeMiningDays_LastMonth: 0,
-        });
-        }
+        return NextResponse.json(
+          { error: 'User not found in database' },
+          { status: 404 }
+        );
       }
       
       const userId = user.id;

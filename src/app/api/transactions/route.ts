@@ -1,43 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/session';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get session from cookie (following demo pattern)
-    const sessionCookie = request.cookies.get('pi-session');
-    
-    if (!sessionCookie?.value) {
-      return NextResponse.json(
-        { error: 'No session found' },
-        { status: 401 }
-      );
-    }
-
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      console.error('❌ Invalid session cookie:', error);
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      );
-    }
-
-    if (!sessionData.userId) {
-      return NextResponse.json(
-        { error: 'Invalid session data' },
-        { status: 401 }
-      );
-    }
-
-    // Get user from database
-    const { UserService } = await import('@/services/databaseService');
-    const user = await UserService.getUserById(sessionData.userId);
+    // FIXED: Use proper session management
+    const user = await getSessionUser(request);
     
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+        { error: 'No session found' },
+        { status: 401 }
       );
     }
 
@@ -82,42 +54,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get session from cookie (following demo pattern)
-    const sessionCookie = request.cookies.get('pi-session');
-    
-    if (!sessionCookie?.value) {
-      return NextResponse.json(
-        { error: 'No session found' },
-        { status: 401 }
-      );
-    }
-
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      console.error('❌ Invalid session cookie:', error);
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      );
-    }
-
-    if (!sessionData.userId) {
-      return NextResponse.json(
-        { error: 'Invalid session data' },
-        { status: 401 }
-      );
-    }
-
-    // Get user from database
-    const { UserService } = await import('@/services/databaseService');
-    const user = await UserService.getUserById(sessionData.userId);
+    // FIXED: Use proper session management
+    const user = await getSessionUser(request);
     
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+        { error: 'No session found' },
+        { status: 401 }
       );
     }
 

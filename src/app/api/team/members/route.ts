@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { TeamMember } from '@/data/schemas';
+import { getSessionUser } from '@/lib/session';
 
 // In-memory storage for team members (in production, this would be a database)
 const teamMembers: TeamMember[] = [
@@ -66,10 +67,11 @@ const teamMembers: TeamMember[] = [
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // FIXED: Use proper session management
+    const user = await getSessionUser(request);
+    if (!user) {
       return NextResponse.json(
-        { error: 'Authorization header required' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }

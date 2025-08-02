@@ -1,28 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UserService } from '@/services/databaseService';
+import { getSessionUser } from '@/lib/session';
 
 // GET - Retrieve user profile
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const username = searchParams.get('username');
-
-    if (!userId && !username) {
+    // FIXED: Use proper session management
+    const user = await getSessionUser(request);
+    if (!user) {
       return NextResponse.json(
-        { success: false, message: 'User ID or username is required' },
-        { status: 400 }
+        { success: false, message: 'No session found' },
+        { status: 401 }
       );
     }
 
-    let user;
-    if (userId) {
-      user = await UserService.getUserById(userId);
-    } else if (username) {
-      user = await UserService.getUserByUsername(username);
-    }
-
-    if (!user) {
+    const dbUser = await UserService.getUserById(user.id);
+    if (!dbUser) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: 404 }
@@ -31,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      user
+      user: dbUser
     });
 
   } catch (error) {
@@ -50,17 +43,19 @@ export async function GET(request: NextRequest) {
 // PUT - Update user profile
 export async function PUT(request: NextRequest) {
   try {
-    const { userId, ...updateData } = await request.json();
-
-    if (!userId) {
+    // FIXED: Use proper session management
+    const user = await getSessionUser(request);
+    if (!user) {
       return NextResponse.json(
-        { success: false, message: 'User ID is required' },
-        { status: 400 }
+        { success: false, message: 'No session found' },
+        { status: 401 }
       );
     }
 
+    const { ...updateData } = await request.json();
+
     // Validate that user exists
-    const existingUser = await UserService.getUserById(userId);
+    const existingUser = await UserService.getUserById(user.id);
     if (!existingUser) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
@@ -69,7 +64,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update user
-    const updatedUser = await UserService.updateUser(userId, updateData);
+    const updatedUser = await UserService.updateUser(user.id, updateData);
 
     return NextResponse.json({
       success: true,

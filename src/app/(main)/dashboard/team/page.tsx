@@ -86,17 +86,17 @@ function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
 
     return (
         <Card className="shadow-lg w-full max-w-full">
-            <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl break-words">
-                <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0"/> 
-                {t('teamInsights.managementTools.title')}
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm lg:text-base break-words">
-                {t('teamInsights.managementTools.description')}
-            </CardDescription>
+            <CardHeader className="pb-3 sm:pb-4">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl break-words">
+                    <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0"/> 
+                    {t('teamInsights.managementTools.title')}
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm lg:text-base break-words">
+                    {t('teamInsights.managementTools.description')}
+                </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6 w-full max-w-full">
-                <div className="flex flex-col space-y-4 rounded-lg border p-3 sm:p-4 w-full min-w-0">
+            <CardContent className="space-y-3 sm:space-y-4 md:space-y-6 w-full max-w-full">
+                <div className="flex flex-col space-y-3 sm:space-y-4 rounded-lg border p-2 sm:p-3 md:p-4 w-full min-w-0">
                     <div className="flex items-center gap-2 font-medium">
                         <BellIcon className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 flex-shrink-0"/>
                         <h3 className="text-xs sm:text-sm lg:text-base break-words min-w-0">{t('teamInsights.managementTools.pingInactive.title')}</h3>
@@ -343,7 +343,7 @@ export default function TeamInsightsPage() {
   // } // This line was removed as per the edit hint
 
   return (
-    <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
+    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-hidden">
       <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold font-headline break-words">
         {t('teamInsights.title')}
       </h1>

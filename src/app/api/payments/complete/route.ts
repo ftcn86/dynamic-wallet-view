@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 
-function now() {
-  return new Date().toISOString();
-}
-
 /**
- * Payment Completion Endpoint (Following Official Demo Pattern)
+ * Payment Completion Endpoint (Following Official Pi Network Documentation EXACTLY)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -26,10 +22,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[${now()}] 🔍 [COMPLETE] Request received for paymentId:`, paymentId, 'txid:', txid);
+    console.log(`🔍 [COMPLETE] Request received for paymentId:`, paymentId, 'txid:', txid);
     const piPlatformClient = getPiPlatformAPIClient();
 
-    // 1. Get authenticated user from access token (Official Demo Pattern)
+    // 1. Get authenticated user from access token (Official Pattern)
     const accessToken = request.cookies.get('pi-access-token')?.value;
     if (!accessToken) {
       return NextResponse.json(
@@ -38,52 +34,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user with Pi Platform API
+    // 2. Verify user with Pi Platform API (Official Pattern)
     let userData;
     try {
       userData = await piPlatformClient.verifyUser(accessToken);
-      console.log(`[${now()}] ✅ User verified:`, userData.uid);
+      console.log(`✅ User verified:`, userData.uid);
     } catch (error) {
-      console.error(`[${now()}] ❌ User verification failed:`, error);
+      console.error(`❌ User verification failed:`, error);
       return NextResponse.json(
         { error: 'Invalid access token' },
         { status: 401 }
       );
     }
 
-    // 2. Complete the payment with Pi Network
+    // 3. Complete the payment with Pi Network (Official Pattern)
     try {
-      console.log(`[${now()}] 🔗 Calling piPlatformClient.completePayment...`);
-      const completedPayment = await piPlatformClient.completePayment(paymentId, txid);
-      console.log(`[${now()}] ✅ Payment completed successfully`);
-
-      // 3. Update transaction in database (simplified)
-      console.log(`[${now()}] 💾 Payment completed, skipping DB update for now...`);
-      // Note: In a full implementation, you would update the transaction status here
-      // For now, we focus on the core payment completion functionality
-
-      // 4. Add notification for successful completion
+      console.log(`🔗 Calling piPlatformClient.completePayment...`);
+      await piPlatformClient.completePayment(paymentId, txid);
+      console.log(`✅ Payment completed successfully`);
+      
+      // 4. Store transaction (NON-CRITICAL, can fail safely)
       try {
-        const { addNotification } = await import('@/services/notificationService');
-        addNotification(
-          'announcement',
-          'Payment Completed',
-          `Payment of ${(completedPayment as { amount: number }).amount}π has been completed successfully.`,
-          '/dashboard/transactions'
-        );
-      } catch (notificationError) {
-        console.warn(`[${now()}] ⚠️ Failed to add notification:`, notificationError);
+        console.log(`💾 [COMPLETE] Storing transaction after successful payment...`);
+        const storeResponse = await fetch(`${request.nextUrl.origin}/api/transactions/store`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': request.headers.get('cookie') || '',
+          },
+          body: JSON.stringify({
+            paymentId,
+            txid,
+            metadata: { to: 'Dynamic Wallet View' }
+          })
+        });
+        
+        if (storeResponse.ok) {
+          console.log(`✅ [COMPLETE] Transaction stored successfully`);
+        } else {
+          console.warn(`⚠️ [COMPLETE] Transaction storage failed, but payment is complete`);
+        }
+      } catch (storageError) {
+        console.warn(`⚠️ [COMPLETE] Transaction storage failed, but payment is complete:`, storageError);
       }
 
-      console.log(`[${now()}] 🚀 Responding to frontend with success.`);
+      // 5. Return success response (Official Pattern)
       return NextResponse.json({
         success: true,
-        message: `Payment ${paymentId} completed successfully`,
-        payment: completedPayment
+        message: `Payment ${paymentId} completed successfully`
       });
 
     } catch (completionError) {
-      console.error(`[${now()}] ❌ Payment completion failed:`, completionError);
+      console.error(`❌ Payment completion failed:`, completionError);
       return NextResponse.json(
         { 
           success: false, 
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(`[${now()}] ❌ Payment completion endpoint error:`, error);
+    console.error(`❌ Payment completion endpoint error:`, error);
     return NextResponse.json(
       { 
         success: false, 

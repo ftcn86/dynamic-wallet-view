@@ -110,11 +110,11 @@ export default function DashboardPage() {
   const totalTeamMembers = mockTeam.length;
 
   return (
-    <div className="w-full max-w-full space-y-4 sm:space-y-6">
+    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6">
       
       {/* KPI Cards Grid - Horizontal Scrollable on Mobile */}
       <div className="scroll-container">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 auto-rows-fr min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6 auto-rows-fr min-w-0">
         <KPICard
           title="Total Pi Balance"
           value={
@@ -187,10 +187,11 @@ export default function DashboardPage() {
       {/* Tabs Container - Responsive and Overflow Safe */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-full">
         <ScrollArea className="w-full max-w-full">
-          <TabsList className="grid w-full grid-cols-4 h-auto min-h-[44px] sm:min-h-[48px] gap-1">
+          {/* FIXED: Improved mobile tab layout with better spacing */}
+          <TabsList className="grid w-full grid-cols-4 h-auto min-h-[40px] sm:min-h-[44px] md:min-h-[48px] gap-1 p-1">
             <TabsTrigger 
               value="overview" 
-              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-2 min-h-[44px] sm:min-h-[48px]"
+              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
             >
               <PieChartIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="hidden sm:inline">Overview</span>
@@ -198,7 +199,7 @@ export default function DashboardPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="portfolio" 
-              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-2 min-h-[44px] sm:min-h-[48px]"
+              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
             >
               <BarChartIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="hidden sm:inline">Portfolio</span>
@@ -206,7 +207,7 @@ export default function DashboardPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="achievements" 
-              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-2 min-h-[44px] sm:min-h-[48px]"
+              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
             >
               <TrophyIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="hidden sm:inline">Achievements</span>
@@ -214,7 +215,7 @@ export default function DashboardPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="analysis" 
-              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-2 min-h-[44px] sm:min-h-[48px]"
+              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
             >
               <SettingsIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="hidden sm:inline">Analysis</span>
@@ -225,14 +226,15 @@ export default function DashboardPage() {
         </ScrollArea>
 
         {/* Tab Content - Responsive Grid Layouts */}
-        <TabsContent value="overview" className="mt-4 sm:mt-6 w-full max-w-full">
+        {/* FIXED: Improved mobile spacing and layout */}
+        <TabsContent value="overview" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
           <div className="scroll-container">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-0">
-            <div className="space-y-4 sm:space-y-6 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
+            <div className="space-y-3 sm:space-y-4 md:space-y-6 w-full">
               <BalanceBreakdownCard />
               <TeamActivityCard />
             </div>
-            <div className="space-y-4 sm:space-y-6 w-full">
+            <div className="space-y-3 sm:space-y-4 md:space-y-6 w-full">
               <UnverifiedPiDetailCard />
               <MiningFocusCard />
             </div>
@@ -240,9 +242,9 @@ export default function DashboardPage() {
         </div>
         </TabsContent>
         
-        <TabsContent value="portfolio" className="mt-4 sm:mt-6 w-full max-w-full">
+        <TabsContent value="portfolio" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
           <div className="scroll-container">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
             <div className="w-full">
               <BalanceFluctuationChartCard />
             </div>
@@ -253,9 +255,9 @@ export default function DashboardPage() {
         </div>
         </TabsContent>
         
-        <TabsContent value="achievements" className="mt-4 sm:mt-6 w-full max-w-full">
+        <TabsContent value="achievements" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
           <div className="scroll-container">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
             <div className="w-full">
               <MyBadgesCard />
             </div>
@@ -266,9 +268,9 @@ export default function DashboardPage() {
         </div>
         </TabsContent>
         
-        <TabsContent value="analysis" className="mt-4 sm:mt-6 w-full max-w-full">
+        <TabsContent value="analysis" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
           <div className="scroll-container">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full min-w-0">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
             <div className="w-full">
               <LockupCalculatorCard />
             </div>
@@ -277,7 +279,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-          <div className="mt-4 sm:mt-6 w-full">
+          <div className="mt-3 sm:mt-4 md:mt-6 w-full">
             <NativeFeaturesCard />
           </div>
         </TabsContent>

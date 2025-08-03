@@ -214,7 +214,8 @@ export class PiPlatformAPIClient {
       ...(options.headers as Record<string, string>),
     };
     if (!headers['Authorization']) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
+      // FIXED: Use 'Key' prefix for API key authentication (Official Pi Network Pattern)
+      headers['Authorization'] = `Key ${this.apiKey}`;
     }
     // Debug log
     console.log('[PiPlatformAPIClient] Request to', url, 'with headers:', headers);

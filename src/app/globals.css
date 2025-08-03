@@ -4,35 +4,41 @@
 @tailwind utilities;
 
 @layer base {
+  /* FIXED: Improved mobile body styles */
   body {
     @apply min-h-screen bg-background text-foreground;
     background-image: radial-gradient(circle at top left, hsl(var(--primary) / 0.05), transparent 30%),
                       radial-gradient(circle at bottom right, hsl(var(--accent) / 0.05), transparent 40%);
+    /* FIXED: Better mobile overflow handling */
+    overflow-x: hidden;
+    width: 100%;
+    min-width: 320px; /* Minimum width for mobile */
+    /* FIXED: Ensure consistent height handling */
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline;
   }
 
-  /* Improved mobile fluidity */
+  /* FIXED: Improved mobile fluidity */
   html {
     scroll-behavior: smooth;
+    /* FIXED: Better mobile viewport handling */
+    height: 100%;
+    overflow-x: hidden;
   }
 
-  /* Enable horizontal scrolling when needed */
-  body {
-    overflow-x: auto;
-    width: 100%;
-    min-width: 320px; /* Minimum width for mobile */
-  }
-
-  /* Container for horizontal scrolling */
+  /* FIXED: Improved container for horizontal scrolling */
   .scroll-container {
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground)) transparent;
+    /* FIXED: Better mobile touch handling */
+    touch-action: pan-x;
   }
 
   /* Custom scrollbar for webkit browsers */
@@ -53,7 +59,7 @@
     background-color: hsl(var(--muted-foreground) / 0.5);
   }
 
-  /* Fluid typography for better mobile scaling */
+  /* FIXED: Improved fluid typography for better mobile scaling */
   .fluid-text {
     font-size: clamp(0.875rem, 2.5vw, 1.125rem);
   }
@@ -68,6 +74,20 @@
 
   .fluid-text-2xl {
     font-size: clamp(1.5rem, 5vw, 2.25rem);
+  }
+
+  /* FIXED: Mobile-specific improvements */
+  @media (max-width: 640px) {
+    body {
+      /* FIXED: Better mobile padding and spacing */
+      padding: 0;
+      margin: 0;
+    }
+    
+    /* FIXED: Ensure cards don't overflow on mobile */
+    .card, [class*="card"] {
+      margin-bottom: 0.75rem;
+    }
   }
 }
 

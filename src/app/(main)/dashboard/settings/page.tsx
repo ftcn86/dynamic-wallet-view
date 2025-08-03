@@ -85,7 +85,7 @@ function ProfileCard() {
 
     return (
         <Card className="shadow-lg">
-            <CardHeader>
+            <CardHeader className="pb-3 sm:pb-4">
                 <CardTitle className="flex items-center">
                     <UserCircleIcon className="mr-2 h-5 w-5" />
                     Profile Information
@@ -93,11 +93,11 @@ function ProfileCard() {
                 <CardDescription>Update your personal information and avatar.</CardDescription>
             </CardHeader>
              <form onSubmit={handleSaveProfile}>
-                <CardContent className="space-y-6">
-                    <div className="flex flex-col items-center space-y-4">
-                        <Avatar className="h-32 w-32 ring-4 ring-primary/20 ring-offset-background ring-offset-2">
+                <CardContent className="space-y-4 sm:space-y-6">
+                    <div className="flex flex-col items-center space-y-3 sm:space-y-4">
+                        <Avatar className="h-24 w-24 sm:h-32 sm:w-32 ring-4 ring-primary/20 ring-offset-background ring-offset-2">
                             <AvatarImage src={avatarUrl} alt={displayName} data-ai-hint="person face" />
-                            <AvatarFallback className="text-4xl">{avatarFallback}</AvatarFallback>
+                            <AvatarFallback className="text-2xl sm:text-4xl">{avatarFallback}</AvatarFallback>
                         </Avatar>
                         <Button asChild variant="outline">
                             <Label htmlFor="avatar-upload" className="cursor-pointer">
@@ -211,22 +211,22 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
        <h1 className="text-2xl sm:text-3xl font-bold font-headline">Settings & Profile</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-8 max-w-4xl mx-auto">
         <div className="lg:col-span-2">
             <ProfileCard />
         </div>
         
         <Card className="shadow-lg">
-          <CardHeader>
+          <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="flex items-center text-lg sm:text-xl">
               <SettingsIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
               Display Preferences
               </CardTitle>
             <CardDescription className="text-sm sm:text-base">Manage your application theme to suit your style.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 sm:space-y-8 pt-6">
+          <CardContent className="space-y-4 sm:space-y-6 md:space-y-8 pt-4 sm:pt-6">
             <div className="space-y-3">
               <Label className="text-base sm:text-lg font-medium">Theme</Label>
               <div className="flex space-x-2 rounded-md bg-muted p-1">

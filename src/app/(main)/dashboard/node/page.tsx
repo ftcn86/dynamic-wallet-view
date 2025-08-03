@@ -53,11 +53,11 @@ function NodeOperatorView() {
   
   if (isLoading) {
     return (
-      <div className="w-full max-w-full space-y-4 sm:space-y-6">
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-36 rounded-lg" />)}
         </div>
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2">
             <Skeleton className="h-28 rounded-lg" />
             <Skeleton className="h-28 rounded-lg" />
         </div>
@@ -80,8 +80,8 @@ function NodeOperatorView() {
     : 'Unknown';
 
   return (
-    <div className="w-full max-w-full space-y-4 sm:space-y-6">
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <NodeStatCard
                 title="Status"
                 icon={<ServerIcon />}

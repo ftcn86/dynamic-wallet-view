@@ -55,8 +55,8 @@ function FeedbackCard() {
     };
 
     return (
-        <Card className="w-full max-w-2xl shadow-xl mt-6">
-            <CardHeader>
+        <Card className="w-full max-w-2xl shadow-xl mt-4 sm:mt-6">
+            <CardHeader className="pb-3 sm:pb-4">
                 <CardTitle className="flex items-center">
                     <MessageSquareIcon className="mr-2 h-6 w-6" />
                     Submit Feedback
@@ -66,7 +66,7 @@ function FeedbackCard() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                     <Textarea
                         placeholder="Type your feedback here..."
                         value={feedback}
@@ -93,7 +93,7 @@ export default function HelpPage() {
   const helpSections = getLegalSections('legal.helpSections');
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-background p-4 py-8">
+    <div className="flex min-h-screen flex-col items-center bg-background p-2 sm:p-4 py-4 sm:py-6 md:py-8">
         <div className="w-full max-w-2xl">
             <LegalPageLayout
               pageTitle={t('legal.helpTitle')}

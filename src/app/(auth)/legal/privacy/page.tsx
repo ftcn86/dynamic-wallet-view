@@ -9,10 +9,14 @@ export default function PrivacyPage() {
   const privacySections = getLegalSections('legal.privacySections');
 
   return (
-    <LegalPageLayout
-      pageTitle={t('legal.privacyTitle')}
-      sections={privacySections}
-      displayMode="accordion"
-    />
+    <div className="flex min-h-screen flex-col items-center bg-background p-2 sm:p-4 py-4 sm:py-6 md:py-8">
+        <div className="w-full max-w-2xl">
+            <LegalPageLayout
+              pageTitle={t('legal.privacyTitle')}
+              sections={privacySections}
+              displayMode="accordion"
+            />
+        </div>
+    </div>
   );
 }

@@ -40,11 +40,11 @@ export default function DonatePage() {
   const progressPercentage = (currentDonations / MOCK_DONATION_GOAL) * 100;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="space-y-8">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 max-w-6xl">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold">Support Dynamic Wallet View</h1>
+        <div className="text-center space-y-3 sm:space-y-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">Support Dynamic Wallet View</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Help us keep this Pi Network dashboard free and improve it with new features. 
             Your support goes directly to server costs and development.
@@ -53,13 +53,13 @@ export default function DonatePage() {
 
         {/* Donation Goal Card */}
         <Card className="max-w-2xl mx-auto">
-          <CardHeader className="text-center">
+          <CardHeader className="text-center pb-3 sm:pb-4">
             <CardTitle>Monthly Goal</CardTitle>
             <CardDescription>
               Help us reach our monthly server cost goal
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Progress</span>
               <span className="text-sm text-muted-foreground">
@@ -82,9 +82,9 @@ export default function DonatePage() {
         </Card>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 max-w-6xl mx-auto">
           {/* Payment Form */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <PaymentForm
               title="Make a Donation"
               description="Support the development of Dynamic Wallet View"
@@ -95,7 +95,7 @@ export default function DonatePage() {
           </div>
 
           {/* Recent Supporters */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <RecentSupporters supporters={recentSupporters} />
             
             <Separator />

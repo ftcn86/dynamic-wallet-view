@@ -154,6 +154,7 @@ export async function validatePiToken(accessToken: string): Promise<boolean> {
 
 /**
  * Create a Pi Network payment
+ * Following the EXACT official Pi Network documentation pattern
  */
 export async function createPiPayment(
   paymentData: PiPaymentData,
@@ -168,21 +169,13 @@ export async function createPiPayment(
         createPayment: (data: PiPaymentData, callbacks: PaymentCallbacks) => Promise<PiPayment & { identifier: string }>;
       };
       
+      // FOLLOWING OFFICIAL PI NETWORK PATTERN EXACTLY
       const payment = await Pi.createPayment(paymentData, {
         onReadyForServerApproval: async (paymentId: string) => {
           console.log("Payment ready for server approval:", paymentId);
           
-          // Store payment info
-        activePayments.set(paymentId, {
-          paymentId,
-          status: 'pending',
-          amount: paymentData.amount,
-          memo: paymentData.memo,
-            createdAt: new Date().toISOString()
-          });
-          
           try {
-            // Call our backend to approve the payment
+            // Call our backend to approve the payment (Official Pattern)
             const response = await fetch('/api/payments/approve', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -191,9 +184,11 @@ export async function createPiPayment(
             
             if (response.ok) {
               console.log("✅ Payment approved by backend");
-        callbacks.onReadyForServerApproval(paymentId);
+              callbacks.onReadyForServerApproval(paymentId);
             } else {
-              throw new Error(`Backend approval failed: ${response.status}`);
+              const errorData = await response.json();
+              console.error("❌ Backend approval failed:", errorData);
+              throw new Error(`Backend approval failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
             }
           } catch (error) {
             console.error("❌ Backend approval failed:", error);
@@ -204,15 +199,8 @@ export async function createPiPayment(
         onReadyForServerCompletion: async (paymentId: string, txid: string) => {
           console.log("Payment ready for server completion:", paymentId, txid);
           
-          // Update payment info
-          const paymentInfo = activePayments.get(paymentId);
-          if (paymentInfo) {
-            paymentInfo.status = 'approved';
-            paymentInfo.txid = txid;
-          }
-          
           try {
-            // Call our backend to complete the payment
+            // Call our backend to complete the payment (Official Pattern)
             const response = await fetch('/api/payments/complete', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -221,13 +209,11 @@ export async function createPiPayment(
             
             if (response.ok) {
               console.log("✅ Payment completed by backend");
-              if (paymentInfo) {
-                paymentInfo.status = 'completed';
-                paymentInfo.completedAt = new Date().toISOString();
-              }
-        callbacks.onReadyForServerCompletion(paymentId, txid);
+              callbacks.onReadyForServerCompletion(paymentId, txid);
             } else {
-              throw new Error(`Backend completion failed: ${response.status}`);
+              const errorData = await response.json();
+              console.error("❌ Backend completion failed:", errorData);
+              throw new Error(`Backend completion failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
             }
           } catch (error) {
             console.error("❌ Backend completion failed:", error);
@@ -237,37 +223,12 @@ export async function createPiPayment(
         
         onCancel: (paymentId: string) => {
           console.log("Payment cancelled:", paymentId);
-          
-          // Update payment info
-          const paymentInfo = activePayments.get(paymentId);
-          if (paymentInfo) {
-            paymentInfo.status = 'cancelled';
-          }
-          
-          // Call our backend to handle cancellation
-          fetch('/api/payments/cancel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentId })
-          }).catch(error => {
-            console.error("❌ Backend cancellation failed:", error);
-          });
-        
-        callbacks.onCancel(paymentId);
-      },
+          callbacks.onCancel(paymentId);
+        },
         
         onError: (error: Error, payment: PiPayment) => {
           console.error("❌ Pi Network payment error:", error);
-          
-          // Update payment info
-          if (payment.identifier) {
-            const paymentInfo = activePayments.get(payment.identifier);
-            if (paymentInfo) {
-              paymentInfo.status = 'failed';
-            }
-        }
-        
-        callbacks.onError(error, payment);
+          callbacks.onError(error, payment);
         }
       });
       

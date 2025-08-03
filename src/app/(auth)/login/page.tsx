@@ -60,10 +60,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-2 sm:p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex justify-center">
+        <CardHeader className="text-center pb-3 sm:pb-4">
+          <div className="mx-auto mb-3 sm:mb-4 flex justify-center">
             <Image
               src="/logo.png"
               alt="Pi Network"
@@ -73,13 +73,13 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <CardTitle className="text-2xl font-bold">Dynamic Wallet View</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl font-bold">Dynamic Wallet View</CardTitle>
           <CardDescription>
             Your comprehensive Pi Network dashboard
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -87,9 +87,9 @@ export default function LoginPage() {
             </Alert>
           )}
           
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-3 sm:space-y-4">
             <div>
-              <h3 className="text-lg font-semibold mb-2">Welcome Back</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-2">Welcome Back</h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Sign in to your Pi Network account to continue
               </p>

@@ -93,7 +93,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleExplorerRedirect} className="min-h-[44px] sm:min-h-[40px]">
+              <AlertDialogAction onClick={handleExplorerRedirect} className="min-h-[40px] sm:min-h-[44px]">
                 <ExternalLinkIcon className="mr-2 h-4 w-4" />
                 Continue
               </AlertDialogAction>
@@ -193,14 +193,14 @@ export default function TransactionsPage() {
   }, [transactions, sortConfig]);
 
   return (
-    <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
+    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-hidden">
       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline break-words">Transaction History</h1>
       
       {/* Payment Cancellation Card - Temporarily suspended to prevent app stacking */}
       {/* <PaymentCancellationCard /> */}
       
       <Card className="shadow-lg w-full max-w-full">
-        <CardHeader>
+        <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <CoinsIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             Your Ledger

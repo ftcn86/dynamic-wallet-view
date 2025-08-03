@@ -37,8 +37,8 @@ export default function LegalPageLayout({ pageTitle, sections, content, displayM
   return (
     <div className="flex w-full items-center justify-center">
       <Card className="w-full max-w-2xl shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline">{pageTitle}</CardTitle>
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-xl sm:text-2xl font-headline">{pageTitle}</CardTitle>
         </CardHeader>
         <CardContent className="max-h-[60vh] overflow-y-auto">
           {displayMode === 'accordion' && sections && sections.length > 0 ? (
@@ -46,21 +46,21 @@ export default function LegalPageLayout({ pageTitle, sections, content, displayM
               {sections.map((section, index) => (
                 <AccordionItem value={`item-${index}`} key={index}>
                   <AccordionTrigger>{section.title}</AccordionTrigger>
-                  <AccordionContent className="prose dark:prose-invert max-w-none px-1 pb-4">
+                  <AccordionContent className="prose dark:prose-invert max-w-none px-1 pb-3 sm:pb-4">
                     <ReactMarkdown>{section.content}</ReactMarkdown>
                   </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
           ) : displayMode === 'markdown' && content ? (
-            <div className="prose dark:prose-invert max-w-none px-1 pb-4">
+            <div className="prose dark:prose-invert max-w-none px-1 pb-3 sm:pb-4">
               <ReactMarkdown>{content}</ReactMarkdown>
             </div>
           ) : (
             <p>Content is not available.</p> 
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="pt-3 sm:pt-4">
           <Button variant="outline" onClick={handleReturn}>
             <ArrowLeftIcon className="mr-2 h-4 w-4" />
             Return to App

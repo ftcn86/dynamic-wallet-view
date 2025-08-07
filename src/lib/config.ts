@@ -63,16 +63,11 @@ function getPiEnvironment(): 'testnet' | 'mainnet' {
   if (typeof window === 'undefined') return 'mainnet';
   
   const currentHostname = window.location.hostname;
-  const parentHostname = window.parent?.location?.hostname || '';
-  const referrer = document.referrer;
   
-  // Check for sandbox/testnet environments
+  // Official Pi Network environment detection
+  // ONLY check current window location (no cross-origin access)
   if (currentHostname.includes('sandbox.minepi.com') || 
-      parentHostname.includes('sandbox.minepi.com') ||
-      referrer.includes('sandbox.minepi.com') ||
-      currentHostname.includes('testnet.minepi.com') ||
-      parentHostname.includes('testnet.minepi.com') ||
-      referrer.includes('testnet.minepi.com')) {
+      currentHostname.includes('testnet.minepi.com')) {
     return 'testnet';
   } else {
     return 'mainnet';

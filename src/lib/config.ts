@@ -99,8 +99,15 @@ function getPiPlatformApiUrl(): string {
   const customUrl = getEnvVar('NEXT_PUBLIC_PI_PLATFORM_API_URL', '');
   if (customUrl) return customUrl;
   
-  // Default URL
-  return 'https://api.minepi.com';
+  // Get current environment
+  const environment = getPiEnvironment();
+  
+  // Return appropriate URL based on environment
+  if (environment === 'testnet') {
+    return 'https://api.testnet.minepi.com';
+  } else {
+    return 'https://api.minepi.com';
+  }
 }
 
 /**
@@ -158,6 +165,18 @@ export const config: AppConfig = {
     supportEmail: 'support@dynamicwalletview.com',
   },
 };
+
+// Debug logging for environment detection
+if (typeof window !== 'undefined') {
+  console.log('🔧 [CONFIG] Environment detection:', {
+    isDevelopment: config.isDevelopment,
+    isProduction: config.isProduction,
+    piEnvironment: config.piEnvironment,
+    platformApiUrl: config.piNetwork.platformApiUrl,
+    currentHostname: window.location.hostname,
+    referrer: document.referrer
+  });
+}
 
 /**
  * Get Pi Network configuration for current environment

@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     let currentUser;
     try {
       currentUser = await prisma.user.upsert({
-        where: { uid: authResult.user.uid },
+        where: { username: authResult.user.username },
         update: { 
           accessToken: authResult.accessToken,
           updatedAt: new Date()
@@ -98,15 +98,16 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ 
       message: "User signed in",
       user: {
-        uid: currentUser.uid,
+        id: currentUser.id,
         username: currentUser.username
       }
     });
 
+    // Set cookie with proper cross-origin settings
     response.cookies.set('session-token', sessionToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always secure for cross-origin
+      sameSite: 'none', // Allow cross-origin requests
       maxAge: 24 * 60 * 60, // 24 hours
       path: '/',
     });

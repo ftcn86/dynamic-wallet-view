@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,6 +47,51 @@ import {
 
 const TABS = ['overview', 'portfolio', 'achievements', 'analysis'];
 
+// Error Boundary Component
+function ErrorBoundary({ children }: { children: React.ReactNode }) {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('Dashboard error caught:', error);
+      setHasError(true);
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  if (hasError) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
+          <p className="text-muted-foreground mb-4">Please refresh the page to try again.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+// Safe Component Wrapper
+function SafeComponent({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<LoadingSpinner size={24} />}>
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
+    </Suspense>
+  );
+}
+
 export default function DashboardPage() {
   const { user: rawUser } = useAuth();
   const user = rawUser as User | null;
@@ -55,14 +100,16 @@ export default function DashboardPage() {
   
   const [piBalance, setPiBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const initialTab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(TABS.includes(initialTab as string) ? initialTab as string : 'overview');
 
-  // Fetch real-time Pi balance from SDK
+  // Fetch real-time Pi balance from SDK with error handling
   useEffect(() => {
     const fetchPiBalance = async () => {
       try {
+        setError(null);
         setBalanceLoading(true);
         // For now, use user balance as fallback
         // In a real implementation, you would call the Pi SDK here
@@ -70,6 +117,7 @@ export default function DashboardPage() {
         console.log('✅ Pi balance fetched:', user?.balance);
       } catch (error) {
         console.error('❌ Error fetching Pi balance:', error);
+        setError('Failed to fetch balance');
         setPiBalance(null);
       } finally {
         setBalanceLoading(false);
@@ -82,12 +130,20 @@ export default function DashboardPage() {
   }, [user]);
 
   const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    router.push(`/dashboard?tab=${value}`, { scroll: false });
+    try {
+      setActiveTab(value);
+      router.push(`/dashboard?tab=${value}`, { scroll: false });
+    } catch (error) {
+      console.error('Tab change error:', error);
+    }
   };
 
   const handleRedirectToPiApp = () => {
-    window.open(PI_APP_MINING_URL, '_blank');
+    try {
+      window.open(PI_APP_MINING_URL, '_blank');
+    } catch (error) {
+      console.error('Redirect error:', error);
+    }
   };
 
   if (!user) {
@@ -110,180 +166,197 @@ export default function DashboardPage() {
   const totalTeamMembers = mockTeam.length;
 
   return (
-    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6">
-      
-      {/* KPI Cards Grid - Horizontal Scrollable on Mobile */}
-      <div className="scroll-container">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6 auto-rows-fr min-w-0">
-        <KPICard
-          title="Total Pi Balance"
-          value={
-            balanceLoading 
-              ? 'Loading...' 
-              : displayBalance.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}) + ' π'
-          }
-          icon={<WalletIcon />}
-          footerValue={
-            balanceStatus === 'live' 
-              ? `~$${(displayBalance * 0.042).toFixed(2)} USD (Live)` 
-              : `~$${(displayBalance * 0.042).toFixed(2)} USD (Fallback)`
-          }
-          change="+2.3%"
-        />
-
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <div className="cursor-pointer">
-              <KPICard
-                title="Current Mining Rate"
-                value={`${(user.miningRate || 0).toFixed(4)} π/hr`}
-                icon={<GaugeIcon />}
-                footerValue="Next session in 12h"
-                badgeText="Active"
-                badgeVariant="success"
-              />
-            </div>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="w-[95vw] max-w-md sm:max-w-lg md:max-w-xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Redirect to Pi App?</AlertDialogTitle>
-              <AlertDialogDescription>
-                You will be redirected to the Pi Network app to manage your mining session. Continue?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleRedirectToPiApp}>
-                Continue to Pi App
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+    <SafeComponent>
+      <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6">
         
-        <Link href="/dashboard/team" className="block">
-          <KPICard
-            title="Active Team Members"
-            value={`${activeTeamMembers} / ${totalTeamMembers}`}
-            icon={<UsersIcon />}
-            footerValue={`${totalTeamMembers - activeTeamMembers} inactive`}
-          />
-        </Link>
-        
-        {user.isNodeOperator && user.nodeUptimePercentage !== undefined && (
-          <Link href="/dashboard/node" className="block">
-            <KPICard
-              title="Node Uptime (90d)"
-              value={`${(user.nodeUptimePercentage || 0).toFixed(1)}%`}
-              icon={<ServerIcon />}
-              footerValue="Uptime last 90d"
-              badgeText="Online"
-              badgeVariant="success"
-            />
-          </Link>
+        {/* Error Display */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+            <p className="text-destructive text-sm">{error}</p>
+          </div>
         )}
+        
+        {/* KPI Cards Grid - Horizontal Scrollable on Mobile */}
+        <div className="scroll-container">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6 auto-rows-fr min-w-0">
+          <SafeComponent>
+            <KPICard
+              title="Total Pi Balance"
+              value={
+                balanceLoading 
+                  ? 'Loading...' 
+                  : displayBalance.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}) + ' π'
+              }
+              icon={<WalletIcon />}
+              footerValue={
+                balanceStatus === 'live' 
+                  ? `~$${(displayBalance * 0.042).toFixed(2)} USD (Live)` 
+                  : `~$${(displayBalance * 0.042).toFixed(2)} USD (Fallback)`
+              }
+              change="+2.3%"
+            />
+          </SafeComponent>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <div className="cursor-pointer">
+                <SafeComponent>
+                  <KPICard
+                    title="Current Mining Rate"
+                    value={`${(user.miningRate || 0).toFixed(4)} π/hr`}
+                    icon={<GaugeIcon />}
+                    footerValue="Next session in 12h"
+                    badgeText="Active"
+                    badgeVariant="success"
+                  />
+                </SafeComponent>
+              </div>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="w-[95vw] max-w-md sm:max-w-lg md:max-w-xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Redirect to Pi App?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You will be redirected to the Pi Network app to manage your mining session. Continue?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleRedirectToPiApp}>
+                  Continue to Pi App
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          
+          <Link href="/dashboard/team" className="block">
+            <SafeComponent>
+              <KPICard
+                title="Active Team Members"
+                value={`${activeTeamMembers} / ${totalTeamMembers}`}
+                icon={<UsersIcon />}
+                footerValue={`${totalTeamMembers - activeTeamMembers} inactive`}
+              />
+            </SafeComponent>
+          </Link>
+          
+          {user.isNodeOperator && user.nodeUptimePercentage !== undefined && (
+            <Link href="/dashboard/node" className="block">
+              <SafeComponent>
+                <KPICard
+                  title="Node Uptime (90d)"
+                  value={`${(user.nodeUptimePercentage || 0).toFixed(1)}%`}
+                  icon={<ServerIcon />}
+                  footerValue="Uptime last 90d"
+                  badgeText="Online"
+                  badgeVariant="success"
+                />
+              </SafeComponent>
+            </Link>
+          )}
+          </div>
         </div>
+
+        {/* Tabs Container - Responsive and Overflow Safe */}
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-full">
+          <ScrollArea className="w-full max-w-full">
+            {/* FIXED: Improved mobile tab layout with better spacing */}
+            <TabsList className="grid w-full grid-cols-4 h-auto min-h-[40px] sm:min-h-[44px] md:min-h-[48px] gap-1 p-1">
+              <TabsTrigger 
+                value="overview" 
+                className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
+              >
+                <PieChartIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Overview</span>
+                <span className="sm:hidden">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="portfolio" 
+                className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
+              >
+                <BarChartIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Portfolio</span>
+                <span className="sm:hidden">Portfolio</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="achievements" 
+                className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
+              >
+                <TrophyIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Achievements</span>
+                <span className="sm:hidden">Achievements</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="analysis" 
+                className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
+              >
+                <SettingsIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Analysis</span>
+                <span className="sm:hidden">Analysis</span>
+              </TabsTrigger>
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+
+          {/* Tab Content - Responsive Grid Layouts */}
+          {/* FIXED: Improved mobile spacing and layout */}
+          <TabsContent value="overview" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
+            <div className="scroll-container">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
+              <div className="space-y-3 sm:space-y-4 md:space-y-6 w-full">
+                <SafeComponent><BalanceBreakdownCard /></SafeComponent>
+                <SafeComponent><TeamActivityCard /></SafeComponent>
+              </div>
+              <div className="space-y-3 sm:space-y-4 md:space-y-6 w-full">
+                <SafeComponent><UnverifiedPiDetailCard /></SafeComponent>
+                <SafeComponent><MiningFocusCard /></SafeComponent>
+              </div>
+            </div>
+          </div>
+          </TabsContent>
+          
+          <TabsContent value="portfolio" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
+            <div className="scroll-container">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
+              <div className="w-full">
+                <SafeComponent><BalanceFluctuationChartCard /></SafeComponent>
+              </div>
+              <div className="w-full">
+                <SafeComponent><WalletAddressCard user={user} /></SafeComponent>
+              </div>
+            </div>
+          </div>
+          </TabsContent>
+          
+          <TabsContent value="achievements" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
+            <div className="scroll-container">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
+              <div className="w-full">
+                <SafeComponent><MyBadgesCard /></SafeComponent>
+              </div>
+              <div className="w-full">
+                <SafeComponent><RewardedAdsCard /></SafeComponent>
+              </div>
+            </div>
+          </div>
+          </TabsContent>
+          
+          <TabsContent value="analysis" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
+            <div className="scroll-container">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
+              <div className="w-full">
+                <SafeComponent><LockupCalculatorCard /></SafeComponent>
+              </div>
+              <div className="w-full">
+                <SafeComponent><AIFeatureFeedbackCard /></SafeComponent>
+              </div>
+            </div>
+          </div>
+            <div className="mt-3 sm:mt-4 md:mt-6 w-full">
+              <SafeComponent><NativeFeaturesCard /></SafeComponent>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Tabs Container - Responsive and Overflow Safe */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-full">
-        <ScrollArea className="w-full max-w-full">
-          {/* FIXED: Improved mobile tab layout with better spacing */}
-          <TabsList className="grid w-full grid-cols-4 h-auto min-h-[40px] sm:min-h-[44px] md:min-h-[48px] gap-1 p-1">
-            <TabsTrigger 
-              value="overview" 
-              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
-            >
-              <PieChartIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Overview</span>
-              <span className="sm:hidden">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="portfolio" 
-              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
-            >
-              <BarChartIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Portfolio</span>
-              <span className="sm:hidden">Portfolio</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="achievements" 
-              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
-            >
-              <TrophyIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Achievements</span>
-              <span className="sm:hidden">Achievements</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="analysis" 
-              className="flex items-center justify-center gap-1 text-xs sm:text-sm px-1 sm:px-2 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] md:min-h-[48px]"
-            >
-              <SettingsIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden sm:inline">Analysis</span>
-              <span className="sm:hidden">Analysis</span>
-            </TabsTrigger>
-          </TabsList>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-
-        {/* Tab Content - Responsive Grid Layouts */}
-        {/* FIXED: Improved mobile spacing and layout */}
-        <TabsContent value="overview" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
-          <div className="scroll-container">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
-            <div className="space-y-3 sm:space-y-4 md:space-y-6 w-full">
-              <BalanceBreakdownCard />
-              <TeamActivityCard />
-            </div>
-            <div className="space-y-3 sm:space-y-4 md:space-y-6 w-full">
-              <UnverifiedPiDetailCard />
-              <MiningFocusCard />
-            </div>
-          </div>
-        </div>
-        </TabsContent>
-        
-        <TabsContent value="portfolio" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
-          <div className="scroll-container">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
-            <div className="w-full">
-              <BalanceFluctuationChartCard />
-            </div>
-            <div className="w-full">
-              <WalletAddressCard user={user} />
-            </div>
-          </div>
-        </div>
-        </TabsContent>
-        
-        <TabsContent value="achievements" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
-          <div className="scroll-container">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
-            <div className="w-full">
-              <MyBadgesCard />
-            </div>
-            <div className="w-full">
-              <RewardedAdsCard />
-            </div>
-          </div>
-        </div>
-        </TabsContent>
-        
-        <TabsContent value="analysis" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
-          <div className="scroll-container">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
-            <div className="w-full">
-              <LockupCalculatorCard />
-            </div>
-            <div className="w-full">
-              <AIFeatureFeedbackCard />
-            </div>
-          </div>
-        </div>
-          <div className="mt-3 sm:mt-4 md:mt-6 w-full">
-            <NativeFeaturesCard />
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+    </SafeComponent>
   );
 }

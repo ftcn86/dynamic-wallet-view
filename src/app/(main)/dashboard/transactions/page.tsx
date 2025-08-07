@@ -26,6 +26,8 @@ import { SortableTableHead } from '@/components/shared/SortableTableHead';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/PageHeader';
+import { InfoBanner } from '@/components/shared/InfoBanner';
 // import PaymentCancellationCard from '@/components/dashboard/PaymentCancellationCard';
 import { 
     ArrowDownLeftIcon,
@@ -209,7 +211,7 @@ export default function TransactionsPage() {
 
   return (
     <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-hidden">
-      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline break-words">Transaction History</h1>
+      <PageHeader title="Transaction History" subtitle="Your complete ledger on the Pi Network" />
       
       {/* Payment Cancellation Card - Temporarily suspended to prevent app stacking */}
       {/* <PaymentCancellationCard /> */}
@@ -232,7 +234,21 @@ export default function TransactionsPage() {
         </CardHeader>
         <CardContent className="w-full max-w-full">
           {isLoading && <TransactionsTableSkeleton />}
-          {!isLoading && error && <p className="text-destructive text-center py-8">{error}</p>}
+          {!isLoading && error && (
+            <InfoBanner
+              variant="destructive"
+              title={error}
+              onRetry={() => {
+                setIsLoading(true);
+                setError(null);
+                getTransactions()
+                  .then(setTransactions)
+                  .catch(() => setError('Failed to load transactions. Please try again.'))
+                  .finally(() => setIsLoading(false));
+              }}
+              className="mb-3"
+            />
+          )}
           {!isLoading && !error && sortedTransactions.length === 0 && (
             <p className="text-muted-foreground text-center py-8">You have no transactions yet.</p>
           )}

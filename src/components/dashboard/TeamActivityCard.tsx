@@ -17,6 +17,7 @@ import { getTeamMembers } from '@/services/piService';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { TeamLeaderboard } from './team/TeamLeaderboard';
 import { TeamStats } from './team/TeamStats';
+import { InfoBanner } from '../shared/InfoBanner';
 
 const DISPLAY_RECENT_BADGES_COUNT = 3;
 
@@ -60,8 +61,17 @@ export function TeamActivityCard() {
   );
 
   if (error) return (
-    <Card className={cn("shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center bg-red-50 border border-red-200")}> 
-      <span className="text-red-700 font-medium">{error}</span>
+    <Card className={cn("shadow-lg")}>
+      <CardContent className="p-3 sm:p-4">
+        <InfoBanner variant="destructive" title={error} onRetry={() => {
+          setIsLoading(true);
+          setError(null);
+          getTeamMembers()
+            .then(setTeam)
+            .catch(() => setError('Failed to load team data. Please try again.'))
+            .finally(() => setIsLoading(false));
+        }} />
+      </CardContent>
     </Card>
   );
 

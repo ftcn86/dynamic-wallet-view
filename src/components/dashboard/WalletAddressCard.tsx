@@ -9,6 +9,7 @@ import { Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/data/schemas';
 import { notifyWalletAddressViewed } from '@/services/notificationService';
+import { InfoBanner } from '@/components/shared/InfoBanner';
 
 interface WalletAddressCardProps {
   user: User;
@@ -56,36 +57,24 @@ export default function WalletAddressCard({ user }: WalletAddressCardProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Wallet address not available. This may be due to insufficient permissions or the user not being authenticated with the wallet_address scope.
-            </p>
-            
-            {/* Debug information */}
-            <div className="bg-muted p-3 rounded-md">
-              <p className="text-xs font-mono text-muted-foreground">
-                Debug Info:
-              </p>
-              <p className="text-xs text-muted-foreground">
-                User ID: {user.id}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Username: {user.username}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Has Wallet Address: {user.walletAddress ? 'Yes' : 'No'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Environment: {typeof window !== 'undefined' && (window as unknown as { Pi?: boolean })?.Pi ? 'Pi Browser' : 'Regular Browser'}
-              </p>
+          <InfoBanner
+            variant="warning"
+            title="Wallet address not available"
+            description="Use Pi Browser and grant the wallet_address permission during login to show your address."
+          />
+          <details className="mt-3 text-xs text-muted-foreground space-y-1">
+            <summary className="cursor-pointer">Debug details</summary>
+            <div className="mt-2 bg-muted p-3 rounded-md">
+              <p>User ID: {user.id}</p>
+              <p>Username: {user.username}</p>
+              <p>Has Wallet Address: {user.walletAddress ? 'Yes' : 'No'}</p>
+              <p>Environment: {typeof window !== 'undefined' && (window as unknown as { Pi?: boolean })?.Pi ? 'Pi Browser' : 'Regular Browser'}</p>
             </div>
-            
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p>• Make sure you&apos;re using Pi Browser</p>
-              <p>• Grant wallet address permission during login</p>
-              <p>• Check browser console for debug information</p>
-            </div>
-          </div>
+            <ul className="list-disc pl-5 mt-2">
+              <li>Open this app in Pi Browser</li>
+              <li>Re-login and allow wallet_address scope</li>
+            </ul>
+          </details>
         </CardContent>
       </Card>
     );

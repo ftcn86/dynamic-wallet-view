@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { TargetIcon, UsersIcon, CalendarDaysIcon } from '@/components/shared/icons';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 export function MiningFocusCard() {
   const { user: rawUser } = useAuth();
@@ -33,8 +34,10 @@ export function MiningFocusCard() {
 
   if (user.activeMiningDays_LastWeek === undefined && user.activeMiningDays_LastMonth === undefined) {
     return (
-      <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
-        <span className="text-gray-500">No mining activity data available.</span>
+      <Card className="shadow-lg">
+        <CardContent>
+          <EmptyState title="No mining activity data" description="We could not find mining activity for this account yet." />
+        </CardContent>
       </Card>
     );
   }

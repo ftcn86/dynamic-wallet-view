@@ -33,6 +33,8 @@ import NativeFeaturesCard from '@/components/dashboard/NativeFeaturesCard';
 import RewardedAdsCard from '@/components/dashboard/RewardedAdsCard';
 import { mockTeam } from '@/data/mocks';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { InfoBanner } from '@/components/shared/InfoBanner';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
     WalletIcon, 
@@ -168,12 +170,20 @@ export default function DashboardPage() {
   return (
     <SafeComponent>
       <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6">
-        
+        <PageHeader title="Dashboard" subtitle="Manage your Pi Network wallet" />
+
         {/* Error Display */}
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-            <p className="text-destructive text-sm">{error}</p>
-          </div>
+          <InfoBanner
+            variant="destructive"
+            title={error}
+            onRetry={() => {
+              setError(null);
+              setBalanceLoading(true);
+              setPiBalance(user?.balance || null);
+              setBalanceLoading(false);
+            }}
+          />
         )}
         
         {/* KPI Cards Grid - Horizontal Scrollable on Mobile */}

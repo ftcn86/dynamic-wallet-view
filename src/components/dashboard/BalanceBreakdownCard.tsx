@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
+import { EmptyState } from '../shared/EmptyState';
 
 export function BalanceBreakdownCard() {
   const { user: rawUser } = useAuth();
@@ -20,8 +21,10 @@ export function BalanceBreakdownCard() {
 
   if (!user.balanceBreakdown) {
     return (
-      <Card className={cn("shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center")}> 
-        <span className="text-gray-500">No balance breakdown data available.</span>
+      <Card className={cn("shadow-lg")}> 
+        <CardContent>
+          <EmptyState title="No balance breakdown" description="We couldn't find a breakdown for this account yet." />
+        </CardContent>
       </Card>
     );
   }

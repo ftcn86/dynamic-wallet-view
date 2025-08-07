@@ -11,6 +11,7 @@ import { format, parseISO } from 'date-fns';
 import { BadgeIcon } from './badge/BadgeIcon';
 import { AwardIcon, CheckCircleIcon } from '@/components/shared/icons';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
+import { InfoBanner } from '../shared/InfoBanner';
 import { getUserBadges } from '@/services/piService';
 
 function BadgeItem({ badge }: { badge: Badge }) {
@@ -66,14 +67,27 @@ export function MyBadgesCard() {
   );
 
   if (error) return (
-    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center bg-red-50 border border-red-200">
-      <span className="text-red-700 font-medium">{error}</span>
+    <Card className="shadow-lg">
+      <CardContent className="p-3 sm:p-4">
+        <InfoBanner variant="destructive" title={error} onRetry={() => {
+          setIsLoading(true);
+          setError(null);
+          getUserBadges()
+            .then((data) => setBadges(data as Badge[]))
+            .catch(() => setError('Failed to load badges. Please try again.'))
+            .finally(() => setIsLoading(false));
+        }} />
+      </CardContent>
     </Card>
   );
 
   if (!badges.length) return (
-    <Card className="shadow-lg flex flex-col items-center justify-center min-h-[120px] p-4 text-center">
-      <span className="text-gray-500">No badges earned yet.</span>
+    <Card className="shadow-lg">
+      <CardContent>
+        <div className="py-6">
+          <p className="text-center text-muted-foreground">No badges earned yet.</p>
+        </div>
+      </CardContent>
     </Card>
   );
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InfoBanner } from '@/components/shared/InfoBanner';
 import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { getPiSDKInstance } from '@/lib/pi-network';
 import { notifyNativeFeaturesUnavailable, notifyPiBrowserUpdateRecommended } from '@/services/notificationService';
@@ -115,10 +115,7 @@ export default function NativeFeaturesCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <InfoBanner variant="warning" title={error} />
         )}
         
         {loading ? (

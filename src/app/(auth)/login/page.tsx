@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InfoBanner } from '@/components/shared/InfoBanner';
 import { Loader2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { User } from '@/data/schemas';
@@ -87,10 +87,7 @@ export default function LoginPage() {
         
         <CardContent className="space-y-3 sm:space-y-4">
           {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <InfoBanner variant="destructive" title={error} />
           )}
           
           <div className="text-center space-y-3 sm:space-y-4">

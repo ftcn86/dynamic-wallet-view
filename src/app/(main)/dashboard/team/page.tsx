@@ -29,6 +29,7 @@ import {
 } from '@/components/shared/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
     const { t } = useTranslation();
@@ -346,12 +347,7 @@ export default function TeamInsightsPage() {
 
   return (
     <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-hidden">
-      <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold font-headline break-words">
-        {t('teamInsights.title')}
-      </h1>
-      <p className="text-sm sm:text-base text-muted-foreground mt-1">
-        {t('teamInsights.description')}
-      </p>
+      <PageHeader title={t('teamInsights.title')} subtitle={t('teamInsights.description')} />
       
       <TeamManagementCard teamMembers={teamMembers} />
       

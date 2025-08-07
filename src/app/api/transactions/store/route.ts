@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     const { prisma } = await import('@/lib/db');
     
     let userData;
+    let dbUserId: string;
     try {
       console.log(`🔍 [STORE] Getting user from session...`);
       const session = await prisma.userSession.findFirst({
@@ -49,6 +50,9 @@ export async function POST(request: NextRequest) {
           error: 'Invalid session' 
         }, { status: 401 });
       }
+
+      // Keep DB user id for FK references
+      dbUserId = session.user.id as string;
 
       // 3. Verify user with Pi Platform API using access token from database
       console.log(`🔍 [STORE] Verifying user with Pi Platform API...`);
@@ -94,7 +98,7 @@ export async function POST(request: NextRequest) {
         date: new Date().toISOString(),
       };
 
-      const orderRecord = await TransactionService.createTransaction(userData.uid, transactionData);
+      const orderRecord = await TransactionService.createTransaction(dbUserId, transactionData);
       console.log(`✅ [STORE] Transaction stored successfully:`, orderRecord);
 
       // 5. Add notification for successful transaction storage

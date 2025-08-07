@@ -337,7 +337,7 @@ npx prisma studio
 
 ### **Current Limitations**
 
-1. **Sandbox Mode**: Sandbox connection needs configuration
+1. **Sandbox Mode**: ✅ Properly configured for sandbox.minepi.com only
 2. **Real Data**: Some features still use mock data
 3. **Mobile Optimization**: Mobile experience needs improvement
 

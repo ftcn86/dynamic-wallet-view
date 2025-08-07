@@ -25,7 +25,8 @@ All notable changes to the Dynamic Wallet View project will be documented in thi
 
 - **UPDATED**: `PiSDKInitializer` - Uses official Pi Network pattern
 - **REMOVED**: Custom environment variables and URL parameters
-- **FIXED**: Sandbox detection now follows `process.env.NODE_ENV !== 'production'`
+- **FIXED**: Sandbox detection now follows official documentation
+- **FIXED**: Sandbox mode only enabled on `sandbox.minepi.com`
 - **RESULT**: Proper environment detection for development and production
 
 ### 🔔 **Notification System Fixed**

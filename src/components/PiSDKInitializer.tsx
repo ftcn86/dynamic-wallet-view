@@ -6,7 +6,7 @@ import { useEffect } from 'react';
  * Pi SDK Initializer Component
  * 
  * Initializes the Pi Network SDK following the OFFICIAL Pi Network documentation.
- * FIXED: Proper sandbox detection based on hostname
+ * Sandbox mode is only enabled when running on sandbox.minepi.com
  */
 export default function PiSDKInitializer() {
   useEffect(() => {
@@ -25,13 +25,12 @@ export default function PiSDKInitializer() {
             return;
           }
 
-          // FIXED: Proper sandbox detection
-          // Check if we're on sandbox.minepi.com OR if NODE_ENV is not production
-          const isSandbox = window.location.hostname.includes('sandbox') || process.env.NODE_ENV !== 'production';
+          // Official Pi Network sandbox detection
+          // Sandbox mode is ONLY enabled when running on sandbox.minepi.com
+          const isSandbox = window.location.hostname === 'sandbox.minepi.com';
           
           console.log('🔧 Environment detected:', {
             isSandbox,
-            NODE_ENV: process.env.NODE_ENV,
             hostname: window.location.hostname,
             fullUrl: window.location.href
           });

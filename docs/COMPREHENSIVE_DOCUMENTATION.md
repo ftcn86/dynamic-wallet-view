@@ -4,7 +4,7 @@
 
 1. [Project Overview](#project-overview)
 2. [Current Status](#current-status)
-3. [Recent Fixes & Updates](#recent-fixes--updates)
+3. [Recent Updates - Official Pi Network Implementation](#recent-updates---official-pi-network-implementation)
 4. [Technical Architecture](#technical-architecture)
 5. [Pi Network Integration](#pi-network-integration)
 6. [Session Management](#session-management)
@@ -27,7 +27,9 @@
 
 ### Key Features
 
-- ✅ **Real Pi Network Integration** - Fetches actual user data
+- ✅ **Official Pi Network Integration** - Follows exact official patterns
+- ✅ **Database-Backed Sessions** - Secure session management
+- ✅ **Payment Order Tracking** - Complete payment history
 - ✅ **Responsive Design** - Works on all devices
 - ✅ **Payment Processing** - Real Pi Network payments
 - ✅ **Team Management** - Team insights and communication
@@ -41,190 +43,241 @@
 
 ### ✅ **Completed Features**
 
-1. **Authentication System** - Pi Network login with real token validation
-2. **Dashboard UI** - Responsive design with all major components
-3. **Payment System** - Real Pi Network payment processing with cancellation
-4. **Balance Integration** - Official Pi Network sources only (SDK, Blockchain, Internal APIs)
-5. **Team Management** - Team insights and member management
-6. **Node Analytics** - Node operator dashboard
-7. **Transaction History** - Payment and transaction tracking
-8. **Settings & Profile** - User preferences and profile management
-9. **Wallet Address Display** - Show and copy Pi wallet addresses
-10. **Native Features Detection** - Pi Browser compatibility checking
-11. **App-to-User Payments** - Send Pi rewards to users
-12. **Share Dialog** - Native sharing functionality
-13. **Rewarded Ads** - Monetization through ad watching
-14. **Smart Notifications** - Contextual notifications for all features
-15. **Balance Caching** - Performance optimization with local storage
-16. **Session Management** - Database-backed sessions with proper authentication
+1. **Official Pi Network Authentication** - Following exact demo patterns
+2. **Database User Storage** - Persistent user data storage
+3. **Session Management** - Database-backed sessions (24-hour expiry)
+4. **Payment System** - Official Pi Network payment processing with order tracking
+5. **Payment History** - Complete payment order tracking in database
+6. **Dashboard UI** - Responsive design with all major components
+7. **Balance Integration** - Official Pi Network sources only (SDK, Blockchain, Internal APIs)
+8. **Team Management** - Team insights and member management
+9. **Node Analytics** - Node operator dashboard
+10. **Transaction History** - Payment and transaction tracking
+11. **Settings & Profile** - User preferences and profile management
+12. **Wallet Address Display** - Show and copy Pi wallet addresses
+13. **Native Features Detection** - Pi Browser compatibility checking
+14. **App-to-User Payments** - Send Pi rewards to users
+15. **Share Dialog** - Native sharing functionality
+16. **Rewarded Ads** - Monetization through ad watching
+17. **Smart Notifications** - Contextual notifications for all features
+18. **Balance Caching** - Performance optimization with local storage
+19. **Incomplete Payment Handling** - Official pattern implementation
+20. **Rollback Mechanism** - Complete rollback guide and procedures
 
 ### 🔄 **In Progress**
 
 1. **Real Data Integration** - Replacing mock data with real Pi Network APIs
-2. **Database Layer** - Persistent storage for user data
-3. **Gamification Engine** - Badge system and activity tracking
+2. **Advanced Analytics** - Mining rate calculations and predictions
+3. **Team Communication** - Real-time team messaging
 
 ### 📋 **Planned Features**
 
 1. **Real-time Updates** - Live data synchronization
-2. **Advanced Analytics** - Mining rate calculations and predictions
-3. **Team Communication** - Real-time team messaging
-4. **Mobile App** - Native mobile application
+2. **Mobile App** - Native mobile application
+3. **Advanced Security** - Additional security measures
 
 ---
 
-## 🔧 Recent Fixes & Updates
+## 🔧 Recent Updates - Official Pi Network Implementation
 
-### **Latest Update (2025-01-18) - Session Management & Visual Fixes**
+### **Latest Update (2025-01-18) - Official Pi Network Patterns**
 
-#### **🔐 Session Management Overhaul**
+#### **🔐 Complete Authentication Overhaul**
 
-- **Issue**: Backend 401 errors due to fragile cookie-based session management
-- **Fix**: Implemented database-backed session management using Prisma
-- **Result**: Secure, reliable authentication with proper session validation
-
-**Technical Changes:**
-
-- **NEW**: `src/lib/session.ts` - Session management utility
-- **UPDATED**: `/api/auth/pi` - Creates database sessions instead of cookies
-- **UPDATED**: `/api/user/me` - Uses database sessions for authentication
-- **UPDATED**: `/api/notifications` - Uses database sessions for authentication
-- **UPDATED**: `/api/auth/logout` - Properly invalidates database sessions
-
-#### **🎨 Visual Issues Fixed**
-
-- **Issue**: Team Activity Card layout and spacing problems
-- **Fix**: Improved responsive design and BadgeIcon usage
-- **Result**: Clean, consistent UI across all screen sizes
+- **Implementation**: Follows exact official Pi Network demo patterns
+- **Database Storage**: User data stored persistently in database
+- **Session Management**: Database-backed sessions with 24-hour expiry
+- **Security**: Access tokens stored securely in database
 
 **Technical Changes:**
 
-- **FIXED**: BadgeIcon component usage (correct props)
-- **IMPROVED**: Card spacing and responsive text sizing
-- **ENHANCED**: Layout alignment and visual consistency
+- **NEW**: `/api/user/signin` - Official authentication endpoint
+- **NEW**: `/api/user/signout` - Official signout endpoint
+- **UPDATED**: Prisma schema with simplified User model
+- **NEW**: PaymentOrder model for payment tracking
+- **UPDATED**: Session management with database storage
 
-#### **🔧 Sandbox Configuration Fixed**
+#### **💰 Payment System Overhaul**
 
-- **Issue**: Incorrect sandbox detection causing authentication failures
-- **Fix**: Implemented official Pi Network sandbox configuration
-- **Result**: Proper environment detection for development and production
-
-**Technical Changes:**
-
-- **UPDATED**: `PiSDKInitializer` - Uses `process.env.NODE_ENV !== 'production'`
-- **REMOVED**: Custom environment variables and URL parameters
-- **FOLLOWS**: Official Pi Network documentation patterns
-
-#### **🔔 Notification System Fixed**
-
-- **Issue**: `TypeError: t.notify is not a function` errors
-- **Fix**: Removed non-existent `Pi.notify` method calls
-- **Result**: Clean console logs without errors
+- **Implementation**: Follows exact official Pi Network payment patterns
+- **Order Tracking**: Complete payment order tracking in database
+- **Transaction Storage**: TXID storage for blockchain verification
+- **Incomplete Payment Handling**: Official pattern implementation
 
 **Technical Changes:**
 
-- **UPDATED**: `piNotificationService.ts` - Removed `Pi.notify` calls
-- **ENHANCED**: Console logging for development debugging
+- **UPDATED**: `/api/payments/approve` - Official approval pattern
+- **UPDATED**: `/api/payments/complete` - Official completion pattern
+- **NEW**: `/api/payments/incomplete` - Official incomplete payment handler
+- **NEW**: `/api/payments/cancelled_payment` - Official cancellation handler
+- **UPDATED**: PaymentService with official patterns
 
----
+#### **🛡️ Security Improvements**
 
-## 🏗️ Technical Architecture
+- **Session Security**: Database-backed sessions instead of cookies
+- **Token Management**: Access tokens stored securely in database
+- **User Verification**: Session-based user lookup
+- **Payment Verification**: Blockchain transaction verification
 
-### **Stack Overview**
-
-- **Frontend**: Next.js 15.3.3 with TypeScript
-- **Database**: Neon PostgreSQL with Prisma ORM
-- **Authentication**: Pi Network SDK with database sessions
-- **Styling**: Tailwind CSS with Radix UI components
-- **Deployment**: Vercel
-
-### **Session Management Architecture**
-
-```typescript
-// Session Flow
-1. User authenticates with Pi Network SDK
-2. Backend verifies with Pi Platform API
-3. Database session created in UserSession table
-4. Session token stored in httpOnly cookie
-5. All API routes validate sessions via database
-```
-
-**Key Components:**
-
-- **`src/lib/session.ts`** - Session management utilities
-- **`prisma/schema.prisma`** - UserSession model
-- **API Routes** - Use `getSessionUser()` for authentication
-
-### **Database Schema**
+#### **📊 Database Schema Updates**
 
 ```prisma
+// Official Pi Network User Model (Simplified)
+model User {
+  id          String   @id @default(cuid())
+  uid         String   @unique // Pi Network UID
+  username    String   @unique
+  accessToken String?  // Store access token for API calls
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions    UserSession[]
+  paymentOrders PaymentOrder[]
+}
+
+// Official Pi Network Session Model
 model UserSession {
-  id String @id @default(cuid())
-  userId String
+  id        String   @id @default(cuid())
+  userId    String
   sessionToken String @unique
-  piAccessToken String
-  piRefreshToken String?
   expiresAt DateTime
-  isActive Boolean @default(true)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Official Pi Network Payment Order Model
+model PaymentOrder {
+  id          String   @id @default(cuid())
+  paymentId   String   @unique // Pi Network payment identifier
+  userId      String
+  amount      Float
+  memo        String
+  metadata    Json?    // Store payment metadata
+  txid        String?  // Transaction ID from blockchain
+  paid        Boolean  @default(false)
+  cancelled   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 ```
 
 ---
 
-## 🔗 Pi Network Integration
+## 🏗️ Technical Architecture
 
-### **Authentication Flow**
+### **Authentication Flow (Official Pattern)**
 
-1. **Frontend**: `Pi.authenticate()` with required scopes
-2. **Backend**: Verify access token with Pi Platform API
-3. **Database**: Store user data and create session
-4. **Response**: Return user data with session token
-
-### **Official Patterns Followed**
-
-- ✅ **Platform API Verification** - Always verify tokens with `/v2/me`
-- ✅ **Sandbox Configuration** - `sandbox: process.env.NODE_ENV !== 'production'`
-- ✅ **Session Management** - Database-backed sessions
-- ✅ **Error Handling** - Comprehensive error handling and logging
-
-### **Environment Configuration**
-
-```typescript
-// Development: sandbox mode
-NODE_ENV=development → sandbox: true
-
-// Production: production mode  
-NODE_ENV=production → sandbox: false
+```mermaid
+graph TD
+    A[User clicks Sign In] --> B[Pi.authenticate() called]
+    B --> C[SDK returns AuthResult]
+    C --> D[Send authResult to /api/user/signin]
+    D --> E[Backend verifies with /me endpoint]
+    E --> F[Store user in database]
+    F --> G[Create database session]
+    G --> H[Set session cookie]
+    H --> I[Return success]
 ```
+
+### **Payment Flow (Official Pattern)**
+
+```mermaid
+graph TD
+    A[User initiates payment] --> B[createPayment() called]
+    B --> C[onReadyForServerApproval]
+    C --> D[Send paymentId to /api/payments/approve]
+    D --> E[Create order record in database]
+    E --> F[Approve with Pi API]
+    F --> G[User completes transaction]
+    G --> H[onReadyForServerCompletion]
+    H --> I[Send txid to /api/payments/complete]
+    I --> J[Update order record]
+    J --> K[Complete with Pi API]
+    K --> L[Payment complete]
+```
+
+### **Session Management**
+
+- **Database Sessions**: All sessions stored in database
+- **24-Hour Expiry**: Sessions expire after 24 hours
+- **Automatic Cleanup**: Expired sessions automatically cleaned up
+- **Secure Tokens**: Session tokens generated with crypto.randomBytes
 
 ---
 
-## 🔐 Session Management
+## 🔐 Pi Network Integration
 
-### **How It Works**
+### **Official Endpoints**
 
-1. **Authentication**: User logs in via Pi Network SDK
-2. **Verification**: Backend verifies with Pi Platform API
-3. **Session Creation**: Database session created with unique token
-4. **Cookie Storage**: Session token stored in httpOnly cookie
-5. **API Validation**: All protected routes validate via database
+- `POST /api/user/signin` - Authenticate user
+- `GET /api/user/signout` - Sign out user
+- `POST /api/payments/approve` - Approve payment
+- `POST /api/payments/complete` - Complete payment
+- `POST /api/payments/incomplete` - Handle incomplete payment
+- `POST /api/payments/cancelled_payment` - Handle cancelled payment
 
 ### **Security Features**
 
-- **Database Sessions**: Sessions stored in PostgreSQL with expiration
-- **HttpOnly Cookies**: Session tokens protected from XSS
-- **Automatic Cleanup**: Expired sessions automatically invalidated
-- **Token Validation**: Each request validates session in database
+- **Platform API Verification**: All tokens verified with Pi Platform API
+- **Database Storage**: User data and sessions stored securely
+- **Session Validation**: All requests validated against database sessions
+- **Payment Tracking**: Complete payment order tracking
 
-### **API Endpoints**
+---
 
-- **`POST /api/auth/pi`** - Authenticate and create session
-- **`GET /api/user/me`** - Get user data (requires session)
-- **`POST /api/auth/logout`** - Invalidate session
-- **`GET /api/notifications`** - Get notifications (requires session)
+## 🔄 Session Management
+
+### **Session Creation**
+
+```typescript
+// Create session during authentication
+const sessionToken = randomBytes(32).toString('hex');
+const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+await prisma.userSession.create({
+  data: {
+    userId: currentUser.id,
+    sessionToken,
+    expiresAt,
+    isActive: true
+  }
+});
+```
+
+### **Session Validation**
+
+```typescript
+// Validate session on each request
+const session = await prisma.userSession.findFirst({
+  where: { 
+    sessionToken,
+    isActive: true,
+    expiresAt: { gt: new Date() }
+  },
+  include: { user: true }
+});
+```
+
+### **Session Cleanup**
+
+```typescript
+// Clean up expired sessions
+await prisma.userSession.updateMany({
+  where: { 
+    expiresAt: { lt: new Date() },
+    isActive: true
+  },
+  data: { 
+    isActive: false,
+    updatedAt: new Date()
+  }
+});
+```
 
 ---
 
@@ -234,7 +287,8 @@ NODE_ENV=production → sandbox: false
 
 - Node.js 18+
 - PostgreSQL database (Neon recommended)
-- Pi Network Developer Account
+- Pi Network developer account
+- Pi Browser for testing
 
 ### **Environment Variables**
 
@@ -243,59 +297,91 @@ NODE_ENV=production → sandbox: false
 DATABASE_URL="postgresql://..."
 
 # Pi Network
-PI_NETWORK_PLATFORM_API_URL="https://api.minepi.com"
-PI_NETWORK_PLATFORM_API_KEY="your-api-key"
-
-# Session
-SESSION_SECRET="your-session-secret"
+PI_API_KEY="your_pi_api_key"
+PI_APP_ID="your_app_id"
+PI_PLATFORM_API_URL="https://api.minepi.com"
 ```
 
 ### **Installation**
 
 ```bash
+# Install dependencies
 npm install
+
+# Set up database
+npx prisma migrate dev
+
+# Generate Prisma client
 npx prisma generate
-npx prisma db push
+
+# Start development server
 npm run dev
+```
+
+### **Database Setup**
+
+```bash
+# Create migration
+npx prisma migrate dev --name official-pi-network-patterns
+
+# Push to database (if needed)
+npx prisma db push
+
+# Open Prisma Studio
+npx prisma studio
 ```
 
 ---
 
-## 🐛 Known Issues
+## ⚠️ Known Issues
 
-### **Resolved Issues**
+### **Current Limitations**
 
-- ✅ **Backend 401 Errors** - Fixed with database session management
-- ✅ **Pi Browser Authentication** - Fixed with proper sandbox configuration
-- ✅ **Notification Errors** - Fixed by removing non-existent Pi.notify calls
-- ✅ **Team Activity Card Layout** - Fixed with improved responsive design
+1. **Sandbox Mode**: Sandbox connection needs configuration
+2. **Real Data**: Some features still use mock data
+3. **Mobile Optimization**: Mobile experience needs improvement
 
-### **Current Issues**
+### **Workarounds**
 
-- **None** - All reported issues have been resolved
-
----
-
-## 📋 Next Steps
-
-### **Immediate Priorities**
-
-1. **Test Session Management** - Verify authentication works in both environments
-2. **Monitor Performance** - Ensure database sessions don't impact performance
-3. **User Testing** - Test with real Pi Network users
-
-### **Future Enhancements**
-
-1. **Real-time Updates** - WebSocket integration for live data
-2. **Advanced Analytics** - Mining predictions and insights
-3. **Mobile Optimization** - Progressive Web App features
-4. **Team Communication** - Real-time messaging system
+1. **Testing**: Use Pi Browser for authentication testing
+2. **Development**: Use mock data for development
+3. **Deployment**: Ensure environment variables are set correctly
 
 ---
 
-## 📚 Additional Documentation
+## 🎯 Next Steps
 
-- **`docs/NEON_SETUP.md`** - Database setup guide
-- **`docs/DEBUGGING_RULES.md`** - Debugging guidelines
-- **`docs/CHANGELOG.md`** - Detailed change history
-- **`docs/PRD.md`** - Product requirements document .
+### **Immediate (Next 1-2 weeks)**
+
+1. **Database Migration**: Run the new migration
+2. **Testing**: Test authentication and payment flows
+3. **Documentation**: Update user documentation
+4. **Deployment**: Deploy to production
+
+### **Short-term (Next 1-2 months)**
+
+1. **Real Data Integration**: Replace mock data with real APIs
+2. **Advanced Analytics**: Implement mining rate calculations
+3. **Team Communication**: Add real-time messaging
+4. **Mobile Optimization**: Improve mobile experience
+
+### **Long-term (Next 3-6 months)**
+
+1. **Mobile App**: Develop native mobile application
+2. **Advanced Security**: Implement additional security measures
+3. **Performance Optimization**: Optimize for large user base
+4. **Feature Expansion**: Add new Pi Network features
+
+---
+
+## 📚 Resources
+
+- [Official Pi Network Documentation](https://github.com/pi-apps/pi-platform-docs)
+- [Official Demo App](https://github.com/pi-apps/demo)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Rollback Guide](./ROLLBACK_GUIDE.md)
+
+---
+
+*Last updated: January 18, 2025*

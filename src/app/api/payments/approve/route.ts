@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 /**
  * Payment Approval Endpoint (Following Official Pi Network Documentation EXACTLY)
@@ -18,45 +21,105 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [APPROVE] Request received for paymentId:`, paymentId);
     const piPlatformClient = getPiPlatformAPIClient();
 
-    // 1. Get authenticated user from access token (Official Pattern)
-    const accessToken = request.cookies.get('pi-access-token')?.value;
-    if (!accessToken) {
+    // 1. Get authenticated user from session (Official Pattern)
+    const sessionToken = request.cookies.get('session-token')?.value;
+    if (!sessionToken) {
       return NextResponse.json(
-        { error: 'No access token found' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    // 2. Verify user with Pi Platform API (Official Pattern)
-    let userData;
+    // 2. Get user from session (Official Pattern)
+    let currentUser;
     try {
-      userData = await piPlatformClient.verifyUser(accessToken);
-      console.log(`✅ User verified:`, userData.uid);
+      const session = await prisma.userSession.findFirst({
+        where: { 
+          sessionToken,
+          isActive: true,
+          expiresAt: { gt: new Date() }
+        },
+        include: { user: true }
+      });
+
+      if (!session) {
+        return NextResponse.json(
+          { error: 'Invalid session' },
+          { status: 401 }
+        );
+      }
+
+      currentUser = session.user;
+      console.log(`✅ [APPROVE] User verified:`, currentUser.uid);
     } catch (error) {
-      console.error(`❌ User verification failed:`, error);
+      console.error(`❌ [APPROVE] Session verification failed:`, error);
       return NextResponse.json(
-        { error: 'Invalid access token' },
+        { error: 'Invalid session' },
         { status: 401 }
       );
     }
 
-    // 3. Approve the payment with Pi Network (Official Pattern)
+    // 3. Get payment details from Pi Network (Official Pattern)
+    let paymentDetails;
     try {
-      console.log(`🔗 Calling piPlatformClient.approvePayment...`);
-      await piPlatformClient.approvePayment(paymentId);
-      console.log(`✅ Payment approved successfully`);
+      paymentDetails = await piPlatformClient.getPayment(paymentId);
+      console.log(`✅ [APPROVE] Payment details retrieved:`, paymentDetails);
+    } catch (error) {
+      console.error(`❌ [APPROVE] Failed to get payment details:`, error);
+      return NextResponse.json(
+        { error: 'Payment not found' },
+        { status: 404 }
+      );
+    }
 
-      // 4. Return success response (Official Pattern)
+    // 4. Create order record (Official Pattern)
+    try {
+      await prisma.paymentOrder.create({
+        data: {
+          paymentId,
+          userId: currentUser.id,
+          amount: paymentDetails.amount,
+          memo: paymentDetails.memo,
+          metadata: metadata || {},
+          paid: false,
+          cancelled: false
+        }
+      });
+      console.log(`✅ [APPROVE] Order record created for payment:`, paymentId);
+    } catch (error) {
+      console.error(`❌ [APPROVE] Failed to create order record:`, error);
+      return NextResponse.json(
+        { error: 'Failed to create order' },
+        { status: 500 }
+      );
+    }
+
+    // 5. Approve the payment with Pi Network (Official Pattern)
+    try {
+      console.log(`🔗 [APPROVE] Calling piPlatformClient.approvePayment...`);
+      await piPlatformClient.approvePayment(paymentId);
+      console.log(`✅ [APPROVE] Payment approved successfully`);
+
+      // 6. Return success response (Official Pattern)
       return NextResponse.json({
-        success: true,
-        message: `Payment ${paymentId} approved successfully`
+        message: `Approved the payment ${paymentId}`
       });
 
     } catch (approvalError) {
-      console.error(`❌ Payment approval failed:`, approvalError);
+      console.error(`❌ [APPROVE] Payment approval failed:`, approvalError);
+      
+      // Clean up order record if approval failed
+      try {
+        await prisma.paymentOrder.delete({
+          where: { paymentId }
+        });
+        console.log(`🧹 [APPROVE] Cleaned up order record after failed approval`);
+      } catch (cleanupError) {
+        console.error(`❌ [APPROVE] Failed to clean up order record:`, cleanupError);
+      }
+
       return NextResponse.json(
         { 
-          success: false, 
           error: 'Payment approval failed',
           message: approvalError instanceof Error ? approvalError.message : 'Unknown error'
         },
@@ -65,10 +128,9 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(`❌ Payment approval endpoint error:`, error);
+    console.error(`❌ [APPROVE] Payment approval endpoint error:`, error);
     return NextResponse.json(
       { 
-        success: false, 
         error: 'Internal server error',
         message: error instanceof Error ? error.message : 'Unknown error'
       },

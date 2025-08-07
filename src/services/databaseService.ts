@@ -1,99 +1,81 @@
 import { PrismaClient } from '@prisma/client';
 import type { User as UserType, Transaction as AppTransactionType, Notification as AppNotificationType, TeamMember as AppTeamMemberType, NodeData as AppNodeDataType } from '@/data/schemas';
 
-import { KycStatus, TeamMemberStatus, NodeStatus, TransactionType as PrismaTransactionType, TransactionStatus as PrismaTransactionStatus, NotificationType as PrismaNotificationType } from '@prisma/client';
-import type { Badge as PrismaBadge } from '@prisma/client';
+const prisma = new PrismaClient();
 
+// Type mappings for Prisma enums
+type KycStatus = 'COMPLETED' | 'PENDING' | 'NOT_COMPLETED';
+type TeamMemberStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING';
+type NodeStatus = 'ONLINE' | 'OFFLINE' | 'SYNCHRONIZING';
+type PrismaTransactionType = 'SENT' | 'RECEIVED' | 'MINING_REWARD' | 'NODE_BONUS';
+type PrismaTransactionStatus = 'COMPLETED' | 'PENDING' | 'FAILED';
+type PrismaNotificationType = 'BADGE_EARNED' | 'TEAM_UPDATE' | 'NODE_UPDATE' | 'ANNOUNCEMENT' | 'TEAM_MESSAGE';
+
+// Helper functions for mapping between app and Prisma types
 function mapKycStatus(status: string | undefined): KycStatus | undefined {
   if (!status) return undefined;
-  switch (status.toUpperCase()) {
-    case 'COMPLETED':
-    case 'VERIFIED':
-      return KycStatus.COMPLETED;
-    case 'PENDING':
-      return KycStatus.PENDING;
-    case 'NOT_COMPLETED':
-    case 'NOTCOMPLETED':
-    case 'NOT COMPLETED':
-      return KycStatus.NOT_COMPLETED;
-    default:
-      return undefined;
+  switch (status.toLowerCase()) {
+    case 'completed': return 'COMPLETED';
+    case 'pending': return 'PENDING';
+    case 'not_completed': return 'NOT_COMPLETED';
+    default: return undefined;
   }
 }
+
 function mapTeamMemberStatus(status: string | undefined): TeamMemberStatus | undefined {
   if (!status) return undefined;
-  switch (status.toUpperCase()) {
-    case 'ACTIVE': return TeamMemberStatus.ACTIVE;
-    case 'INACTIVE': return TeamMemberStatus.INACTIVE;
-    case 'PENDING': return TeamMemberStatus.PENDING;
+  switch (status.toLowerCase()) {
+    case 'active': return 'ACTIVE';
+    case 'inactive': return 'INACTIVE';
+    case 'pending': return 'PENDING';
     default: return undefined;
   }
 }
+
 function mapNodeStatus(status: string | undefined): NodeStatus | undefined {
   if (!status) return undefined;
-  switch (status.toUpperCase()) {
-    case 'ONLINE': return NodeStatus.ONLINE;
-    case 'OFFLINE': return NodeStatus.OFFLINE;
-    case 'SYNCHRONIZING': return NodeStatus.SYNCHRONIZING;
+  switch (status.toLowerCase()) {
+    case 'online': return 'ONLINE';
+    case 'offline': return 'OFFLINE';
+    case 'synchronizing': return 'SYNCHRONIZING';
     default: return undefined;
   }
 }
+
 function mapTransactionType(type: string | undefined): PrismaTransactionType | undefined {
   if (!type) return undefined;
-  switch (type.toUpperCase()) {
-    case 'SENT': return PrismaTransactionType.SENT;
-    case 'RECEIVED': return PrismaTransactionType.RECEIVED;
-    case 'MINING_REWARD':
-    case 'MININGREWARD':
-      return PrismaTransactionType.MINING_REWARD;
-    case 'NODE_BONUS':
-    case 'NODEBONUS':
-      return PrismaTransactionType.NODE_BONUS;
+  switch (type.toLowerCase()) {
+    case 'sent': return 'SENT';
+    case 'received': return 'RECEIVED';
+    case 'mining_reward': return 'MINING_REWARD';
+    case 'node_bonus': return 'NODE_BONUS';
     default: return undefined;
   }
 }
+
 function mapTransactionStatus(status: string | undefined): PrismaTransactionStatus | undefined {
   if (!status) return undefined;
-  switch (status.toUpperCase()) {
-    case 'COMPLETED': return PrismaTransactionStatus.COMPLETED;
-    case 'PENDING': return PrismaTransactionStatus.PENDING;
-    case 'FAILED': return PrismaTransactionStatus.FAILED;
+  switch (status.toLowerCase()) {
+    case 'completed': return 'COMPLETED';
+    case 'pending': return 'PENDING';
+    case 'failed': return 'FAILED';
     default: return undefined;
   }
 }
+
 function mapNotificationType(type: string | undefined): PrismaNotificationType | undefined {
   if (!type) return undefined;
-  switch (type.toUpperCase()) {
-    case 'BADGE_EARNED':
-    case 'BADGE EARNED':
-    case 'BADGE-EARNED':
-    case 'BADGE_ACHIEVED':
-      return PrismaNotificationType.BADGE_EARNED;
-    case 'TEAM_UPDATE':
-    case 'TEAM UPDATE':
-      return PrismaNotificationType.TEAM_UPDATE;
-    case 'NODE_UPDATE':
-    case 'NODE UPDATE':
-      return PrismaNotificationType.NODE_UPDATE;
-    case 'ANNOUNCEMENT': return PrismaNotificationType.ANNOUNCEMENT;
-    case 'TEAM_MESSAGE':
-    case 'TEAM MESSAGE':
-      return PrismaNotificationType.TEAM_MESSAGE;
+  switch (type.toLowerCase()) {
+    case 'badge_earned': return 'BADGE_EARNED';
+    case 'team_update': return 'TEAM_UPDATE';
+    case 'node_update': return 'NODE_UPDATE';
+    case 'announcement': return 'ANNOUNCEMENT';
+    case 'team_message': return 'TEAM_MESSAGE';
     default: return undefined;
   }
 }
 
-// Use environment variable for database URL (with fallback for build time)
-const databaseUrl = process.env.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy';
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: databaseUrl,
-    },
-  },
-});
-
-// Use unknown for now until Prisma types are properly generated
+// Type definitions for Prisma results
 type User = unknown;
 type Transaction = unknown;
 type Notification = unknown;
@@ -103,13 +85,13 @@ interface Badge {
   name: string;
   description: string;
   iconUrl: string;
-  dataAiHint?: string;
+  dataAiHint?: string | null;
 }
 interface UserBadgeResult {
   name: string;
   description: string;
   iconUrl: string;
-  dataAiHint?: string;
+  dataAiHint?: string | null;
   earned: boolean;
   earnedDate: string;
 }
@@ -127,125 +109,34 @@ export class UserService {
   static async createUser(userData: Partial<UserType>): Promise<User> {
     return await prisma.user.create({
       data: {
+        uid: userData.username!, // Use username as uid
         username: userData.username!,
-        name: userData.name!,
-        email: userData.email,
-        walletAddress: userData.walletAddress,
-        avatar: userData.avatar || '/default-avatar.png',
-        bio: userData.bio,
-        balance: userData.balance || 0,
-        miningRate: userData.miningRate || 0,
-        teamSize: userData.teamSize || 0,
-        isNodeOperator: userData.isNodeOperator || false,
-        nodeUptimePercentage: userData.nodeUptimePercentage,
-        kycStatus: mapKycStatus(userData.kycStatus as string),
-        joinDate: userData.joinDate ? new Date(userData.joinDate) : new Date(),
-        termsAccepted: userData.termsAccepted || false,
         accessToken: userData.accessToken,
-        refreshToken: userData.refreshToken,
-        tokenExpiresAt: userData.tokenExpiresAt,
-        settings: {
-          create: {
-            theme: userData.settings?.theme || 'system',
-            language: userData.settings?.language || 'en',
-            notifications: userData.settings?.notifications ?? true,
-            emailNotifications: userData.settings?.emailNotifications ?? false,
-            remindersEnabled: userData.settings?.remindersEnabled ?? false,
-            reminderHoursBefore: userData.settings?.reminderHoursBefore || 1,
-          }
-        },
-        balanceBreakdown: {
-          create: {
-            transferableToMainnet: userData.balanceBreakdown?.transferableToMainnet || 0,
-            totalUnverifiedPi: userData.balanceBreakdown?.totalUnverifiedPi || 0,
-            currentlyInLockups: userData.balanceBreakdown?.currentlyInLockups || 0,
-          }
-        },
-        unverifiedPiDetails: {
-          create: {
-            fromReferralTeam: userData.unverifiedPiDetails?.fromReferralTeam || 0,
-            fromSecurityCircle: userData.unverifiedPiDetails?.fromSecurityCircle || 0,
-            fromNodeRewards: userData.unverifiedPiDetails?.fromNodeRewards || 0,
-            fromOtherBonuses: userData.unverifiedPiDetails?.fromOtherBonuses || 0,
-          }
-        }
-      },
-      include: {
-        settings: true,
-        balanceBreakdown: true,
-        unverifiedPiDetails: true,
-        badges: {
-          include: {
-            badge: true
-          }
-        }
       }
     });
   }
 
   static async getUserById(id: string): Promise<User | null> {
     return await prisma.user.findUnique({
-      where: { id },
-      include: {
-        settings: true,
-        balanceBreakdown: true,
-        unverifiedPiDetails: true,
-        badges: {
-          include: {
-            badge: true
-          }
-        },
-        transactions: {
-          orderBy: { date: 'desc' },
-          take: 10
-        },
-        notifications: {
-          where: { read: false },
-          orderBy: { date: 'desc' },
-          take: 10
-        },
-        teamMembers: true,
-        nodeData: {
-          include: {
-            performanceHistory: {
-              orderBy: { date: 'desc' },
-              take: 30
-            }
-          }
-        }
-      }
+      where: { id }
     });
   }
 
   static async getUserByUsername(username: string): Promise<User | null> {
     return await prisma.user.findUnique({
-      where: { username },
-      include: {
-        settings: true,
-        balanceBreakdown: true,
-        unverifiedPiDetails: true,
-        badges: {
-          include: {
-            badge: true
-          }
-        }
-      }
+      where: { username }
+    });
+  }
+
+  static async getUserByUid(uid: string): Promise<User | null> {
+    return await prisma.user.findUnique({
+      where: { uid }
     });
   }
 
   static async getUserByAccessToken(accessToken: string): Promise<User | null> {
     return await prisma.user.findFirst({
-      where: { accessToken },
-      include: {
-        settings: true,
-        balanceBreakdown: true,
-        unverifiedPiDetails: true,
-        badges: {
-          include: {
-            badge: true
-          }
-        }
-      }
+      where: { accessToken }
     });
   }
 
@@ -253,57 +144,15 @@ export class UserService {
     return await prisma.user.update({
       where: { id },
       data: {
-        name: userData.name,
-        email: userData.email,
-        avatar: userData.avatar,
-        bio: userData.bio,
-        balance: userData.balance,
-        miningRate: userData.miningRate,
-        teamSize: userData.teamSize,
-        isNodeOperator: userData.isNodeOperator,
-        nodeUptimePercentage: userData.nodeUptimePercentage,
-        kycStatus: mapKycStatus(userData.kycStatus as string),
-        lastActive: new Date(),
-        termsAccepted: userData.termsAccepted,
+        username: userData.username,
         accessToken: userData.accessToken,
-        refreshToken: userData.refreshToken,
-        tokenExpiresAt: userData.tokenExpiresAt,
-        settings: {
-          update: {
-            theme: userData.settings?.theme,
-            language: userData.settings?.language,
-            notifications: userData.settings?.notifications,
-            emailNotifications: userData.settings?.emailNotifications,
-            remindersEnabled: userData.settings?.remindersEnabled,
-            reminderHoursBefore: userData.settings?.reminderHoursBefore,
-          }
-        },
-        balanceBreakdown: {
-          update: {
-            transferableToMainnet: userData.balanceBreakdown?.transferableToMainnet,
-            totalUnverifiedPi: userData.balanceBreakdown?.totalUnverifiedPi,
-            currentlyInLockups: userData.balanceBreakdown?.currentlyInLockups,
-          }
-        },
-        unverifiedPiDetails: {
-          update: {
-            fromReferralTeam: userData.unverifiedPiDetails?.fromReferralTeam,
-            fromSecurityCircle: userData.unverifiedPiDetails?.fromSecurityCircle,
-            fromNodeRewards: userData.unverifiedPiDetails?.fromNodeRewards,
-            fromOtherBonuses: userData.unverifiedPiDetails?.fromOtherBonuses,
-          }
-        }
-      },
-      include: {
-        settings: true,
-        balanceBreakdown: true,
-        unverifiedPiDetails: true,
-        badges: {
-          include: {
-            badge: true
-          }
-        }
       }
+    });
+  }
+
+  static async deleteUser(id: string): Promise<User> {
+    return await prisma.user.delete({
+      where: { id }
     });
   }
 }
@@ -315,9 +164,9 @@ export class TransactionService {
       data: {
         userId,
         date: new Date(),
-        type: mapTransactionType(transactionData.type as string) ?? PrismaTransactionType.SENT,
+        type: mapTransactionType(transactionData.type) || 'SENT',
         amount: transactionData.amount,
-        status: mapTransactionStatus(transactionData.status as string) ?? PrismaTransactionStatus.PENDING,
+        status: mapTransactionStatus(transactionData.status) || 'PENDING',
         from: transactionData.from,
         to: transactionData.to,
         description: transactionData.description,
@@ -328,7 +177,6 @@ export class TransactionService {
 
   static async getUserTransactions(userId: string, page: number = 1, limit: number = 20): Promise<{ transactions: Transaction[], total: number }> {
     const skip = (page - 1) * limit;
-    
     const [transactions, total] = await Promise.all([
       prisma.transaction.findMany({
         where: { userId },
@@ -336,9 +184,7 @@ export class TransactionService {
         skip,
         take: limit,
       }),
-      prisma.transaction.count({
-        where: { userId }
-      })
+      prisma.transaction.count({ where: { userId } })
     ]);
 
     return { transactions, total };
@@ -357,9 +203,11 @@ export class NotificationService {
     return await prisma.notification.create({
       data: {
         userId,
-        type: mapNotificationType(notificationData.type as string) ?? PrismaNotificationType.ANNOUNCEMENT,
+        type: mapNotificationType(notificationData.type) || 'ANNOUNCEMENT',
         title: notificationData.title,
         description: notificationData.description,
+        date: new Date(),
+        read: false,
         link: notificationData.link,
       }
     });
@@ -367,7 +215,7 @@ export class NotificationService {
 
   static async getUserNotifications(userId: string, unreadOnly: boolean = false): Promise<Notification[]> {
     return await prisma.notification.findMany({
-      where: {
+      where: { 
         userId,
         ...(unreadOnly && { read: false })
       },
@@ -405,11 +253,11 @@ export class TeamService {
         name: memberData.name,
         avatarUrl: memberData.avatarUrl,
         joinDate: new Date(memberData.joinDate),
-        status: mapTeamMemberStatus(memberData.status as string),
+        status: mapTeamMemberStatus(memberData.status) || 'PENDING',
         unverifiedPiContribution: memberData.unverifiedPiContribution,
-        teamMemberActiveMiningHours_LastWeek: memberData.teamMemberActiveMiningHours_LastWeek || 0,
-        teamMemberActiveMiningHours_LastMonth: memberData.teamMemberActiveMiningHours_LastMonth || 0,
-        kycStatus: mapKycStatus(memberData.kycStatus as string),
+        teamMemberActiveMiningHours_LastWeek: memberData.teamMemberActiveMiningHours_LastWeek,
+        teamMemberActiveMiningHours_LastMonth: memberData.teamMemberActiveMiningHours_LastMonth,
+        kycStatus: mapKycStatus(memberData.kycStatus) || 'NOT_COMPLETED',
         dataAiHint: memberData.dataAiHint,
       }
     });
@@ -428,25 +276,25 @@ export class TeamService {
       data: {
         name: memberData.name,
         avatarUrl: memberData.avatarUrl,
-        status: mapTeamMemberStatus(memberData.status as string),
+        status: memberData.status ? mapTeamMemberStatus(memberData.status) : undefined,
         unverifiedPiContribution: memberData.unverifiedPiContribution,
         teamMemberActiveMiningHours_LastWeek: memberData.teamMemberActiveMiningHours_LastWeek,
         teamMemberActiveMiningHours_LastMonth: memberData.teamMemberActiveMiningHours_LastMonth,
-        kycStatus: mapKycStatus(memberData.kycStatus as string),
+        kycStatus: memberData.kycStatus ? mapKycStatus(memberData.kycStatus) : undefined,
         dataAiHint: memberData.dataAiHint,
       }
     });
   }
 }
 
-// Node Data Management
+// Node Management
 export class NodeService {
   static async createNodeData(userId: string, nodeData: Omit<AppNodeDataType, 'id'>): Promise<NodeData> {
     return await prisma.nodeData.create({
       data: {
         userId,
         nodeId: nodeData.nodeId,
-        status: NodeStatus.ONLINE,
+        status: mapNodeStatus(nodeData.status) || 'OFFLINE',
         lastSeen: new Date(nodeData.lastSeen),
         nodeSoftwareVersion: nodeData.nodeSoftwareVersion,
         latestSoftwareVersion: nodeData.latestSoftwareVersion,
@@ -455,17 +303,6 @@ export class NodeService {
         uptimePercentage: nodeData.uptimePercentage,
         performanceScore: nodeData.performanceScore,
         blocksProcessed: nodeData.blocksProcessed,
-        performanceHistory: {
-          create: nodeData.performanceHistory.map(history => ({
-            date: new Date(history.date),
-            score: history.score,
-          }))
-        }
-      },
-      include: {
-        performanceHistory: {
-          orderBy: { date: 'desc' }
-        }
       }
     });
   }
@@ -486,8 +323,9 @@ export class NodeService {
     return await prisma.nodeData.update({
       where: { userId },
       data: {
-        status: NodeStatus.ONLINE,
-        lastSeen: nodeData.lastSeen ? new Date(nodeData.lastSeen) : new Date(),
+        nodeId: nodeData.nodeId,
+        status: nodeData.status ? mapNodeStatus(nodeData.status) : undefined,
+        lastSeen: nodeData.lastSeen ? new Date(nodeData.lastSeen) : undefined,
         nodeSoftwareVersion: nodeData.nodeSoftwareVersion,
         latestSoftwareVersion: nodeData.latestSoftwareVersion,
         country: nodeData.country,
@@ -495,11 +333,6 @@ export class NodeService {
         uptimePercentage: nodeData.uptimePercentage,
         performanceScore: nodeData.performanceScore,
         blocksProcessed: nodeData.blocksProcessed,
-      },
-      include: {
-        performanceHistory: {
-          orderBy: { date: 'desc' }
-        }
       }
     });
   }
@@ -507,17 +340,13 @@ export class NodeService {
 
 // Badge Management
 export class BadgeService {
-  static async createBadge(badgeData: Record<string, unknown>): Promise<PrismaBadge> {
-    if (typeof badgeData.name !== 'string') throw new Error('Invalid badge name');
-    if (typeof badgeData.description !== 'string') throw new Error('Invalid badge description');
-    if (typeof badgeData.iconUrl !== 'string') throw new Error('Invalid badge iconUrl');
-    if (badgeData.dataAiHint !== undefined && typeof badgeData.dataAiHint !== 'string') throw new Error('Invalid badge dataAiHint');
+  static async createBadge(badgeData: Record<string, unknown>): Promise<Badge> {
     return await prisma.badge.create({
       data: {
-        name: badgeData.name,
-        description: badgeData.description,
-        iconUrl: badgeData.iconUrl,
-        dataAiHint: badgeData.dataAiHint as string | undefined,
+        name: badgeData.name as string,
+        description: badgeData.description as string,
+        iconUrl: badgeData.iconUrl as string,
+        dataAiHint: badgeData.dataAiHint as string,
       }
     });
   }
@@ -540,34 +369,15 @@ export class BadgeService {
         badge: true
       }
     });
-    
-    return userBadges.map((ub: unknown): UserBadgeResult => {
-      if (
-        typeof ub === 'object' &&
-        ub !== null &&
-        'badge' in ub &&
-        typeof (ub as { badge?: unknown }).badge === 'object'
-      ) {
-        const badgeObj = (ub as { badge: Record<string, unknown> }).badge;
-        const { name, description, iconUrl, dataAiHint } = badgeObj;
-        return {
-          name: name as string,
-          description: description as string,
-          iconUrl: iconUrl as string,
-          dataAiHint: dataAiHint as string | undefined,
-          earned: (ub as { earned?: boolean }).earned ?? false,
-          earnedDate: (ub as { earnedDate?: string }).earnedDate ?? '',
-        };
-      }
-      return {
-        name: '',
-        description: '',
-        iconUrl: '',
-        dataAiHint: undefined,
-        earned: false,
-        earnedDate: '',
-      };
-    });
+
+    return userBadges.map(ub => ({
+      name: (ub.badge as Badge).name,
+      description: (ub.badge as Badge).description,
+      iconUrl: (ub.badge as Badge).iconUrl,
+      dataAiHint: (ub.badge as Badge).dataAiHint,
+      earned: ub.earned,
+      earnedDate: ub.earnedDate?.toISOString() || '',
+    }));
   }
 }
 
@@ -592,68 +402,87 @@ export class BalanceHistoryService {
     return await prisma.balanceHistory.findMany({
       where: {
         userId,
-        date: {
-          gte: startDate
-        }
+        date: { gte: startDate }
       },
       orderBy: { date: 'asc' }
     });
   }
-} 
+}
 
 // Session Management
 export class SessionService {
   static async createSession(sessionData: {
     userId: string;
     sessionToken: string;
-    piAccessToken: string;
-    piRefreshToken?: string;
     expiresAt: Date;
   }): Promise<unknown> {
     return await prisma.userSession.create({
       data: {
         userId: sessionData.userId,
         sessionToken: sessionData.sessionToken,
-        piAccessToken: sessionData.piAccessToken,
-        piRefreshToken: sessionData.piRefreshToken,
         expiresAt: sessionData.expiresAt,
+        isActive: true,
       }
     });
   }
 
   static async getSessionByToken(sessionToken: string): Promise<unknown> {
-    return await prisma.userSession.findUnique({
-      where: { sessionToken }
+    return await prisma.userSession.findFirst({
+      where: { 
+        sessionToken,
+        isActive: true,
+        expiresAt: { gt: new Date() }
+      },
+      include: { user: true }
     });
   }
 
   static async invalidateSession(sessionToken: string): Promise<void> {
-    await prisma.userSession.update({
-      where: { sessionToken },
-      data: { isActive: false }
+    await prisma.userSession.updateMany({
+      where: { 
+        sessionToken,
+        isActive: true
+      },
+      data: { 
+        isActive: false,
+        updatedAt: new Date()
+      }
     });
   }
 
   static async invalidateAllUserSessions(userId: string): Promise<void> {
     await prisma.userSession.updateMany({
-      where: { userId, isActive: true },
-      data: { isActive: false }
+      where: { 
+        userId,
+        isActive: true
+      },
+      data: { 
+        isActive: false,
+        updatedAt: new Date()
+      }
     });
   }
 
   static async getActiveUserSessions(userId: string): Promise<unknown[]> {
     return await prisma.userSession.findMany({
-      where: { userId, isActive: true }
+      where: { 
+        userId,
+        isActive: true,
+        expiresAt: { gt: new Date() }
+      }
     });
   }
 
   static async cleanupExpiredSessions(): Promise<void> {
     await prisma.userSession.updateMany({
-      where: {
+      where: { 
         expiresAt: { lt: new Date() },
         isActive: true
       },
-      data: { isActive: false }
+      data: { 
+        isActive: false,
+        updatedAt: new Date()
+      }
     });
   }
 } 

@@ -67,14 +67,15 @@ export class PaymentService {
           });
 
           try {
-            // Call backend to approve payment
+            // Call backend to approve payment (Official Pattern)
             const response = await fetch('/api/payments/approve', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                 paymentId, 
                 metadata: paymentData.metadata 
-              })
+              }),
+              credentials: 'include'
             });
 
             if (!response.ok) {
@@ -100,11 +101,12 @@ export class PaymentService {
           console.log('✅ Payment ready for completion:', paymentId, txid);
 
           try {
-            // Call backend to complete payment
+            // Call backend to complete payment (Official Pattern)
             const response = await fetch('/api/payments/complete', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paymentId, txid })
+              body: JSON.stringify({ paymentId, txid }),
+              credentials: 'include'
             });
 
             if (!response.ok) {
@@ -147,11 +149,12 @@ export class PaymentService {
             paymentInfo.status = 'cancelled';
           }
 
-          // Call backend to handle cancellation
-          fetch('/api/payments/cancel', {
+          // Call backend to handle cancellation (Official Pattern)
+          fetch('/api/payments/cancelled_payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentId })
+            body: JSON.stringify({ paymentId }),
+            credentials: 'include'
           }).catch(error => {
             console.error('❌ Backend cancellation failed:', error);
           });

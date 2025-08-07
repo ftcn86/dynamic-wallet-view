@@ -10,30 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Official Pi Network User Model (Simplified)
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  name      String
-  email     String?  @unique
-  walletAddress String? @unique
-  avatar    String
-  bio       String?
-  balance   Float    @default(0)
-  miningRate Float   @default(0)
-  teamSize  Int?     @default(0)
-  isNodeOperator Boolean @default(false)
-  nodeUptimePercentage Float?
-  kycStatus KycStatus? @default(NOT_COMPLETED)
-  joinDate  DateTime?
-  lastActive DateTime? @default(now())
-  termsAccepted Boolean @default(false)
-  accessToken String?
-  refreshToken String?
-  tokenExpiresAt Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  uid         String   @unique // Pi Network UID
+  username    String   @unique
+  accessToken String?  // Store access token for API calls
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relationships
+  sessions    UserSession[]
+  paymentOrders PaymentOrder[]
+
+  // Legacy relationships (for existing functionality)
   settings UserSettings?
   balanceBreakdown BalanceBreakdown?
   unverifiedPiDetails UnverifiedPiDetails?
@@ -43,19 +33,17 @@ model User {
   teamMembers TeamMember[]
   nodeData NodeData?
   balanceHistory BalanceHistory[]
-  sessions UserSession[]
 
   @@map("users")
 }
 
+// Official Pi Network Session Model
 model UserSession {
-  id String @id @default(cuid())
-  userId String
+  id        String   @id @default(cuid())
+  userId    String
   sessionToken String @unique
-  piAccessToken String
-  piRefreshToken String?
   expiresAt DateTime
-  isActive Boolean @default(true)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -67,6 +55,29 @@ model UserSession {
   @@map("user_sessions")
 }
 
+// Official Pi Network Payment Order Model
+model PaymentOrder {
+  id          String   @id @default(cuid())
+  paymentId   String   @unique // Pi Network payment identifier
+  userId      String
+  amount      Float
+  memo        String
+  metadata    Json?    // Store payment metadata
+  txid        String?  // Transaction ID from blockchain
+  paid        Boolean  @default(false)
+  cancelled   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([userId, paid])
+  @@map("payment_orders")
+}
+
+// Legacy models for existing functionality (will be migrated later)
 model UserSettings {
   id String @id @default(cuid())
   userId String @unique

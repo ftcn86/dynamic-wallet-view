@@ -1,31 +1,32 @@
+import { PrismaClient } from '@prisma/client';
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/db';
-import { config } from '@/lib/config';
+
+const prisma = new PrismaClient();
 
 /**
- * Simple Session Management Utility
- * Uses your existing UserSession model with Prisma
+ * Session Management Utility
+ * Following Official Pi Network Patterns
  */
 
 export interface SessionUser {
   id: string;
+  uid: string;
   username: string;
-  name: string;
-  email?: string;
-  walletAddress?: string;
+  accessToken: string;
 }
 
 /**
  * Get user from session token
  */
-export async function getSessionUser(request: NextRequest): Promise<SessionUser | null> {
+export async function getUserFromSession(request: NextRequest): Promise<SessionUser | null> {
   try {
     const sessionToken = request.cookies.get('session-token')?.value;
+    
     if (!sessionToken) {
       return null;
     }
 
-    const session = await prisma.userSession.findUnique({
+    const session = await prisma.userSession.findFirst({
       where: { 
         sessionToken,
         isActive: true,
@@ -40,56 +41,72 @@ export async function getSessionUser(request: NextRequest): Promise<SessionUser 
 
     return {
       id: session.user.id,
+      uid: session.user.uid,
       username: session.user.username,
-      name: session.user.name,
-      email: session.user.email || undefined,
-      walletAddress: session.user.walletAddress || undefined,
+      accessToken: session.user.accessToken || ''
     };
   } catch (error) {
-    console.error('Session error:', error);
+    console.error('❌ Session validation error:', error);
     return null;
   }
 }
 
 /**
- * Create new session for user
+ * Validate session token
  */
-export async function createSession(userId: string, piAccessToken: string): Promise<string> {
-  const sessionToken = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+export async function validateSession(sessionToken: string): Promise<boolean> {
+  try {
+    const session = await prisma.userSession.findFirst({
+      where: { 
+        sessionToken,
+        isActive: true,
+        expiresAt: { gt: new Date() }
+      }
+    });
 
-  await prisma.userSession.create({
-    data: {
-      userId,
-      sessionToken,
-      piAccessToken,
-      expiresAt,
-      isActive: true,
-    }
-  });
-
-  return sessionToken;
+    return !!session;
+  } catch (error) {
+    console.error('❌ Session validation error:', error);
+    return false;
+  }
 }
 
 /**
  * Invalidate session
  */
 export async function invalidateSession(sessionToken: string): Promise<void> {
-  await prisma.userSession.updateMany({
-    where: { sessionToken },
-    data: { isActive: false }
-  });
+  try {
+    await prisma.userSession.updateMany({
+      where: { 
+        sessionToken,
+        isActive: true
+      },
+      data: { 
+        isActive: false,
+        updatedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('❌ Session invalidation error:', error);
+  }
 }
 
 /**
  * Clean up expired sessions
  */
 export async function cleanupExpiredSessions(): Promise<void> {
-  await prisma.userSession.updateMany({
-    where: { 
-      expiresAt: { lt: new Date() },
-      isActive: true
-    },
-    data: { isActive: false }
-  });
+  try {
+    await prisma.userSession.updateMany({
+      where: { 
+        expiresAt: { lt: new Date() },
+        isActive: true
+      },
+      data: { 
+        isActive: false,
+        updatedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('❌ Session cleanup error:', error);
+  }
 } 

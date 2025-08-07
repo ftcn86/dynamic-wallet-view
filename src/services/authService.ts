@@ -41,7 +41,7 @@ export class AuthService {
 
       // Send auth result to backend for verification (Official Demo Pattern)
       console.log('📡 Sending auth result to backend for verification...');
-      const response = await fetch('/api/auth/pi', {
+      const response = await fetch('/api/user/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ authResult }),
@@ -56,11 +56,54 @@ export class AuthService {
 
       const data = await response.json();
       
-      if (data.success && data.user) {
+      if (data.message === "User signed in") {
         console.log('✅ Backend verification successful');
         return {
           success: true,
-          user: data.user
+          user: {
+            id: authResult.user.uid,
+            username: authResult.user.username,
+            name: authResult.user.username,
+            email: authResult.user.profile?.email || '',
+            walletAddress: authResult.user.wallet_address || '',
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authResult.user.username}`,
+            bio: '',
+            balance: 0,
+            miningRate: 0,
+            teamSize: 0,
+            isNodeOperator: false,
+            kycStatus: 'verified',
+            joinDate: new Date().toISOString(),
+            lastActive: new Date().toISOString(),
+            termsAccepted: true,
+            settings: {
+              theme: 'system',
+              language: 'en',
+              notifications: true,
+              emailNotifications: false,
+              remindersEnabled: false,
+              reminderHoursBefore: 1,
+            },
+            balanceBreakdown: {
+              transferableToMainnet: 0,
+              totalUnverifiedPi: 0,
+              currentlyInLockups: 0,
+            },
+            unverifiedPiDetails: {
+              fromReferralTeam: 0,
+              fromSecurityCircle: 0,
+              fromNodeRewards: 0,
+              fromOtherBonuses: 0,
+            },
+            badges: [],
+            userActiveMiningHours_LastWeek: 0,
+            userActiveMiningHours_LastMonth: 0,
+            activeMiningDays_LastWeek: 0,
+            activeMiningDays_LastMonth: 0,
+            accessToken: authResult.accessToken,
+            refreshToken: authResult.refreshToken,
+            tokenExpiresAt: authResult.expiresAt,
+          }
         };
       } else {
         throw new Error('Invalid response from backend');
@@ -92,7 +135,7 @@ export class AuthService {
    */
   static async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await fetch('/api/auth/pi', {
+      const response = await fetch('/api/user/signin', {
         method: 'GET',
         credentials: 'include'
       });
@@ -115,8 +158,8 @@ export class AuthService {
   static async logout(): Promise<void> {
     try {
       // Call backend to clear session
-      await fetch('/api/auth/logout', {
-        method: 'POST',
+      await fetch('/api/user/signout', {
+        method: 'GET',
         credentials: 'include'
       });
     } catch (error) {
@@ -125,10 +168,18 @@ export class AuthService {
   }
 
   /**
-   * Handle incomplete payments during authentication
+   * Handle incomplete payments during authentication (Official Pattern)
    */
   private static handleIncompletePayment(payment: unknown): void {
     console.log('⚠️ Incomplete payment found during authentication:', payment);
-    // You can implement custom logic here to handle incomplete payments
+    
+    // Send to backend for handling (Official Pattern)
+    fetch('/api/payments/incomplete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment })
+    }).catch(error => {
+      console.error('❌ Failed to handle incomplete payment:', error);
+    });
   }
 } 

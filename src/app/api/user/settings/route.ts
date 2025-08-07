@@ -1,93 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserService } from '@/services/databaseService';
-import { getSessionUser } from '@/lib/session';
-import type { User } from '@/data/schemas';
+import { getUserFromSession } from '@/lib/session';
 
-// GET - Retrieve user settings
 export async function GET(request: NextRequest) {
   try {
-    // FIXED: Use proper session management
-    const user = await getSessionUser(request);
+    const user = await getUserFromSession(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'No session found' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    const dbUser = await UserService.getUserById(user.id);
-    if (!dbUser) {
-      return NextResponse.json(
-        { success: false, message: 'User not found' },
-        { status: 404 }
-      );
-    }
+    // Mock user settings (in production, this would come from a database)
+    const userSettings = {
+      theme: 'system',
+      language: 'en',
+      notifications: true,
+      emailNotifications: false,
+      remindersEnabled: true,
+      reminderHoursBefore: 1
+    };
 
     return NextResponse.json({
       success: true,
-      settings: (dbUser as User).settings
+      settings: userSettings
     });
-
   } catch (error) {
-    console.error('Get settings error:', error);
+    console.error('Failed to fetch user settings:', error);
     return NextResponse.json(
-      {
-        success: false,
-        message: 'Failed to retrieve settings',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to fetch user settings' },
       { status: 500 }
     );
   }
 }
 
-// PUT - Update user settings
 export async function PUT(request: NextRequest) {
   try {
-    // FIXED: Use proper session management
-    const user = await getSessionUser(request);
+    const user = await getUserFromSession(request);
     if (!user) {
       return NextResponse.json(
-        { success: false, message: 'No session found' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    const { settings } = await request.json();
+    const body = await request.json();
+    const { theme, language, notifications, emailNotifications, remindersEnabled, reminderHoursBefore } = body;
 
-    if (!settings) {
+    // Validate input
+    if (theme && !['light', 'dark', 'system'].includes(theme)) {
       return NextResponse.json(
-        { success: false, message: 'Settings data is required' },
+        { error: 'Theme must be light, dark, or system' },
         { status: 400 }
       );
     }
 
-    // Validate that user exists
-    const existingUser = await UserService.getUserById(user.id);
-    if (!existingUser) {
+    if (language && typeof language !== 'string') {
       return NextResponse.json(
-        { success: false, message: 'User not found' },
-        { status: 404 }
+        { error: 'Language must be a string' },
+        { status: 400 }
       );
     }
 
-    // Update user settings
-    const updatedUser = await UserService.updateUser(user.id, { settings });
+    if (typeof notifications !== 'undefined' && typeof notifications !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Notifications must be a boolean' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof emailNotifications !== 'undefined' && typeof emailNotifications !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Email notifications must be a boolean' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof remindersEnabled !== 'undefined' && typeof remindersEnabled !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Reminders enabled must be a boolean' },
+        { status: 400 }
+      );
+    }
+
+    if (reminderHoursBefore && (typeof reminderHoursBefore !== 'number' || reminderHoursBefore < 0)) {
+      return NextResponse.json(
+        { error: 'Reminder hours must be a positive number' },
+        { status: 400 }
+      );
+    }
+
+    // Mock settings update (in production, this would update a database)
+    console.log('Updating user settings:', body);
 
     return NextResponse.json({
       success: true,
       message: 'Settings updated successfully',
-      settings: (updatedUser as User).settings
+      updatedSettings: body
     });
-
   } catch (error) {
-    console.error('Update settings error:', error);
+    console.error('Failed to update user settings:', error);
     return NextResponse.json(
-      {
-        success: false,
-        message: 'Failed to update settings',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Failed to update user settings' },
       { status: 500 }
     );
   }

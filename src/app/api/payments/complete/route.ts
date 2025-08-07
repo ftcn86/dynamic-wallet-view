@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 /**
  * Payment Completion Endpoint (Following Official Pi Network Documentation EXACTLY)
@@ -25,35 +28,70 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [COMPLETE] Request received for paymentId:`, paymentId, 'txid:', txid);
     const piPlatformClient = getPiPlatformAPIClient();
 
-    // 1. Get authenticated user from access token (Official Pattern)
-    const accessToken = request.cookies.get('pi-access-token')?.value;
-    if (!accessToken) {
+    // 1. Get authenticated user from session (Official Pattern)
+    const sessionToken = request.cookies.get('session-token')?.value;
+    if (!sessionToken) {
       return NextResponse.json(
-        { error: 'No access token found' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    // 2. Verify user with Pi Platform API (Official Pattern)
-    let userData;
+    // 2. Get user from session (Official Pattern)
+    let currentUser;
     try {
-      userData = await piPlatformClient.verifyUser(accessToken);
-      console.log(`✅ User verified:`, userData.uid);
+      const session = await prisma.userSession.findFirst({
+        where: { 
+          sessionToken,
+          isActive: true,
+          expiresAt: { gt: new Date() }
+        },
+        include: { user: true }
+      });
+
+      if (!session) {
+        return NextResponse.json(
+          { error: 'Invalid session' },
+          { status: 401 }
+        );
+      }
+
+      currentUser = session.user;
+      console.log(`✅ [COMPLETE] User verified:`, currentUser.uid);
     } catch (error) {
-      console.error(`❌ User verification failed:`, error);
+      console.error(`❌ [COMPLETE] Session verification failed:`, error);
       return NextResponse.json(
-        { error: 'Invalid access token' },
+        { error: 'Invalid session' },
         { status: 401 }
       );
     }
 
-    // 3. Complete the payment with Pi Network (Official Pattern)
+    // 3. Update order record (Official Pattern)
     try {
-      console.log(`🔗 Calling piPlatformClient.completePayment...`);
+      await prisma.paymentOrder.update({
+        where: { paymentId },
+        data: { 
+          txid: txid, 
+          paid: true,
+          updatedAt: new Date()
+        }
+      });
+      console.log(`✅ [COMPLETE] Order record updated for payment:`, paymentId);
+    } catch (error) {
+      console.error(`❌ [COMPLETE] Failed to update order record:`, error);
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      );
+    }
+
+    // 4. Complete the payment with Pi Network (Official Pattern)
+    try {
+      console.log(`🔗 [COMPLETE] Calling piPlatformClient.completePayment...`);
       await piPlatformClient.completePayment(paymentId, txid);
-      console.log(`✅ Payment completed successfully`);
+      console.log(`✅ [COMPLETE] Payment completed successfully`);
       
-      // 4. Store transaction (NON-CRITICAL, can fail safely)
+      // 5. Store transaction (NON-CRITICAL, can fail safely)
       try {
         console.log(`💾 [COMPLETE] Storing transaction after successful payment...`);
         const storeResponse = await fetch(`${request.nextUrl.origin}/api/transactions/store`, {
@@ -78,17 +116,31 @@ export async function POST(request: NextRequest) {
         console.warn(`⚠️ [COMPLETE] Transaction storage failed, but payment is complete:`, storageError);
       }
 
-      // 5. Return success response (Official Pattern)
+      // 6. Return success response (Official Pattern)
       return NextResponse.json({
-        success: true,
-        message: `Payment ${paymentId} completed successfully`
+        message: `Completed the payment ${paymentId}`
       });
 
     } catch (completionError) {
-      console.error(`❌ Payment completion failed:`, completionError);
+      console.error(`❌ [COMPLETE] Payment completion failed:`, completionError);
+      
+      // Revert order record if completion failed
+      try {
+        await prisma.paymentOrder.update({
+          where: { paymentId },
+          data: { 
+            paid: false,
+            txid: null,
+            updatedAt: new Date()
+          }
+        });
+        console.log(`🔄 [COMPLETE] Reverted order record after failed completion`);
+      } catch (revertError) {
+        console.error(`❌ [COMPLETE] Failed to revert order record:`, revertError);
+      }
+
       return NextResponse.json(
         { 
-          success: false, 
           error: 'Payment completion failed',
           message: completionError instanceof Error ? completionError.message : 'Unknown error'
         },
@@ -97,10 +149,9 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(`❌ Payment completion endpoint error:`, error);
+    console.error(`❌ [COMPLETE] Payment completion endpoint error:`, error);
     return NextResponse.json(
       { 
-        success: false, 
         error: 'Internal server error',
         message: error instanceof Error ? error.message : 'Unknown error'
       },

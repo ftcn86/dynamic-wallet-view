@@ -1,0 +1,2 @@
+# Exclude official demo files from build
+docs/official/

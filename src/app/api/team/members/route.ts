@@ -1,74 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { TeamMember } from '@/data/schemas';
-import { getSessionUser } from '@/lib/session';
+import { getUserFromSession } from '@/lib/session';
 
-// In-memory storage for team members (in production, this would be a database)
-const teamMembers: TeamMember[] = [
+// Mock team members data (in production, this would come from a database)
+const mockTeamMembers = [
   {
-    id: 'member_001',
+    id: 'member_1',
     name: 'Alice Miner',
-    joinDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
-    status: 'active',
-    kycStatus: 'completed',
-    teamMemberActiveMiningHours_LastWeek: 24,
-    teamMemberActiveMiningHours_LastMonth: 168,
-    avatarUrl: '',
-    unverifiedPiContribution: 150.5,
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice',
+    joinDate: '2024-01-15T10:30:00Z',
+    status: 'active' as const,
+    unverifiedPiContribution: 45.2,
+    teamMemberActiveMiningHours_LastWeek: 168,
+    teamMemberActiveMiningHours_LastMonth: 720,
+    kycStatus: 'completed' as const,
+    dataAiHint: 'Highly active team member with consistent mining'
   },
   {
-    id: 'member_002',
+    id: 'member_2',
     name: 'Bob Validator',
-    joinDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days ago
-    status: 'active',
-    kycStatus: 'completed',
-    teamMemberActiveMiningHours_LastWeek: 18,
-    teamMemberActiveMiningHours_LastMonth: 120,
-    avatarUrl: '',
-    unverifiedPiContribution: 89.2,
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob',
+    joinDate: '2024-01-20T14:15:00Z',
+    status: 'active' as const,
+    unverifiedPiContribution: 32.8,
+    teamMemberActiveMiningHours_LastWeek: 156,
+    teamMemberActiveMiningHours_LastMonth: 680,
+    kycStatus: 'completed' as const,
+    dataAiHint: 'Reliable team member with good mining consistency'
   },
   {
-    id: 'member_003',
-    name: 'Charlie Node',
-    joinDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
-    status: 'active',
-    kycStatus: 'pending',
-    teamMemberActiveMiningHours_LastWeek: 12,
-    teamMemberActiveMiningHours_LastMonth: 84,
-    avatarUrl: '',
-    unverifiedPiContribution: 45.8,
+    id: 'member_3',
+    name: 'Carol Node',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carol',
+    joinDate: '2024-02-01T09:45:00Z',
+    status: 'pending' as const,
+    unverifiedPiContribution: 18.5,
+    teamMemberActiveMiningHours_LastWeek: 72,
+    teamMemberActiveMiningHours_LastMonth: 240,
+    kycStatus: 'pending' as const,
+    dataAiHint: 'New team member, still completing KYC verification'
   },
   {
-    id: 'member_004',
-    name: 'Diana Pioneer',
-    joinDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days ago
-    status: 'inactive',
-    kycStatus: 'completed',
-    teamMemberActiveMiningHours_LastWeek: 0,
-    teamMemberActiveMiningHours_LastMonth: 12,
-    avatarUrl: '',
-    unverifiedPiContribution: 234.1,
-  },
-  {
-    id: 'member_005',
-    name: 'Edward Miner',
-    joinDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-    status: 'active',
-    kycStatus: 'not_completed',
-    teamMemberActiveMiningHours_LastWeek: 8,
-    teamMemberActiveMiningHours_LastMonth: 8,
-    avatarUrl: '',
+    id: 'member_4',
+    name: 'David Explorer',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
+    joinDate: '2024-01-10T16:20:00Z',
+    status: 'inactive' as const,
     unverifiedPiContribution: 12.3,
+    teamMemberActiveMiningHours_LastWeek: 0,
+    teamMemberActiveMiningHours_LastMonth: 24,
+    kycStatus: 'completed' as const,
+    dataAiHint: 'Inactive team member, may need re-engagement'
   },
+  {
+    id: 'member_5',
+    name: 'Eve Pioneer',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eve',
+    joinDate: '2024-01-25T11:00:00Z',
+    status: 'active' as const,
+    unverifiedPiContribution: 28.7,
+    teamMemberActiveMiningHours_LastWeek: 144,
+    teamMemberActiveMiningHours_LastMonth: 600,
+    kycStatus: 'completed' as const,
+    dataAiHint: 'Consistent team member with steady mining activity'
+  }
 ];
 
 /**
  * GET /api/team/members
- * Get team members with optional sorting
+ * Get all team members for the current user
  */
 export async function GET(request: NextRequest) {
   try {
-    // FIXED: Use proper session management
-    const user = await getSessionUser(request);
+    // Get user from database session (NEW: Proper session management)
+    const user = await getUserFromSession(request);
     if (!user) {
       return NextResponse.json(
         { error: 'No session found' },
@@ -77,86 +81,121 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
     const sortBy = searchParams.get('sortBy') || 'joinDate';
-    const order = searchParams.get('order') || 'desc';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    // Create a copy of team members for sorting
-    const sortedMembers = [...teamMembers];
+    // Filter by status if provided
+    let filteredMembers = mockTeamMembers;
+    if (status && status !== 'all') {
+      filteredMembers = mockTeamMembers.filter(member => member.status === status);
+    }
 
-    // Apply sorting
-    sortedMembers.sort((a, b) => {
-      let aValue: unknown;
-      let bValue: unknown;
+    // Sort members
+    filteredMembers.sort((a, b) => {
+      let aValue: any, bValue: any;
 
       switch (sortBy) {
-        case 'joinDate':
-          aValue = new Date(a.joinDate).getTime();
-          bValue = new Date(b.joinDate).getTime();
-          break;
         case 'name':
           aValue = a.name.toLowerCase();
           bValue = b.name.toLowerCase();
           break;
-        case 'status':
-          aValue = a.status;
-          bValue = b.status;
+        case 'contribution':
+          aValue = a.unverifiedPiContribution;
+          bValue = b.unverifiedPiContribution;
           break;
-        case 'kycStatus':
-          aValue = a.kycStatus;
-          bValue = b.kycStatus;
-          break;
-        case 'teamMemberActiveMiningHours_LastWeek':
-          aValue = a.teamMemberActiveMiningHours_LastWeek;
-          bValue = b.teamMemberActiveMiningHours_LastWeek;
-          break;
-        case 'teamMemberActiveMiningHours_LastMonth':
-          aValue = a.teamMemberActiveMiningHours_LastMonth;
-          bValue = b.teamMemberActiveMiningHours_LastMonth;
-          break;
+        case 'joinDate':
         default:
           aValue = new Date(a.joinDate).getTime();
           bValue = new Date(b.joinDate).getTime();
+          break;
       }
 
-      if (order === 'desc') {
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return bValue - aValue;
-        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return bValue.localeCompare(aValue);
-        } else {
-          return 0;
-        }
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
       } else {
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return aValue - bValue;
-        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
-          return aValue.localeCompare(bValue);
-        } else {
-          return 0;
-        }
+        return aValue < bValue ? 1 : -1;
       }
     });
 
     // Calculate team statistics
-    const activeMembers = sortedMembers.filter(m => m.status === 'active').length;
-    const totalMembers = sortedMembers.length;
-    const kycCompleted = sortedMembers.filter(m => m.kycStatus === 'completed').length;
+    const activeMembers = filteredMembers.filter(m => m.status === 'active').length;
+    const totalContribution = filteredMembers.reduce((sum, m) => sum + m.unverifiedPiContribution, 0);
+    const averageContribution = totalContribution / filteredMembers.length;
 
     return NextResponse.json({
       success: true,
-      members: sortedMembers,
+      members: filteredMembers,
       statistics: {
+        total: filteredMembers.length,
         active: activeMembers,
-        total: totalMembers,
-        kycCompleted,
-        kycPending: sortedMembers.filter(m => m.kycStatus === 'pending').length,
-        kycNotStarted: sortedMembers.filter(m => m.kycStatus === 'not_completed').length,
-      },
+        pending: filteredMembers.filter(m => m.status === 'pending').length,
+        inactive: filteredMembers.filter(m => m.status === 'inactive').length,
+        totalContribution: Math.round(totalContribution * 100) / 100,
+        averageContribution: Math.round(averageContribution * 100) / 100
+      }
     });
   } catch (error) {
     console.error('Failed to fetch team members:', error);
     return NextResponse.json(
       { error: 'Failed to fetch team members' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/team/members
+ * Ping inactive team members or send team message
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getUserFromSession(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No session found' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { action, memberId, message } = body;
+
+    if (action === 'ping' && memberId) {
+      // Simulate pinging an inactive member
+      const member = mockTeamMembers.find(m => m.id === memberId);
+      if (!member) {
+        return NextResponse.json(
+          { error: 'Team member not found' },
+          { status: 404 }
+        );
+      }
+
+      console.log(`Pinging inactive team member: ${member.name}`);
+      return NextResponse.json({
+        success: true,
+        message: `Ping sent to ${member.name}`,
+        memberId
+      });
+    }
+
+    if (action === 'message' && message) {
+      // Simulate sending a team message
+      console.log(`Sending team message: ${message}`);
+      return NextResponse.json({
+        success: true,
+        message: 'Team message sent successfully'
+      });
+    }
+
+    return NextResponse.json(
+      { error: 'Invalid action or missing parameters' },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error('Failed to perform team action:', error);
+    return NextResponse.json(
+      { error: 'Failed to perform team action' },
       { status: 500 }
     );
   }

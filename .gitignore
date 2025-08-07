@@ -98,6 +98,9 @@ jspm_packages/
 .parcel-cache
 
 # next.js build output
+
+# Official Pi Network demo files (excluded from build)
+docs/official/
 .next
 
 # nuxt.js build output

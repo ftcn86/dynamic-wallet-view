@@ -1,55 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Notification, NotificationType } from '@/data/schemas';
-import { getSessionUser } from '@/lib/session';
+import { getUserFromSession } from '@/lib/session';
 
 // In-memory storage for notifications (in production, this would be a database)
-// eslint-disable-next-line prefer-const
-let notifications: Notification[] = [
+const notifications: Notification[] = [
   {
-    id: 'notif_001',
+    id: 'notif_1',
+    type: 'badge_earned',
+    title: 'Welcome Badge Earned!',
+    description: 'Congratulations! You\'ve earned your first badge.',
+    date: new Date().toISOString(),
+    read: false,
+    link: '/dashboard/badges'
+  },
+  {
+    id: 'notif_2',
+    type: 'team_update',
+    title: 'New Team Member',
+    description: 'JohnDoe has joined your earning team!',
+    date: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    read: false,
+    link: '/dashboard/team'
+  },
+  {
+    id: 'notif_3',
     type: 'node_update',
-    title: 'Software Update Available',
-    description: 'Your node is running v1.2.3, but v1.2.4 is available.',
-    date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    title: 'Node Status Update',
+    description: 'Your Pi Node is now online and running smoothly.',
+    date: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
     read: true,
     link: '/dashboard/node'
   },
   {
-    id: 'notif_002',
-    type: 'badge_earned',
-    title: 'New Badge Earned!',
-    description: 'You\'ve earned the "Active Team Leader" badge. Great leadership!',
-    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-    read: true,
-    link: '/dashboard?tab=achievements'
-  },
-  {
-    id: 'notif_003',
-    type: 'team_update',
-    title: 'Team Member KYC Verified',
-    description: 'Your team member, Bob Miner, has completed their KYC verification.',
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-    read: true,
-    link: '/dashboard/team'
-  },
-  {
-    id: 'notif_004',
+    id: 'notif_4',
     type: 'announcement',
-    title: 'Community Donation Goal Met!',
-    description: 'Thanks to your support, we\'ve reached our monthly server cost goal.',
-    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-    read: true,
-    link: '/dashboard/donate'
+    title: 'App Update Available',
+    description: 'A new version of Dynamic Wallet View is available with exciting features!',
+    date: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    read: false,
+    link: '/dashboard/settings'
   },
   {
-    id: 'notif_005',
+    id: 'notif_5',
     type: 'team_message',
-    title: 'Message from your Team Leader',
-    description: 'Great work this week everyone! Let\'s keep up the momentum.',
-    date: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(), // 26 hours ago
+    title: 'Team Message',
+    description: 'Great work team! We\'ve reached our weekly mining goal.',
+    date: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
     read: true,
     link: '/dashboard/team'
-  },
+  }
 ];
 
 /**
@@ -59,7 +58,7 @@ let notifications: Notification[] = [
 export async function GET(request: NextRequest) {
   try {
     // Get user from database session (NEW: Proper session management)
-    const user = await getSessionUser(request);
+    const user = await getUserFromSession(request);
     if (!user) {
       return NextResponse.json(
         { error: 'No session found' },
@@ -98,7 +97,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Get user from database session (NEW: Proper session management)
-    const user = await getSessionUser(request);
+    const user = await getUserFromSession(request);
     if (!user) {
       return NextResponse.json(
         { error: 'No session found' },
@@ -152,21 +151,69 @@ export async function POST(request: NextRequest) {
       description,
       date: new Date().toISOString(),
       read: false,
-      link,
+      link: link || null
     };
 
-    notifications.unshift(newNotification); // Add to beginning of array
-
-    console.log('Notification created:', newNotification);
+    notifications.unshift(newNotification);
+    console.log('New notification created:', newNotification);
 
     return NextResponse.json({
       success: true,
       notification: newNotification,
+      message: 'Notification created successfully',
     });
   } catch (error) {
     console.error('Failed to create notification:', error);
     return NextResponse.json(
       { error: 'Failed to create notification' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/notifications
+ * Delete a notification
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getUserFromSession(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No session found' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const notificationId = searchParams.get('id');
+
+    if (!notificationId) {
+      return NextResponse.json(
+        { error: 'Notification ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+    if (notificationIndex === -1) {
+      return NextResponse.json(
+        { error: 'Notification not found' },
+        { status: 404 }
+      );
+    }
+
+    notifications.splice(notificationIndex, 1);
+    console.log(`Notification ${notificationId} deleted`);
+
+    return NextResponse.json({
+      success: true,
+      message: `Notification ${notificationId} deleted successfully`,
+    });
+  } catch (error) {
+    console.error('Failed to delete notification:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete notification' },
       { status: 500 }
     );
   }

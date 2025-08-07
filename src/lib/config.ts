@@ -63,11 +63,28 @@ function getPiEnvironment(): 'testnet' | 'mainnet' {
   if (typeof window === 'undefined') return 'mainnet';
   
   const currentHostname = window.location.hostname;
+  const referrer = document.referrer;
   
-  // Official Pi Network environment detection
-  // ONLY check current window location (no cross-origin access)
-  if (currentHostname.includes('sandbox.minepi.com') || 
-      currentHostname.includes('testnet.minepi.com')) {
+  // Enhanced sandbox detection for Pi Network
+  // Check multiple conditions for sandbox detection:
+  // 1. Direct access to sandbox.minepi.com
+  // 2. Embedded in Pi Network sandbox (referrer contains sandbox.minepi.com)
+  // 3. Parent window is on sandbox.minepi.com (if accessible)
+  const isDirectSandbox = currentHostname === 'sandbox.minepi.com';
+  const isEmbeddedSandbox = referrer.includes('sandbox.minepi.com');
+  const isParentSandbox = (() => {
+    try {
+      // Try to access parent window (may fail due to CORS)
+      return window.parent && window.parent !== window && 
+             window.parent.location.hostname === 'sandbox.minepi.com';
+    } catch {
+      return false; // CORS blocked access
+    }
+  })();
+  
+  const isSandbox = isDirectSandbox || isEmbeddedSandbox || isParentSandbox;
+  
+  if (isSandbox || currentHostname.includes('testnet.minepi.com')) {
     return 'testnet';
   } else {
     return 'mainnet';

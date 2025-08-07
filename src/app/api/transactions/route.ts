@@ -1,5 +1,6 @@
 import { getUserFromSession } from '@/lib/session';
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +17,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Mock transaction data (in production, this would come from a database)
+    // DB-first, fallback to small mock set
+    const dbTransactions = await prisma.transaction.findMany({
+      where: { userId: user.id },
+      orderBy: { date: 'desc' },
+      take: 200
+    });
+
     const mockTransactions = [
       {
         id: 'tx_001',
@@ -86,10 +93,13 @@ export async function GET(request: NextRequest) {
       }
     ];
 
+    // Choose source: DB first, else mocks
+    const source = dbTransactions.length > 0 ? dbTransactions : mockTransactions;
+
     // Filter by type if provided
-    let filteredTransactions = mockTransactions;
+    let filteredTransactions = source as typeof mockTransactions;
     if (type && type !== 'all') {
-      filteredTransactions = mockTransactions.filter(tx => tx.type === type);
+      filteredTransactions = filteredTransactions.filter(tx => tx.type === type);
     }
 
     // Apply pagination

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/db';
 
-const prisma = new PrismaClient();
+// Use Prisma singleton
 
 /**
  * Handle Cancelled Payment Endpoint (Following Official Pi Network Documentation EXACTLY)

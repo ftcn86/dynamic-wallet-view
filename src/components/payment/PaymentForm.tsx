@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { PaymentService, type PaymentData } from '@/services/paymentService';
-import { addTransaction } from '@/services/piService';
-import { addNotification } from '@/services/notificationService';
+// Transactions are stored server-side after payment completion
 import { HeartIcon, SendIcon } from '@/components/shared/icons';
+import * as Log from '@/lib/log';
 
 interface PaymentFormProps {
   title?: string;
@@ -65,25 +65,7 @@ export function PaymentForm({
 
       const result = await PaymentService.createPayment(paymentData, {
         onSuccess: async (paymentResult) => {
-          console.log('✅ Payment successful:', paymentResult);
-          
-          // Add transaction to history
-          await addTransaction({
-            type: 'sent',
-            amount: paymentAmount,
-            status: 'completed',
-            to: 'Payment Recipient',
-            description: memo.trim() || title,
-            date: new Date().toISOString(),
-          });
-
-          // Add notification
-          addNotification(
-            'announcement',
-            'Payment Sent',
-            `Successfully sent ${paymentAmount} π`,
-            '/dashboard/transactions'
-          );
+          Log.log('✅ Payment successful:', paymentResult);
 
           toast({
             title: "Payment Successful!",
@@ -97,7 +79,7 @@ export function PaymentForm({
           setMemo('');
         },
         onError: (error) => {
-          console.error('❌ Payment failed:', error);
+          Log.error('❌ Payment failed:', error);
           toast({
             title: "Payment Failed",
             description: error,
@@ -106,7 +88,7 @@ export function PaymentForm({
           onError?.(error);
         },
         onCancel: () => {
-          console.log('❌ Payment cancelled by user');
+          Log.log('❌ Payment cancelled by user');
           toast({
             title: "Payment Cancelled",
             description: "Payment was cancelled",
@@ -119,7 +101,7 @@ export function PaymentForm({
       }
 
     } catch (error) {
-      console.error('❌ Payment error:', error);
+      Log.error('❌ Payment error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Payment failed';
       toast({
         title: "Payment Error",

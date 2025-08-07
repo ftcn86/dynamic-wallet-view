@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
+import { getUserFromSession } from '@/lib/session';
 
 /**
  * Ad Stats API Endpoint
@@ -9,24 +11,30 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    // For now, return mock ad statistics
-    // In production, this would fetch real ad performance data
-    const adStats = {
-      total_ads_watched: 0,
-      total_revenue_earned: 0,
-      ads_watched_today: 0,
-      revenue_earned_today: 0,
-      average_watch_time: 0,
-      completion_rate: 0,
-      last_ad_watched: null,
-      daily_goal: 5,
-      weekly_goal: 25,
-      monthly_goal: 100,
-    };
+    const user = await getUserFromSession(request);
+    if (!user) {
+      return NextResponse.json({ error: 'No session found' }, { status: 401 });
+    }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const [todayViews, totalViews] = await Promise.all([
+      prisma.adView.count({ where: { userId: user.id, createdAt: { gte: todayStart } } }),
+      prisma.adView.count({ where: { userId: user.id } })
+    ]);
+
+    const lastView = await prisma.adView.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' }
+    });
 
     return NextResponse.json({
       success: true,
-      data: adStats,
+      dailyWatches: todayViews,
+      totalWatches: totalViews,
+      lastRewardTime: lastView?.createdAt?.toISOString() || null,
+      dailyGoal: 5,
     });
   } catch (error) {
     console.error('Ad stats fetch error:', error);
@@ -34,18 +42,7 @@ export async function GET(request: NextRequest) {
       { 
         success: false,
         error: 'Failed to fetch ad statistics',
-        data: {
-          total_ads_watched: 0,
-          total_revenue_earned: 0,
-          ads_watched_today: 0,
-          revenue_earned_today: 0,
-          average_watch_time: 0,
-          completion_rate: 0,
-          last_ad_watched: null,
-          daily_goal: 5,
-          weekly_goal: 25,
-          monthly_goal: 100,
-        }
+        data: null
       },
       { status: 500 }
     );
@@ -57,15 +54,17 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { adWatched, revenueEarned, watchTime } = await request.json();
-    
-    // In production, this would update ad statistics in the database
-    console.log('Ad watched:', { adWatched, revenueEarned, watchTime });
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Ad statistics updated successfully',
+    const user = await getUserFromSession(request);
+    if (!user) {
+      return NextResponse.json({ error: 'No session found' }, { status: 401 });
+    }
+
+    const { rewarded } = await request.json();
+    await prisma.adView.create({
+      data: { userId: user.id, rewarded: !!rewarded }
     });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Ad stats update error:', error);
     return NextResponse.json(

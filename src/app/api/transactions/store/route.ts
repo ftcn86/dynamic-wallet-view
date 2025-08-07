@@ -28,8 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Get user from session and access token from database
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+    const { prisma } = await import('@/lib/db');
     
     let userData;
     try {

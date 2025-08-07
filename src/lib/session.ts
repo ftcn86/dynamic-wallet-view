@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/db';
 import { NextRequest } from 'next/server';
 
-const prisma = new PrismaClient();
+// Use Prisma singleton
 
 /**
  * Session Management Utility

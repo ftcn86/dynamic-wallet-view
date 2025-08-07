@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/db';
 
-const prisma = new PrismaClient();
+// Use Prisma singleton
 
 /**
  * Payment Approval Endpoint (Following Official Pi Network Documentation EXACTLY)

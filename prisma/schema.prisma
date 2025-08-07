@@ -22,6 +22,7 @@ model User {
   // Relationships
   sessions    UserSession[]
   paymentOrders PaymentOrder[]
+  adViews     AdView[]
 
   // Legacy relationships (for existing functionality)
   settings UserSettings?
@@ -255,6 +256,21 @@ model Notification {
   @@index([userId, read])
   @@index([userId, date])
   @@map("notifications")
+}
+
+// Ad Views for rewarded ads tracking
+model AdView {
+  id         String   @id @default(cuid())
+  userId     String
+  rewarded   Boolean  @default(false)
+  ipHash     String?
+  deviceHash String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("ad_views")
 }
 
 model BalanceHistory {

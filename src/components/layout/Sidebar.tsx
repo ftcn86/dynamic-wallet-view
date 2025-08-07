@@ -59,7 +59,7 @@ export function Sidebar() {
   if (!user) return null;
 
   return (
-    <RootSidebar>
+    <RootSidebar className="max-md:w-[88vw]">
         <SidebarHeader>
             <Link 
                 href="/dashboard" 

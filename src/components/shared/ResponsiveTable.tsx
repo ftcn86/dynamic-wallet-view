@@ -36,7 +36,7 @@ export function ResponsiveTable({
   }
 
   return (
-    <div className={cn("relative w-full overflow-auto", className)}>
+    <div className={cn("relative w-full overflow-x-auto -mx-2 sm:mx-0 px-2", className)}>
       {children}
     </div>
   );

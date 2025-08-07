@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getPiSDKInstance } from '@/lib/pi-network';
-import { sendA2UPayment } from '@/services/piService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User } from '@/data/schemas';
 import { Gift } from 'lucide-react';
@@ -13,6 +12,7 @@ import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { AdPlayer } from './ads/AdPlayer';
 import { AdRewardDisplay } from './ads/AdRewardDisplay';
 import { AdStats } from './ads/AdStats';
+import { Badge } from '@/components/ui/badge';
 
 const MAX_DAILY_WATCHES = 10;
 const REWARD_AMOUNT = 0.01; // 0.01 Pi per ad
@@ -24,6 +24,8 @@ export default function RewardedAdsCard() {
   const [isAdReady, setIsAdReady] = useState(true);
   const [dailyWatches, setDailyWatches] = useState(0);
   const [lastRewardTime, setLastRewardTime] = useState<Date | null>(null);
+  const [cooldownMs, setCooldownMs] = useState<number>(0);
+  const [cooldownTick, setCooldownTick] = useState<number>(0);
 
   useEffect(() => {
     if (user) {
@@ -60,6 +62,14 @@ export default function RewardedAdsCard() {
         const data = await response.json();
         setDailyWatches(data.dailyWatches || 0);
         setLastRewardTime(data.lastRewardTime ? new Date(data.lastRewardTime) : null);
+        // Simple cooldown estimation: 2 minutes from lastRewardTime
+        if (data.lastRewardTime) {
+          const last = new Date(data.lastRewardTime).getTime();
+          const diff = 2 * 60 * 1000 - (Date.now() - last);
+          setCooldownMs(Math.max(0, diff));
+        } else {
+          setCooldownMs(0);
+        }
       } else {
         // Fallback to localStorage
         const today = new Date().toDateString();
@@ -77,6 +87,20 @@ export default function RewardedAdsCard() {
       console.error('Failed to load daily stats:', error);
     }
   };
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (cooldownMs <= 0) return;
+    setCooldownTick(cooldownMs);
+    const interval = setInterval(() => {
+      setCooldownTick((t) => {
+        const next = Math.max(0, t - 1000);
+        if (next === 0) clearInterval(interval);
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownMs]);
 
   const handleAdComplete = async (rewarded: boolean) => {
     if (!user) return;
@@ -104,8 +128,11 @@ export default function RewardedAdsCard() {
       // Save stats
       await saveDailyStats(rewarded);
       
-      // Check ad readiness for next time
-      setTimeout(checkAdReadiness, 1000);
+      // Check ad readiness and cooldown for next time
+      setTimeout(() => {
+        checkAdReadiness();
+        loadDailyStats();
+      }, 1000);
       
     } catch (error) {
       console.error('Ad completion failed:', error);
@@ -128,19 +155,16 @@ export default function RewardedAdsCard() {
 
   const grantReward = async () => {
     if (!user) return;
-
     try {
-      await sendA2UPayment(
-        user.id,
-        REWARD_AMOUNT,
-        `Reward for watching ad - Dynamic Wallet View`,
-        {
-          type: 'ad_reward',
-          timestamp: new Date().toISOString(),
-          app: 'dynamic-wallet-view'
-        }
-      );
-      console.log('✅ Reward granted successfully');
+      const res = await fetch('/api/ads/view-complete', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to grant reward');
+      const data = await res.json();
+      if (data.success !== true) {
+        console.warn('View recorded but reward not granted:', data.reason);
+      }
     } catch (error) {
       console.error('❌ Failed to grant reward:', error);
     }
@@ -186,7 +210,7 @@ export default function RewardedAdsCard() {
     </Card>
   );
 
-  const canWatchAd = isAdReady && !isLoading && dailyWatches < MAX_DAILY_WATCHES;
+  const canWatchAd = isAdReady && !isLoading && dailyWatches < MAX_DAILY_WATCHES && cooldownTick === 0;
 
   return (
     <Card>
@@ -201,6 +225,11 @@ export default function RewardedAdsCard() {
             maxDailyWatches={MAX_DAILY_WATCHES}
             lastRewardTime={lastRewardTime}
           />
+          {cooldownTick > 0 && (
+            <Badge variant="secondary" className="w-fit mt-1">
+              Next ad in {Math.ceil(cooldownTick / 1000)}s
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

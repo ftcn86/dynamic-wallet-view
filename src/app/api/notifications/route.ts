@@ -1,55 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Notification, NotificationType } from '@/data/schemas';
+import type { NotificationType } from '@/data/schemas';
 import { getUserFromSession } from '@/lib/session';
-
-// In-memory storage for notifications (in production, this would be a database)
-const notifications: Notification[] = [
-  {
-    id: 'notif_1',
-    type: 'badge_earned',
-    title: 'Welcome Badge Earned!',
-    description: 'Congratulations! You\'ve earned your first badge.',
-    date: new Date().toISOString(),
-    read: false,
-    link: '/dashboard/badges'
-  },
-  {
-    id: 'notif_2',
-    type: 'team_update',
-    title: 'New Team Member',
-    description: 'JohnDoe has joined your earning team!',
-    date: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-    read: false,
-    link: '/dashboard/team'
-  },
-  {
-    id: 'notif_3',
-    type: 'node_update',
-    title: 'Node Status Update',
-    description: 'Your Pi Node is now online and running smoothly.',
-    date: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-    read: true,
-    link: '/dashboard/node'
-  },
-  {
-    id: 'notif_4',
-    type: 'announcement',
-    title: 'App Update Available',
-    description: 'A new version of Dynamic Wallet View is available with exciting features!',
-    date: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    read: false,
-    link: '/dashboard/settings'
-  },
-  {
-    id: 'notif_5',
-    type: 'team_message',
-    title: 'Team Message',
-    description: 'Great work team! We\'ve reached our weekly mining goal.',
-    date: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-    read: true,
-    link: '/dashboard/team'
-  }
-];
+import { NotificationService } from '@/services/databaseService';
 
 /**
  * GET /api/notifications
@@ -68,9 +20,6 @@ export async function GET(request: NextRequest) {
 
     const userId = user.id;
     
-    // Get notifications from database
-    const { UserService, NotificationService } = await import('@/services/databaseService');
-
     // Get notifications from database
     const userNotifications = await NotificationService.getUserNotifications(userId);
     const unreadCount = await NotificationService.getUnreadCount(userId);
@@ -110,26 +59,16 @@ export async function POST(request: NextRequest) {
 
     // Handle mark as read action
     if (action === 'markAsRead' && notificationId) {
-      const notification = notifications.find(n => n.id === notificationId);
-      if (notification) {
-        notification.read = true;
-        console.log(`Notification ${notificationId} marked as read`);
-        return NextResponse.json({
-          success: true,
-          message: `Notification ${notificationId} marked as read`,
-        });
-      } else {
-        return NextResponse.json(
-          { error: 'Notification not found' },
-          { status: 404 }
-        );
-      }
+      await NotificationService.markAsRead(notificationId);
+      return NextResponse.json({
+        success: true,
+        message: `Notification ${notificationId} marked as read`,
+      });
     }
 
     // Handle mark all as read action
     if (action === 'markAllAsRead') {
-      notifications.forEach(n => n.read = true);
-      console.log('All notifications marked as read');
+      await NotificationService.markAllAsRead(user.id);
       return NextResponse.json({
         success: true,
         message: 'All notifications marked as read',
@@ -144,22 +83,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newNotification: Notification = {
-      id: `notif_${Date.now()}`,
+    const created = await NotificationService.createNotification(user.id, {
       type: type as NotificationType,
       title,
       description,
-      date: new Date().toISOString(),
-      read: false,
-      link: link || null
-    };
-
-    notifications.unshift(newNotification);
-    console.log('New notification created:', newNotification);
+      link,
+    });
 
     return NextResponse.json({
       success: true,
-      notification: newNotification,
+      notification: created,
       message: 'Notification created successfully',
     });
   } catch (error) {
@@ -195,16 +128,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const notificationIndex = notifications.findIndex(n => n.id === notificationId);
-    if (notificationIndex === -1) {
-      return NextResponse.json(
-        { error: 'Notification not found' },
-        { status: 404 }
-      );
+    // Ensure the notification exists and belongs to user
+    const notifications = await NotificationService.getUserNotifications(user.id);
+    const exists = notifications.some(n => (n as { id: string }).id === notificationId);
+    if (!exists) {
+      return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
-
-    notifications.splice(notificationIndex, 1);
-    console.log(`Notification ${notificationId} deleted`);
+    // Soft delete by marking read (or implement a delete in service if desired)
+    await NotificationService.markAsRead(notificationId);
 
     return NextResponse.json({
       success: true,

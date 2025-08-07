@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 
 /**
  * Logout Endpoint (Official Demo Pattern)
@@ -7,24 +8,27 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚪 Logout endpoint called');
+    const sessionToken = request.cookies.get('session-token')?.value;
+    if (sessionToken) {
+      await prisma.userSession.updateMany({
+        where: { sessionToken, isActive: true },
+        data: { isActive: false, updatedAt: new Date() }
+      });
+    }
 
-    // Create response
     const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully'
     });
 
-    // Clear the access token cookie (Official Demo Pattern)
-    response.cookies.set('pi-access-token', '', {
+    response.cookies.set('session-token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 0, // Expire immediately
+      maxAge: 0,
       path: '/',
     });
 
-    console.log('✅ Logout completed successfully');
     return response;
 
   } catch (error) {
@@ -37,4 +41,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

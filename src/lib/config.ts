@@ -167,7 +167,8 @@ export const config: AppConfig = {
 };
 
 // Debug logging for environment detection
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && config.isDevelopment) {
+  // Only log in development
   console.log('🔧 [CONFIG] Environment detection:', {
     isDevelopment: config.isDevelopment,
     isProduction: config.isProduction,

@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { SortableTableHead } from '@/components/shared/SortableTableHead';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 // import PaymentCancellationCard from '@/components/dashboard/PaymentCancellationCard';
 import { 
     ArrowDownLeftIcon,
@@ -61,7 +62,11 @@ function TransactionRow({ tx }: { tx: Transaction }) {
 
   const handleExplorerRedirect = () => {
     // In a real app, this would use the tx.blockExplorerUrl
-    console.log(`Redirecting to block explorer for tx: ${tx.id}`);
+    if (process.env.NODE_ENV === 'development') {
+      // gate debug log in prod
+      // eslint-disable-next-line no-console
+      console.log(`Redirecting to block explorer for tx: ${tx.id}`);
+    }
   };
 
   return (
@@ -144,6 +149,7 @@ export default function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<React.SortConfig<Transaction>>({ key: 'date', direction: 'descending' });
+  const [filter, setFilter] = useState<'all' | 'sent' | 'received' | 'rewards'>('all');
   const { user: rawUser } = useAuth(); // Data changes handled by session-based authentication
 
   useEffect(() => {
@@ -171,7 +177,16 @@ export default function TransactionsPage() {
   };
 
   const sortedTransactions = useMemo(() => {
-    const sortableItems = [...transactions];
+    // Filter first
+    const filtered = transactions.filter((t) => {
+      if (filter === 'all') return true;
+      if (filter === 'sent') return t.type === 'sent';
+      if (filter === 'received') return t.type === 'received';
+      if (filter === 'rewards') return t.type === 'mining_reward' || t.description?.toLowerCase().includes('reward');
+      return true;
+    });
+
+    const sortableItems = [...filtered];
     if (sortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         const valA = a[sortConfig.key as keyof Transaction];
@@ -190,7 +205,7 @@ export default function TransactionsPage() {
       });
     }
     return sortableItems;
-  }, [transactions, sortConfig]);
+  }, [transactions, sortConfig, filter]);
 
   return (
     <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-hidden">
@@ -200,7 +215,7 @@ export default function TransactionsPage() {
       {/* <PaymentCancellationCard /> */}
       
       <Card className="shadow-lg w-full max-w-full">
-        <CardHeader className="pb-3 sm:pb-4">
+        <CardHeader className="pb-3 sm:pb-4 sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <CoinsIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             Your Ledger
@@ -208,6 +223,12 @@ export default function TransactionsPage() {
           <CardDescription className="break-words">
             A complete history of all your transactions on the Pi Network.
           </CardDescription>
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            <Button variant={filter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('all')}>All</Button>
+            <Button variant={filter === 'sent' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('sent')}>Sent</Button>
+            <Button variant={filter === 'received' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('received')}>Received</Button>
+            <Button variant={filter === 'rewards' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('rewards')}>Rewards</Button>
+          </div>
         </CardHeader>
         <CardContent className="w-full max-w-full">
           {isLoading && <TransactionsTableSkeleton />}

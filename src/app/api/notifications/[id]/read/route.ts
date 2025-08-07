@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getUserFromSession } from '@/lib/session';
+import { NotificationService } from '@/services/databaseService';
 
 // We need to access the same notifications array from the main notifications API
 // For now, we'll simulate the behavior since we can't easily share the array between files
@@ -13,24 +15,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authorization header required' },
-        { status: 401 }
-      );
+    const user = await getUserFromSession(request);
+    if (!user) {
+      return NextResponse.json({ error: 'No session found' }, { status: 401 });
     }
 
     const { id: notificationId } = await params;
-
-    // In a real implementation, this would update the notification in the database
-    // For now, we'll simulate the behavior
-    console.log(`Marking notification ${notificationId} as read`);
+    await NotificationService.markAsRead(notificationId);
 
     return NextResponse.json({
       success: true,
       message: `Notification ${notificationId} marked as read`,
-      notificationId: notificationId,
+      notificationId,
     });
   } catch (error) {
     console.error('Failed to mark notification as read:', error);

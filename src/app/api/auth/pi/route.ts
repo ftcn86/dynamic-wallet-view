@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
+import prisma from '@/lib/db';
+import { randomBytes } from 'crypto';
 
 /**
  * Pi Network Authentication API Endpoint
@@ -60,9 +62,28 @@ export async function POST(request: NextRequest) {
       hasWalletAddress: !!user.wallet_address
     });
 
-    // OFFICIAL PATTERN: Simple response with user data (no database operations)
-    console.log('✅ Creating simple authentication response...');
-    
+    // Unified: Create DB session and set 'session-token' to match main flow
+    let currentUser;
+    try {
+      currentUser = await prisma.user.upsert({
+        where: { username: user.username },
+        update: { accessToken: authResult.accessToken, updatedAt: new Date() },
+        create: { uid: user.uid, username: user.username, accessToken: authResult.accessToken }
+      });
+    } catch (error) {
+      return NextResponse.json({ success: false, message: 'Database error' }, { status: 500 });
+    }
+
+    const sessionToken = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    try {
+      await prisma.userSession.create({
+        data: { userId: currentUser.id, sessionToken, expiresAt, isActive: true }
+      });
+    } catch (error) {
+      return NextResponse.json({ success: false, message: 'Session creation failed' }, { status: 500 });
+    }
+
     const response = NextResponse.json({
       success: true,
       user: {
@@ -75,16 +96,14 @@ export async function POST(request: NextRequest) {
       message: 'Authentication successful'
     });
 
-    // Set simple session cookie with access token (Official Demo Pattern)
-    response.cookies.set('pi-access-token', authResult.accessToken, {
+    response.cookies.set('session-token', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60,
       path: '/',
     });
 
-    console.log('✅ Authentication completed successfully');
     return response;
 
   } catch (error) {

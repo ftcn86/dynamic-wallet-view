@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromSession } from '@/lib/session';
+import { TeamService } from '@/services/databaseService';
+import type { TeamMember } from '@/data/schemas';
 
 // Mock team members data (in production, this would come from a database)
 const mockTeamMembers = [
@@ -85,15 +87,28 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'joinDate';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
+    // Try DB first
+    let members: TeamMember[];
+    try {
+      members = await TeamService.getUserTeamMembers(user.id) as unknown as TeamMember[];
+    } catch {
+      members = [] as TeamMember[];
+    }
+    // Fallback to mocks if DB returns none
+    if (!members || members.length === 0) {
+      members = mockTeamMembers as unknown as typeof members;
+    }
+
     // Filter by status if provided
-    let filteredMembers = mockTeamMembers;
+    let filteredMembers: TeamMember[] = members;
     if (status && status !== 'all') {
-      filteredMembers = mockTeamMembers.filter(member => member.status === status);
+      filteredMembers = members.filter(member => member.status === status);
     }
 
     // Sort members
-    filteredMembers.sort((a, b) => {
-      let aValue: any, bValue: any;
+    filteredMembers.sort((a: TeamMember, b: TeamMember) => {
+      let aValue: number | string = '';
+      let bValue: number | string = '';
 
       switch (sortBy) {
         case 'name':
@@ -120,8 +135,8 @@ export async function GET(request: NextRequest) {
 
     // Calculate team statistics
     const activeMembers = filteredMembers.filter(m => m.status === 'active').length;
-    const totalContribution = filteredMembers.reduce((sum, m) => sum + m.unverifiedPiContribution, 0);
-    const averageContribution = totalContribution / filteredMembers.length;
+    const totalContribution = filteredMembers.reduce((sum, m) => sum + (m.unverifiedPiContribution || 0), 0);
+    const averageContribution = filteredMembers.length > 0 ? totalContribution / filteredMembers.length : 0;
 
     return NextResponse.json({
       success: true,

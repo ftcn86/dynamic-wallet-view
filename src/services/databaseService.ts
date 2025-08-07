@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/db';
 import type { User as UserType, Transaction as AppTransactionType, Notification as AppNotificationType, TeamMember as AppTeamMemberType, NodeData as AppNodeDataType } from '@/data/schemas';
 
-const prisma = new PrismaClient();
+// Use Prisma singleton
 
 // Type mappings for Prisma enums
 type KycStatus = 'COMPLETED' | 'PENDING' | 'NOT_COMPLETED';

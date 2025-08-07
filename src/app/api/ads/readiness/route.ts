@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // For now, return mock data
     // In production, this would check actual Pi Network Ad Network availability
     const adReadiness = {
-      available: isPiBrowser,
+      canWatch: isPiBrowser,
       network: 'pi_network',
       features: {
         rewarded_ads: isPiBrowser,

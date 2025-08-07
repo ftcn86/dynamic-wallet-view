@@ -156,6 +156,7 @@ export async function validatePiToken(accessToken: string): Promise<boolean> {
  * Create a Pi Network payment
  * Following the EXACT official Pi Network documentation pattern
  */
+// DEPRECATED: Use PaymentService.createPayment instead
 export async function createPiPayment(
   paymentData: PiPaymentData,
   callbacks: PaymentCallbacks
@@ -253,44 +254,7 @@ export async function createPiPayment(
 /**
  * Send App-to-User payment
  */
-export async function sendA2UPayment(
-  recipientUid: string,
-  amount: number,
-  memo: string,
-  metadata?: Record<string, unknown>
-): Promise<{ success: boolean; paymentId?: string; error?: string }> {
-  console.log("Sending A2U payment:", { recipientUid, amount, memo });
-
-  try {
-    const response = await fetch('/api/payments/a2u', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        recipientUid,
-        amount,
-        memo,
-        metadata
-      })
-    });
-
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      console.log("✅ A2U payment sent successfully:", result.paymentId);
-      notifyA2UPaymentSent(amount, recipientUid);
-      return { success: true, paymentId: result.paymentId };
-    } else {
-      console.error("❌ A2U payment failed:", result.error);
-      notifyA2UPaymentFailed(amount, recipientUid, result.error);
-      return { success: false, error: result.error };
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error("❌ A2U payment request failed:", errorMessage);
-    notifyA2UPaymentFailed(amount, recipientUid, errorMessage);
-    return { success: false, error: errorMessage };
-  }
-}
+// A2U moved to server endpoints; rewards handled by /api/ads/view-complete
 
 /**
  * Get user's Pi balance

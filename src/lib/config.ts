@@ -62,9 +62,17 @@ function getEnvVar(key: string, fallback: string = ''): string {
 function getPiEnvironment(): 'testnet' | 'mainnet' {
   if (typeof window === 'undefined') return 'mainnet';
   
-  const hostname = window.location.hostname;
+  const currentHostname = window.location.hostname;
+  const parentHostname = window.parent?.location?.hostname || '';
+  const referrer = document.referrer;
   
-  if (hostname.includes('testnet.minepi.com')) {
+  // Check for sandbox/testnet environments
+  if (currentHostname.includes('sandbox.minepi.com') || 
+      parentHostname.includes('sandbox.minepi.com') ||
+      referrer.includes('sandbox.minepi.com') ||
+      currentHostname.includes('testnet.minepi.com') ||
+      parentHostname.includes('testnet.minepi.com') ||
+      referrer.includes('testnet.minepi.com')) {
     return 'testnet';
   } else {
     return 'mainnet';

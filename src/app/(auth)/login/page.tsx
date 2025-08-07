@@ -13,36 +13,42 @@ import Image from 'next/image';
 import type { User } from '@/data/schemas';
 
 export default function LoginPage() {
-  const { user, signIn, isLoading: isAuthContextLoading, error } = useAuth();
+  const { user, signIn, isLoading: isAuthContextLoading, error, clearError } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (user && !isAuthContextLoading) {
+    if (user && !isAuthContextLoading && !error) {
       router.push('/dashboard');
     }
-  }, [user, isAuthContextLoading, router]);
+  }, [user, isAuthContextLoading, error, router]);
+
+  // Clear error when component mounts
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const handleSignIn = async () => {
     try {
       setIsLoggingIn(true);
+      clearError(); // Clear any previous errors
+      
       await signIn();
       
-      toast({
-        title: "Success!",
-        description: "You have been signed in successfully.",
-      });
-      
-      router.push('/dashboard');
+      // Only show success if no error occurred
+      if (!error) {
+        toast({
+          title: "Success!",
+          description: "You have been signed in successfully.",
+        });
+        
+        router.push('/dashboard');
+      }
     } catch (error) {
       console.error('Sign in error:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to sign in",
-        variant: "destructive",
-      });
+      // Don't show toast here as the error is already handled in AuthContext
     } finally {
       setIsLoggingIn(false);
     }
@@ -98,14 +104,13 @@ export default function LoginPage() {
             <div className="space-y-3">
               <Button
                 onClick={handleSignIn}
-                disabled={isLoggingIn}
+                disabled={isLoggingIn || isAuthContextLoading}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                size="lg"
               >
                 {isLoggingIn ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Authenticating with Pi Network...
+                    Signing in...
                   </>
                 ) : (
                   'Sign in with Pi Network'
@@ -113,29 +118,22 @@ export default function LoginPage() {
               </Button>
               
               {error && (
-                <Button
-                  variant="outline"
-                  onClick={handleSignIn}
-                  disabled={isLoggingIn}
-                  className="w-full"
-                >
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Authentication timeout. Please try again.
-                </Button>
+                </div>
               )}
             </div>
           </div>
           
-          <div className="text-center pt-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Sign in to access your Pi Network dashboard
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+          <div className="text-center text-xs text-gray-500 dark:text-gray-400 space-y-1">
+            <p>Sign in to access your Pi Network dashboard</p>
+            <p>
               By signing in, you agree to our{' '}
-              <a href="/legal/terms" className="underline hover:text-purple-600">
+              <a href="/legal/terms" className="underline hover:text-gray-700 dark:hover:text-gray-300">
                 Terms of Service
               </a>{' '}
               and{' '}
-              <a href="/legal/privacy" className="underline hover:text-purple-600">
+              <a href="/legal/privacy" className="underline hover:text-gray-700 dark:hover:text-gray-300">
                 Privacy Policy
               </a>
             </p>

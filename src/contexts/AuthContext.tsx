@@ -12,6 +12,7 @@ interface AuthContextType {
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +21,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const clearError = () => setError(null);
 
   useEffect(() => {
     const checkExistingSession = async () => {
@@ -56,8 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async () => {
     try {
-      setIsLoading(true);
+      // Clear any previous errors and set loading state
       setError(null);
+      setIsLoading(true);
 
       console.log('🚀 Starting Pi Network authentication...');
       
@@ -65,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (result.success && result.user) {
         setUser(result.user);
+        setError(null); // Ensure error is cleared on success
         console.log('✅ User signed in successfully:', result.user);
       } else {
         throw new Error(result.error || 'Authentication failed');
@@ -72,7 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     } catch (error) {
       console.error('❌ Authentication error:', error);
-      setError(error instanceof Error ? error.message : 'Authentication failed');
+      const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+      setError(errorMessage);
+      setUser(null); // Clear user on error
     } finally {
       setIsLoading(false);
     }
@@ -81,13 +88,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       // Clear Pi Network session
       await AuthService.logout();
       
       // Clear local state
       setUser(null);
-      setError(null);
       
       console.log('✅ User signed out successfully');
     } catch (error) {
@@ -105,15 +112,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      // Get fresh user data from backend
-      const currentUser = await AuthService.getCurrentUser();
-      if (currentUser) {
-        setUser(currentUser);
-        console.log('✅ User data refreshed:', currentUser);
+      if (AuthService.isAuthenticated()) {
+        const currentUser = await AuthService.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          console.log('✅ User data refreshed:', currentUser);
+        } else {
+          // If no user data, user might be logged out
+          setUser(null);
+          console.log('⚠️ No user data found during refresh');
+        }
       } else {
-        // If no user data, user might be logged out
         setUser(null);
-        console.log('⚠️ No user data found during refresh');
+        console.log('ℹ️ User not authenticated during refresh');
       }
     } catch (error) {
       console.error('❌ User refresh failed:', error);
@@ -130,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signOut,
     refreshUser,
+    clearError
   };
 
   return (

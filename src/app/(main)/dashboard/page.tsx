@@ -167,10 +167,7 @@ export default function DashboardPage() {
 
   return (
     <SafeComponent>
-      <div 
-        className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-x-auto"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent' }}
-      >
+      <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6">
         
         {/* Error Display */}
         {error && (
@@ -180,8 +177,8 @@ export default function DashboardPage() {
         )}
         
         {/* KPI Cards Grid - Horizontal Scrollable on Mobile */}
-        <div className="overflow-x-auto pb-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6 auto-rows-fr min-w-max">
+        <div className="scroll-container">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-6 auto-rows-fr min-w-0">
           <SafeComponent>
             <KPICard
               title="Total Pi Balance"
@@ -303,8 +300,8 @@ export default function DashboardPage() {
           {/* Tab Content - Responsive Grid Layouts */}
           {/* FIXED: Improved mobile spacing and layout */}
           <TabsContent value="overview" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
-            <div className="overflow-x-auto pb-2">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full min-w-max">
+            <div className="scroll-container">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
               <div className="space-y-3 sm:space-y-4 md:space-y-6 w-full">
                 <SafeComponent><BalanceBreakdownCard /></SafeComponent>
                 <SafeComponent><TeamActivityCard /></SafeComponent>
@@ -318,8 +315,8 @@ export default function DashboardPage() {
           </TabsContent>
           
           <TabsContent value="portfolio" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
-            <div className="overflow-x-auto pb-2">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full min-w-max">
+            <div className="scroll-container">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
               <div className="w-full">
                 <SafeComponent><BalanceFluctuationChartCard /></SafeComponent>
               </div>
@@ -331,8 +328,8 @@ export default function DashboardPage() {
           </TabsContent>
           
           <TabsContent value="achievements" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
-            <div className="overflow-x-auto pb-2">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full min-w-max">
+            <div className="scroll-container">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
               <div className="w-full">
                 <SafeComponent><MyBadgesCard /></SafeComponent>
               </div>
@@ -344,8 +341,8 @@ export default function DashboardPage() {
           </TabsContent>
           
           <TabsContent value="analysis" className="mt-3 sm:mt-4 md:mt-6 w-full max-w-full">
-            <div className="overflow-x-auto pb-2">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full min-w-max">
+            <div className="scroll-container">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 md:gap-6 w-full max-w-full min-w-0">
               <div className="w-full">
                 <SafeComponent><LockupCalculatorCard /></SafeComponent>
               </div>
@@ -354,7 +351,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-            <div className="mt-3 sm:mt-4 md:mt-6 w-full overflow-x-auto pb-2">
+            <div className="mt-3 sm:mt-4 md:mt-6 w-full">
               <SafeComponent><NativeFeaturesCard /></SafeComponent>
             </div>
           </TabsContent>

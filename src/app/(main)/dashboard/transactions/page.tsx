@@ -193,18 +193,8 @@ export default function TransactionsPage() {
   }, [transactions, sortConfig]);
 
   return (
-    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-x-auto">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
-            Transaction History
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            View and manage your Pi Network transactions
-          </p>
-        </div>
-      </div>
+    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-hidden">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline break-words">Transaction History</h1>
       
       {/* Payment Cancellation Card - Temporarily suspended to prevent app stacking */}
       {/* <PaymentCancellationCard /> */}

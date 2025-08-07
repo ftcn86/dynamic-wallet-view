@@ -211,18 +211,8 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-x-auto">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
-            Settings
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Manage your account preferences and settings
-          </p>
-        </div>
-      </div>
+    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+       <h1 className="text-2xl sm:text-3xl font-bold font-headline">Settings & Profile</h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-8 max-w-4xl mx-auto">
         <div className="lg:col-span-2">
             <ProfileCard />

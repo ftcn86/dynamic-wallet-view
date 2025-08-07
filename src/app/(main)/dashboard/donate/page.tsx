@@ -40,7 +40,7 @@ export default function DonatePage() {
   const progressPercentage = (currentDonations / MOCK_DONATION_GOAL) * 100;
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 max-w-6xl overflow-x-auto">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 max-w-6xl">
       <div className="space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header */}
         <div className="text-center space-y-3 sm:space-y-4">

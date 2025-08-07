@@ -17,21 +17,43 @@ export async function POST(request: NextRequest) {
     
     const piPlatformClient = getPiPlatformAPIClient();
     
-    // 1. Get authenticated user from access token (Official Pattern)
-    const accessToken = request.cookies.get('pi-access-token')?.value;
-    if (!accessToken) {
-      console.error(`❌ [STORE] No access token found`);
+    // 1. Get authenticated user from session (Official Pattern)
+    const sessionToken = request.cookies.get('session-token')?.value;
+    if (!sessionToken) {
+      console.error(`❌ [STORE] No session token found`);
       return NextResponse.json({ 
         success: false, 
         error: 'Authentication required' 
       }, { status: 401 });
     }
 
-    // 2. Verify user with Pi Platform API (Official Pattern)
+    // 2. Get user from session and access token from database
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    
     let userData;
     try {
+      console.log(`🔍 [STORE] Getting user from session...`);
+      const session = await prisma.userSession.findFirst({
+        where: { 
+          sessionToken,
+          isActive: true,
+          expiresAt: { gt: new Date() }
+        },
+        include: { user: true }
+      });
+
+      if (!session || !session.user.accessToken) {
+        console.error(`❌ [STORE] Invalid session or no access token`);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Invalid session' 
+        }, { status: 401 });
+      }
+
+      // 3. Verify user with Pi Platform API using access token from database
       console.log(`🔍 [STORE] Verifying user with Pi Platform API...`);
-      userData = await piPlatformClient.verifyUser(accessToken);
+      userData = await piPlatformClient.verifyUser(session.user.accessToken);
       console.log(`✅ [STORE] User verified:`, userData.uid);
     } catch (verifyError) {
       console.error(`❌ [STORE] User verification failed:`, verifyError);

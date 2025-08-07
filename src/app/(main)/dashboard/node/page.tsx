@@ -80,7 +80,7 @@ function NodeOperatorView() {
     : 'Unknown';
 
   return (
-    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6">
+    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-x-auto">
         <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <NodeStatCard
                 title="Status"
@@ -210,7 +210,17 @@ export default function NodeAnalysisPage() {
 
   return (
     <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
-      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline break-words">Node Analysis</h1>
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+            Node Analysis
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            Monitor your Pi Network node performance and statistics
+          </p>
+        </div>
+      </div>
       {user.isNodeOperator ? <NodeOperatorView /> : <BecomeANodeOperatorPrompt />}
     </div>
   );

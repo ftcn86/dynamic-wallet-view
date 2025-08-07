@@ -342,11 +342,32 @@ export default function TeamInsightsPage() {
   //   ); // This line was removed as per the edit hint
   // } // This line was removed as per the edit hint
 
+  const router = useRouter();
+
   return (
-    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-hidden">
-      <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold font-headline break-words">
-        {t('teamInsights.title')}
-      </h1>
+    <div className="w-full max-w-full space-y-3 sm:space-y-4 md:space-y-6 overflow-x-auto">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+            {t('teamInsights.title')}
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            {t('teamInsights.description')}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push('/dashboard/team/broadcast')}
+            className="flex items-center gap-2"
+          >
+            <MessageSquareIcon className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('teamInsights.broadcast')}</span>
+          </Button>
+        </div>
+      </div>
       
       <TeamManagementCard teamMembers={teamMembers} />
       

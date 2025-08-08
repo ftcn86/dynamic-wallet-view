@@ -111,34 +111,13 @@ function convertPiUserToAppUser(piUser: unknown, authResult?: unknown): User {
  * Authenticate user with Pi Network
  */
 export async function getAuthenticatedUser(): Promise<User> {
-  // Get access token from localStorage
-  if (typeof window === 'undefined') {
-    throw new Error('Cannot access localStorage on server side');
-  }
-  
-  const storedUser = localStorage.getItem('user');
-  if (!storedUser) {
-    throw new Error('No authenticated user found');
-  }
-  
-  const user = JSON.parse(storedUser);
-  const accessToken = user.accessToken;
-  
-  if (!accessToken) {
-    throw new Error('No access token found');
-  }
-  
-  // Fetch from backend API with authentication
+  // Rely on session cookie; server will read session-token
   const res = await fetch('/api/user/me', {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
+    credentials: 'include',
   });
-  
   if (!res.ok) throw new Error('Failed to fetch user');
   const data = await res.json();
-  return data.user;
+  return data.user as User;
 }
 
 /**
@@ -368,11 +347,11 @@ export async function getUserBadges(): Promise<unknown[]> {
 /**
  * Get balance history
  */
-export async function getBalanceHistory(): Promise<unknown[]> {
-  const res = await fetch('/api/user/me');
+export async function getBalanceHistory(period: '3M' | '6M' | '12M' = '6M'): Promise<any[]> {
+  const res = await fetch(`/api/user/balance-history?period=${period}`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch balance history');
   const data = await res.json();
-  return data.user?.balanceHistory || [];
+  return data.points || [];
 }
 
 /**

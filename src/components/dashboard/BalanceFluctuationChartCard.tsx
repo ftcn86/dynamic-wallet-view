@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Bar, BarChart as RechartsBarChart } from 'recharts';
 import { ChartTooltip, ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockChartData } from '@/data/mocks';
+// import { mockChartData } from '@/data/mocks';
 import { format } from 'date-fns';
 import { BarChartIcon } from '@/components/shared/icons';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
@@ -24,11 +24,11 @@ export function BalanceFluctuationChartCard() {
   useEffect(() => {
     setIsLoading(true);
     setError(null);
-    getBalanceHistory()
+    getBalanceHistory(period)
       .then(setChartData)
       .catch(() => setError('Failed to load balance history. Please try again.'))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [period]);
 
   if (isLoading) return (
     <Card className="shadow-lg flex items-center justify-center min-h-[120px]">
@@ -59,7 +59,11 @@ export function BalanceFluctuationChartCard() {
     </Card>
   );
 
-  const data = mockChartData[period];
+  const data = chartData.map((p: any) => ({
+    date: p.date,
+    transferable: p.transferable ?? 0,
+    unverified: p.unverified ?? 0,
+  }));
 
   const chartConfig = {
     transferable: {

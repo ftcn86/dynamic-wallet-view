@@ -35,4 +35,6 @@
 ## Deployment Notes
 
 - Ensure Prisma generated (npx prisma generate) when schema changes.
+- Apply tables in production:
+  - POST /api/migrate/ensure once after deployment to create missing tables (safe, non-destructive).
 - Avoid tracking JSON with Git LFS.

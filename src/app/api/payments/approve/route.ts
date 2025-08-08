@@ -24,8 +24,6 @@ export async function POST(request: NextRequest) {
     // 1. Get authenticated user from session (Official Pattern)
     const sessionToken = request.cookies.get('session-token')?.value;
     
-    // Fallback: Check for Authorization header (for cross-origin requests)
-    const authHeader = request.headers.get('authorization');
     let currentUser = null;
 
     if (sessionToken) {
@@ -46,18 +44,6 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error(`❌ [APPROVE] Session verification failed:`, error);
-      }
-    }
-
-    // Fallback: If no session, try to get user from payment metadata
-    if (!currentUser && authHeader) {
-      try {
-        const { paymentId, metadata } = await request.json();
-        // For now, allow the request to proceed (in production, you'd validate the auth header)
-        console.log(`⚠️ [APPROVE] Using fallback auth for payment:`, paymentId);
-        currentUser = { id: 'fallback-user' }; // Temporary fallback
-      } catch (error) {
-        console.error(`❌ [APPROVE] Fallback auth failed:`, error);
       }
     }
 

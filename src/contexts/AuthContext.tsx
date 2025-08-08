@@ -30,21 +30,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         setError(null);
 
-        // Check if user is already authenticated with Pi Network
+        // Always try to restore from server session first
+        const currentUser = await AuthService.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          console.log('✅ User session restored from server:', currentUser);
+          return;
+        }
+
+        // Fallback: if SDK says authenticated, try sign-in flow
         if (AuthService.isAuthenticated()) {
-          console.log('✅ User already authenticated with Pi Network');
-          
-          // Get current user from backend (Official Demo Pattern)
-          const currentUser = await AuthService.getCurrentUser();
-          if (currentUser) {
-            setUser(currentUser);
-            console.log('✅ User session restored:', currentUser);
-          } else {
-            console.log('⚠️ No user data available, clearing session');
-            await signOut();
-          }
-        } else {
-          console.log('ℹ️ No existing Pi Network session found');
+          console.log('ℹ️ SDK indicates authenticated but no server session; user may need re-auth');
         }
       } catch (error) {
         console.error('❌ Session check failed:', error);

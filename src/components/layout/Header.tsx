@@ -206,8 +206,15 @@ export function Header({children}: {children?: React.ReactNode}) {
   };
 
   const handleRefresh = () => {
-    // (refreshData as () => void)(); // REMOVED
-    window.location.reload();
+    // Soft refresh: refetch key data endpoints without signing the user out
+    try {
+      fetch('/api/user/me', { credentials: 'include' }).finally(() => {
+        // As a fallback, do a client reload that preserves session via cookie
+        window.location.reload();
+      });
+    } catch {
+      window.location.reload();
+    }
   };
 
   const avatarFallback = user ? (user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : '?') : '';

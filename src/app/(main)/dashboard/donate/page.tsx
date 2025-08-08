@@ -52,7 +52,7 @@ export default function DonatePage() {
         </div>
 
         {/* Donation Goal Card */}
-        <Card className="max-w-2xl mx-auto">
+        <Card className="max-w-2xl mx-auto bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg">
           <CardHeader className="text-center pb-3 sm:pb-4">
             <CardTitle>Monthly Goal</CardTitle>
             <CardDescription>
@@ -101,7 +101,7 @@ export default function DonatePage() {
             <Separator />
             
             {/* Why Support Section */}
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg">
               <CardHeader>
                 <CardTitle className="text-lg">Why Support Us?</CardTitle>
               </CardHeader>

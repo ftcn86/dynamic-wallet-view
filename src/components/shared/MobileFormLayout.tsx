@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useViewport } from '@/contexts/ViewportContext';
 
 interface MobileFormLayoutProps {
   children: React.ReactNode;
@@ -33,7 +33,7 @@ export function MobileFormLayout({
   columns = 1,
   spacing = 'md'
 }: MobileFormLayoutProps) {
-  const isMobile = useIsMobile();
+  const { isMobile } = useViewport();
   
   const gridCols = isMobile ? 1 : columns;
   const spacingClasses = {

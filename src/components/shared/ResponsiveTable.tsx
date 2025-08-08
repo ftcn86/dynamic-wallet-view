@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useViewport } from '@/contexts/ViewportContext';
 
 interface ResponsiveTableProps {
   children: React.ReactNode;
@@ -24,7 +24,7 @@ export function ResponsiveTable({
   mobileCardView = true,
   cardViewBreakpoint = 'md'
 }: ResponsiveTableProps) {
-  const isMobile = useIsMobile();
+  const { isMobile } = useViewport();
   const shouldUseCardView = mobileCardView && isMobile;
 
   if (shouldUseCardView) {
@@ -48,7 +48,7 @@ export function ResponsiveTableRow({
   data = {},
   renderCard
 }: ResponsiveTableRowProps) {
-  const isMobile = useIsMobile();
+  const { isMobile } = useViewport();
 
   if (isMobile && renderCard) {
     return (

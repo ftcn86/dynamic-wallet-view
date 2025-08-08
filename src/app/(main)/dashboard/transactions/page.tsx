@@ -216,8 +216,8 @@ export default function TransactionsPage() {
       {/* Payment Cancellation Card - Temporarily suspended to prevent app stacking */}
       {/* <PaymentCancellationCard /> */}
       
-      <Card className="shadow-lg w-full max-w-full">
-        <CardHeader className="pb-3 sm:pb-4 sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg w-full max-w-full">
+        <CardHeader className="pb-3 sm:pb-4 sticky top-0 z-10 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <CoinsIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             Your Ledger

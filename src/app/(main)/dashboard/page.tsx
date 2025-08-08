@@ -238,7 +238,7 @@ export default function DashboardPage() {
             </AlertDialogContent>
           </AlertDialog>
           
-          <Link href="/dashboard/team" className="block">
+           <Link href="/dashboard/team" className="block">
             <SafeComponent>
               <KPICard
                 title="Active Team Members"
@@ -270,7 +270,7 @@ export default function DashboardPage() {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-full">
           <ScrollArea className="w-full max-w-full">
             {/* Mobile improvement: keep tabs visible while scrolling content */}
-            <div className="sticky top-14 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="sticky top-14 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <TabsList className="grid w-full grid-cols-4 h-auto min-h-[40px] sm:min-h-[44px] md:min-h-[48px] gap-1 p-1">
               <TabsTrigger 
                 value="overview" 

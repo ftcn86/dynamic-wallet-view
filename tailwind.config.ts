@@ -20,9 +20,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", ...fontFamily.sans],
+        sans: ["var(--font-inter)", "var(--font-geist-sans)", ...fontFamily.sans],
         mono: ["var(--font-geist-mono)", ...fontFamily.mono],
-        headline: ["var(--font-geist-sans)", ...fontFamily.sans],
+        headline: ["var(--font-inter)", "var(--font-geist-sans)", ...fontFamily.sans],
       },
       colors: {
         background: 'hsl(var(--background))',

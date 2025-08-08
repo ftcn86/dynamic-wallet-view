@@ -45,6 +45,7 @@ import {
 } from '@/components/shared/icons';
 import { RefreshCwIcon } from 'lucide-react';
 import ShareButton from '@/components/dashboard/ShareButton';
+import { useViewport } from '@/contexts/ViewportContext';
 
 
 const notificationIcons: Record<NotificationType, React.ElementType> = {
@@ -197,6 +198,7 @@ export function Header({children}: {children?: React.ReactNode}) {
   const { user: rawUser, signOut } = useAuth();
   const user = rawUser as User | null;
   const router = useRouter();
+  const { isMobile } = useViewport();
 
   const handleLogout = async () => {
     await signOut();
@@ -211,7 +213,13 @@ export function Header({children}: {children?: React.ReactNode}) {
   const avatarFallback = user ? (user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : '?') : '';
 
   return (
-    <header className="flex h-16 sm:h-20 items-center justify-between border-b bg-card px-3 sm:px-4 md:px-6 lg:px-8">
+    <header
+      className={
+        "sticky top-0 z-40 w-full border-b bg-card/80 backdrop-blur-xl px-3 sm:px-4 md:px-6 lg:px-8 " +
+        (isMobile ? "h-14" : "h-16 sm:h-20")
+      }
+    >
+      <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-primary/40 via-accent/30 to-transparent" />
       <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
         {children}
         {!user ? (

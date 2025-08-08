@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import ReactMarkdown from 'react-markdown';
+import { useViewport } from '@/contexts/ViewportContext';
 import type { LegalSection } from '@/data/schemas';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -28,6 +29,7 @@ interface LegalPageLayoutProps {
 export default function LegalPageLayout({ pageTitle, sections, content, displayMode }: LegalPageLayoutProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const { isMobile } = useViewport();
 
   const handleReturn = () => {
     // All users now have terms accepted, just go back
@@ -35,12 +37,13 @@ export default function LegalPageLayout({ pageTitle, sections, content, displayM
   };
 
   return (
-    <div className="flex w-full items-center justify-center">
-      <Card className="w-full max-w-2xl shadow-xl">
+    <div className="relative flex w-full items-start justify-center px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(600px_120px_at_10%_0%,hsl(var(--primary)/0.08),transparent),radial-gradient(500px_120px_at_90%_100%,hsl(var(--accent)/0.07),transparent)]" />
+      <Card className="relative z-10 w-full max-w-3xl shadow-xl border-border/60 bg-card/80 backdrop-blur">
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="text-xl sm:text-2xl font-headline">{pageTitle}</CardTitle>
         </CardHeader>
-        <CardContent className="max-h-[60vh] overflow-y-auto">
+        <CardContent className="max-h-[65vh] overflow-y-auto">
           {displayMode === 'accordion' && sections && sections.length > 0 ? (
             <Accordion type="single" collapsible className="w-full">
               {sections.map((section, index) => (

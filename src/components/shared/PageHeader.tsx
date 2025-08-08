@@ -14,7 +14,8 @@ export function PageHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className={cn('flex items-start justify-between gap-3 pb-2', className)}>
+    <div className={cn('relative flex items-start justify-between gap-3 pb-2', className)}>
+      <div className="pointer-events-none absolute inset-x-0 -top-2 h-px bg-gradient-to-r from-primary/30 via-accent/20 to-transparent" />
       <div>
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline break-words">{title}</h1>
         {subtitle && (

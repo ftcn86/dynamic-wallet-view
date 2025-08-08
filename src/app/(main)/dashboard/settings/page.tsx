@@ -84,7 +84,7 @@ function ProfileCard() {
     const avatarFallback = displayName ? displayName.split(' ').map(n => n[0]).join('').toUpperCase() : '?';
 
     return (
-        <Card className="shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg">
             <CardHeader className="pb-3 sm:pb-4">
                 <CardTitle className="flex items-center">
                     <UserCircleIcon className="mr-2 h-5 w-5" />
@@ -218,7 +218,7 @@ export default function SettingsPage() {
             <ProfileCard />
         </div>
         
-        <Card className="shadow-lg">
+        <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg">
           <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="flex items-center text-lg sm:text-xl">
               <SettingsIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
@@ -248,7 +248,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-         <Card className="shadow-lg">
+         <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center text-lg sm:text-xl">
               <BellIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />

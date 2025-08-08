@@ -122,7 +122,7 @@ function NodeOperatorView() {
                 footerText="Compared to network average"
             />
         </div>
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 w-full max-w-full">
+      <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg hover:shadow-xl transition-shadow duration-300 w-full max-w-full">
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl break-words">Performance History</CardTitle>
           <CardDescription className="text-sm sm:text-base break-words">Your node&apos;s performance score trend over the last few months.</CardDescription>
@@ -149,7 +149,7 @@ function NodeOperatorView() {
 function BecomeANodeOperatorPrompt() {
   return (
     <div className="flex items-center justify-center py-8 sm:py-12 w-full max-w-full">
-        <Card className="shadow-lg text-center w-full max-w-sm sm:max-w-2xl mx-auto">
+        <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg text-center w-full max-w-sm sm:max-w-2xl mx-auto">
         <CardHeader>
             <div className="mx-auto mb-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-primary/10">
             <ServerIcon className="h-6 w-6 sm:h-8 sm:w-8"/>
@@ -210,9 +210,12 @@ export default function NodeAnalysisPage() {
   if (!user) return <div className="flex h-full w-full items-center justify-center"><LoadingSpinner size={32} /></div>;
 
   return (
-    <div className="w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
+    <div className="relative w-full max-w-full space-y-4 sm:space-y-6 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_200px_at_0%_-10%,hsl(var(--primary)/0.08),transparent),radial-gradient(900px_200px_at_100%_110%,hsl(var(--accent)/0.07),transparent)]" />
+      <div className="relative z-10">
       <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline break-words">Node Analysis</h1>
       {user.isNodeOperator ? <NodeOperatorView /> : <BecomeANodeOperatorPrompt />}
+      </div>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export function MobileSidebar({
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className={cn("w-72 p-0", className)}>
+      <SheetContent side="left" className={cn("w-72 p-0 bg-sidebar/80 backdrop-blur-xl border-r border-sidebar-border/60 shadow-xl", className)}>
         <SheetHeader className="sr-only">
           <SheetTitle>Dynamic Wallet Navigation</SheetTitle>
           <SheetDescription>Main navigation menu for Pi Network wallet features and settings.</SheetDescription>

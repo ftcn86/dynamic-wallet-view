@@ -86,7 +86,7 @@ function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
     };
 
     return (
-        <Card className="shadow-lg w-full max-w-full">
+        <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg w-full max-w-full">
             <CardHeader className="pb-3 sm:pb-4">
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl break-words">
                     <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0"/> 
@@ -97,7 +97,7 @@ function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 md:space-y-6 w-full max-w-full">
-                <div className="flex flex-col space-y-3 sm:space-y-4 rounded-lg border p-2 sm:p-3 md:p-4 w-full min-w-0">
+                <div className="flex flex-col space-y-3 sm:space-y-4 rounded-lg border p-2 sm:p-3 md:p-4 w-full min-w-0 bg-background/40">
                     <div className="flex items-center gap-2 font-medium">
                         <BellIcon className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 flex-shrink-0"/>
                         <h3 className="text-xs sm:text-sm lg:text-base break-words min-w-0">{t('teamInsights.managementTools.pingInactive.title')}</h3>
@@ -110,7 +110,7 @@ function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
                         {isPinging ? t('teamInsights.managementTools.pingInactive.buttonPinging') : t('teamInsights.managementTools.pingInactive.button', {count: inactiveMembersCount})}
                     </Button>
                 </div>
-                <div className="flex flex-col space-y-4 rounded-lg border p-3 sm:p-4 w-full min-w-0">
+                <div className="flex flex-col space-y-4 rounded-lg border p-3 sm:p-4 w-full min-w-0 bg-background/40">
                      <div className="flex items-center gap-2 font-medium">
                         <MessageSquareIcon className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 flex-shrink-0"/>
                         <h3 className="text-xs sm:text-sm lg:text-base break-words min-w-0">{t('teamInsights.managementTools.broadcast.title')}</h3>
@@ -147,7 +147,7 @@ function RecentTransactionsCard({ transactions }: { transactions: Transaction[] 
     };
 
     return (
-        <Card className="shadow-lg w-full max-w-full">
+        <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg w-full max-w-full">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl break-words">
                     <ExternalLinkIcon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0"/>
@@ -160,7 +160,7 @@ function RecentTransactionsCard({ transactions }: { transactions: Transaction[] 
             <CardContent>
                 <div className="space-y-3">
                     {recentTransactions.map((transaction) => (
-                        <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                        <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg border bg-card/70 backdrop-blur">
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium truncate">
@@ -353,7 +353,7 @@ export default function TeamInsightsPage() {
       
       <RecentTransactionsCard transactions={transactions} />
       
-      <Card className="shadow-lg w-full max-w-full">
+      <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg w-full max-w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl break-words">
             <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0"/>

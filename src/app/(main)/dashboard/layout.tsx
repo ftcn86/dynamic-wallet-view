@@ -31,23 +31,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
-        <Sidebar className="hidden md:flex">
-          <SidebarContent />
-        </Sidebar>
-        <SidebarInset>
-            <Header>
-                <MobileSidebar>
-                  <SidebarContent />
-                </MobileSidebar>
-            </Header>
-            {/* FIXED: Improved mobile layout with better padding and overflow handling */}
-            <main className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-3 md:p-4 lg:p-6 w-full max-w-full min-h-0 pb-16 md:pb-0">
-              <div className="w-full max-w-full min-w-0 pb-4 sm:pb-6">
-                {children}
-              </div>
-            </main>
-            <BottomNav />
-        </SidebarInset>
+      <Sidebar className="hidden md:flex">
+        <SidebarContent />
+      </Sidebar>
+      <SidebarInset>
+        <Header>
+          <MobileSidebar>
+            <SidebarContent />
+          </MobileSidebar>
+        </Header>
+        <main className="relative flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full min-h-0 pb-16 md:pb-0">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1200px_200px_at_0%_-10%,hsl(var(--primary)/0.08),transparent),radial-gradient(800px_200px_at_100%_110%,hsl(var(--accent)/0.07),transparent)]" />
+          <div className="relative z-10 p-2 sm:p-3 md:p-6 lg:p-8">
+            <div className="w-full max-w-full min-w-0">
+              {children}
+            </div>
+          </div>
+        </main>
+        <BottomNav />
+      </SidebarInset>
     </SidebarProvider>
   );
 }

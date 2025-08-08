@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import { useIsMobile } from './use-mobile';
+import { useViewport } from '@/contexts/ViewportContext';
 
 export function useMobileFocus() {
-  const isMobile = useIsMobile();
+  const { isMobile } = useViewport();
 
   const clearFocus = useCallback(() => {
     if (isMobile) {

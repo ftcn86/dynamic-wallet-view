@@ -93,15 +93,16 @@ export default function HelpPage() {
   const helpSections = getLegalSections('legal.helpSections');
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-background p-2 sm:p-4 py-4 sm:py-6 md:py-8">
-        <div className="w-full max-w-2xl">
-            <LegalPageLayout
-              pageTitle={t('legal.helpTitle')}
-              sections={helpSections}
-              displayMode="accordion"
-            />
-            <FeedbackCard />
-        </div>
+    <div className="relative flex min-h-screen flex-col items-center p-2 sm:p-4 py-4 sm:py-6 md:py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_200px_at_0%_-10%,hsl(var(--primary)/0.08),transparent),radial-gradient(900px_200px_at_100%_110%,hsl(var(--accent)/0.07),transparent)]" />
+      <div className="relative z-10 w-full max-w-3xl">
+        <LegalPageLayout
+          pageTitle={t('legal.helpTitle')}
+          sections={helpSections}
+          displayMode="accordion"
+        />
+        <FeedbackCard />
+      </div>
     </div>
   );
 }

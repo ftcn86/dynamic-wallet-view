@@ -2,9 +2,11 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
+import { Inter } from 'next/font/google';
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ViewportProvider } from "@/contexts/ViewportContext";
 import { Toaster } from "@/components/ui/toaster";
 import PiSDKInitializer from "@/components/PiSDKInitializer";
 
@@ -12,6 +14,7 @@ export const metadata: Metadata = {
   title: "Dynamic Wallet View",
   description: "A comprehensive dashboard for Pi Network users",
 };
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -35,7 +38,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
+        className={`${inter.variable} ${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
         <ThemeProvider
           attribute="class"
@@ -44,9 +47,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <PiSDKInitializer />
-            {children}
-            <Toaster />
+            <ViewportProvider>
+              <PiSDKInitializer />
+              {children}
+              <Toaster />
+            </ViewportProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

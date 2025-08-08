@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getUserFromSession } from '@/lib/session';
+import prisma from '@/lib/db';
 
 /**
  * Get Current User API Endpoint
@@ -11,52 +13,26 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('👤 User/me endpoint called');
-
-    const accessToken = request.cookies.get('pi-access-token')?.value;
-    
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: 'No access token found' },
-        { status: 401 }
-      );
+    const sessionUser = await getUserFromSession(request);
+    if (!sessionUser) {
+      return NextResponse.json({ error: 'No session found' }, { status: 401 });
     }
 
-    // Verify token with Pi Platform API
-    try {
-      const { getPiPlatformAPIClient } = await import('@/lib/pi-network');
-      const piPlatformClient = getPiPlatformAPIClient();
-      
-      const userData = await piPlatformClient.verifyUser(accessToken);
-      
-      console.log('✅ User data retrieved successfully:', {
-        uid: userData.uid,
-        username: userData.username
-      });
+    // Enrich from DB if needed
+    const dbUser = await prisma.user.findUnique({ where: { id: sessionUser.id } });
 
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: userData.uid,
-          username: userData.username,
-          name: userData.username,
-          email: userData.profile?.email || '',
-          walletAddress: userData.wallet_address || '',
-        }
-      });
-    } catch (error) {
-      console.error('❌ Token verification failed:', error);
-      return NextResponse.json(
-        { error: 'Invalid access token' },
-        { status: 401 }
-      );
-    }
-
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: sessionUser.id,
+        username: dbUser?.username ?? sessionUser.username ?? '',
+        name: dbUser?.username ?? sessionUser.username ?? '',
+        email: '',
+        walletAddress: '',
+      },
+    });
   } catch (error) {
     console.error('❌ User/me error:', error);
-    return NextResponse.json(
-      { error: 'Failed to get user data' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to get user data' }, { status: 500 });
   }
-} 
+}

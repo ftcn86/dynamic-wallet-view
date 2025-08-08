@@ -7,14 +7,14 @@ import {
   GaugeIconDashboard as GaugeIcon,
   UsersIcon,
   CoinsIcon,
-  SettingsIcon
+  UserCircleIcon
 } from '@/components/shared/icons';
 
 const items = [
   { href: '/dashboard', label: 'Home', Icon: GaugeIcon },
   { href: '/dashboard/team', label: 'Team', Icon: UsersIcon },
   { href: '/dashboard/transactions', label: 'Txns', Icon: CoinsIcon },
-  { href: '/dashboard/settings', label: 'Settings', Icon: SettingsIcon },
+  { href: '/dashboard/settings', label: 'Profile', Icon: UserCircleIcon },
 ];
 
 export function BottomNav() {

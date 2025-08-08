@@ -213,7 +213,10 @@ const Sidebar = React.forwardRef<
               <SheetTitle>Navigation Menu</SheetTitle>
               <SheetDescription>Main navigation menu for the application.</SheetDescription>
             </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
+            {/* Ensure focus is managed correctly to avoid aria-hidden focus trap warnings */}
+            <div className="flex h-full w-full flex-col" role="navigation" aria-label="Primary">
+              {children}
+            </div>
           </SheetContent>
         </Sheet>
       )

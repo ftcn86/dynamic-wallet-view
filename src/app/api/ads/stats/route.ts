@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import { getUserFromSession } from '@/lib/session';
 
 /**
@@ -19,15 +20,34 @@ export async function GET(request: NextRequest) {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [todayViews, totalViews] = await Promise.all([
-      prisma.adView.count({ where: { userId: user.id, createdAt: { gte: todayStart } } }),
-      prisma.adView.count({ where: { userId: user.id } })
-    ]);
+    let todayViews = 0;
+    let totalViews = 0;
+    let lastView: { createdAt?: Date | null } | null = null;
 
-    const lastView = await prisma.adView.findFirst({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' }
-    });
+    try {
+      [todayViews, totalViews] = await Promise.all([
+        prisma.adView.count({ where: { userId: user.id, createdAt: { gte: todayStart } } }),
+        prisma.adView.count({ where: { userId: user.id } })
+      ]);
+
+      lastView = await prisma.adView.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' }
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2021') {
+        // Table missing in the target database. Return safe defaults and a hint flag.
+        return NextResponse.json({
+          success: true,
+          dailyWatches: 0,
+          totalWatches: 0,
+          lastRewardTime: null,
+          dailyGoal: 5,
+          tableMissing: true,
+        });
+      }
+      throw err;
+    }
 
     return NextResponse.json({
       success: true,
@@ -60,9 +80,17 @@ export async function POST(request: NextRequest) {
     }
 
     const { rewarded } = await request.json();
-    await prisma.adView.create({
-      data: { userId: user.id, rewarded: !!rewarded }
-    });
+    try {
+      await prisma.adView.create({
+        data: { userId: user.id, rewarded: !!rewarded }
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2021') {
+        // Table missing – accept request but indicate tracking is disabled until migrations run
+        return NextResponse.json({ success: true, tableMissing: true });
+      }
+      throw err;
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

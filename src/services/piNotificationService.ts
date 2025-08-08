@@ -109,7 +109,7 @@ export async function notifyNodeUpdate(currentVersion: string, latestVersion: st
   await sendPiNotification({
     title: 'Node Update Available',
     description: `Your node is running v${currentVersion}, but v${latestVersion} is available.`,
-    link: '/dashboard?tab=node',
+    link: '/dashboard/node',
     type: 'info'
   });
 }

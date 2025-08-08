@@ -86,7 +86,7 @@ export async function notifyWalletAddressViewed(): Promise<void> {
     'announcement',
     'Wallet Address Accessed',
     'You viewed your Pi Network wallet address. Keep it safe and share it only with trusted sources.',
-    '/dashboard?tab=portfolio'
+  '/dashboard?tab=portfolio'
   );
 }
 
@@ -98,7 +98,7 @@ export async function notifyPaymentCancelled(paymentId: string, amount: number):
     'node_update',
     'Payment Cancelled',
     `Payment of ${amount} Pi has been cancelled successfully.`,
-    '/dashboard/transactions'
+  '/dashboard/transactions'
   );
 }
 
@@ -110,7 +110,7 @@ export async function notifyNativeFeaturesUnavailable(missingFeatures: string[])
     'announcement',
     'Pi Browser Features Unavailable',
     `Some features are not available: ${missingFeatures.join(', ')}. Consider updating your Pi Browser.`,
-    '/dashboard?tab=analysis'
+  '/dashboard?tab=analysis'
   );
 }
 
@@ -122,7 +122,7 @@ export async function notifyPiRewardReceived(amount: number, reason: string): Pr
     'badge_earned',
     'Pi Reward Received! 🎉',
     `You received ${amount} Pi for: ${reason}`,
-    '/dashboard/transactions'
+  '/dashboard/transactions'
   );
 }
 
@@ -145,7 +145,7 @@ export async function notifyAdRewardEarned(amount: number): Promise<void> {
     'badge_earned',
     'Ad Reward Earned! 🎬',
     `You earned ${amount} Pi for watching an ad. Keep watching to earn more!`,
-    '/dashboard?tab=achievements'
+  '/dashboard?tab=achievements'
   );
 }
 
@@ -157,7 +157,7 @@ export async function notifyDailyAdLimitReached(): Promise<void> {
     'announcement',
     'Daily Ad Limit Reached',
     'You\'ve reached your daily limit for watching ads. Come back tomorrow for more rewards!',
-    '/dashboard?tab=achievements'
+  '/dashboard?tab=achievements'
   );
 }
 
@@ -169,7 +169,7 @@ export async function notifyA2UPaymentSent(amount: number, recipient: string): P
     'team_update',
     'Pi Payment Sent',
     `Successfully sent ${amount} Pi to ${recipient}`,
-    '/dashboard/transactions'
+  '/dashboard/transactions'
   );
 }
 
@@ -181,7 +181,7 @@ export async function notifyA2UPaymentFailed(amount: number, recipient: string, 
     'node_update',
     'Payment Failed',
     `Failed to send ${amount} Pi to ${recipient}: ${error}`,
-    '/dashboard/transactions'
+  '/dashboard/transactions'
   );
 }
 
@@ -204,7 +204,7 @@ export async function notifyAdNotAvailable(): Promise<void> {
     'announcement',
     'Ads Not Available',
     'Rewarded ads are not currently available. Please try again later.',
-    '/dashboard?tab=achievements'
+  '/dashboard?tab=achievements'
   );
 }
 
@@ -216,7 +216,7 @@ export async function notifyAchievementMilestone(milestone: string): Promise<voi
     'badge_earned',
     'Achievement Unlocked! 🏆',
     `Congratulations! You've reached: ${milestone}`,
-    '/dashboard?tab=achievements'
+  '/dashboard?tab=achievements'
   );
 }
 

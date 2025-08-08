@@ -142,7 +142,7 @@ function RecentTransactionsCard({ transactions }: { transactions: Transaction[] 
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
-    const handleViewAllTransactions = () => {
+  const handleViewAllTransactions = () => {
         router.push('/dashboard/transactions');
     };
 

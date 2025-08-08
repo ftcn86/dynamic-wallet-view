@@ -1,6 +1,6 @@
-# Dynamic Wallet View - v1.0
+# Dynamic Wallet View
 
-This repository contains the code for the **Dynamic Wallet View**, a comprehensive, user-friendly, and engaging dashboard application for Pi Network users. This application was built as a frontend prototype using Next.js, React, TypeScript, and ShadCN UI.
+This repository contains the code for the **Dynamic Wallet View**, a comprehensive, user-friendly, and engaging dashboard application for Pi Network users with a fully redesigned modern UI.
 
 ## Project Overview
 
@@ -8,13 +8,10 @@ This repository contains the code for the **Dynamic Wallet View**, a comprehensi
 
 ### Core Features
 
-* **Authentication Flow:** A mock authentication system that simulates logging in with a Pi Network account, including terms of service acceptance.
-* **Main Dashboard:** A central hub displaying Key Performance Indicators (KPIs) like total balance, mining rate, team status, and node uptime. It also includes detailed cards for balance breakdowns and team activity.
-* **Team Insights:** A detailed view of the user's earning team with sorting, status badges, and management tools like pinging inactive members.
-* **Node Analysis:** A dedicated page for node operators to view performance metrics and history.
-* **Transaction History:** A full ledger of the user's transactions.
-* **Settings:** Comprehensive settings for profile customization, theme selection (light/dark/system), and notification preferences.
-* **Donation Page:** A page to simulate supporting the app's development via Pi.
+* **Authentication Flow:** Session-backed auth with a clean login screen.
+* **Modern App Shell:** Glass/gradient theme, improved responsiveness, and a simplified mobile-first navigation.
+* **Dashboard:** KPIs, balance breakdown, charts, team leaderboard, rewards, and more.
+* **Team / Transactions / Profile:** Streamlined pages under `/dashboard/*`.
 
 ## Getting Started
 
@@ -34,13 +31,23 @@ The application is built with Next.js and uses `npm` for package management.
 
     Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+3. **Build:**
+
+    ```bash
+    # Ensure Prisma client is generated
+    npx prisma generate
+    npm run build
+    ```
+
 ## Key Project Files
 
 * `src/app/`: Contains all the application routes, pages, and layouts, following the Next.js App Router structure.
 * `src/components/`: Home to all shared and feature-specific React components.
 * `src/contexts/AuthContext.tsx`: Manages global user state and authentication logic.
 * `src/services/piService.ts`: The centralized data-fetching layer that abstracts away the data source (currently mock data).
-* `docs/COMPREHENSIVE_DOCUMENTATION.md`: Complete project documentation including setup, features, and development guide.
-* `docs/CHANGELOG.md`: Detailed changelog of all updates and fixes.
-* `docs/prd.md`: The original Product Requirements Document that guided the development of this prototype.
-* `docs/archive/`: Contains archived documents related to the development process.
+* `docs/CHANGELOG.md`: Changelog of updates and fixes.
+* `docs/Guide.md`: Quick guide for setup, development, and deployment.
+* `docs/DEBUGGING_RULES.md`: Common debugging/playbook items.
+* `docs/ROLLBACK_GUIDE.md`: Minimal rollback checklist.
+* `docs/PRD.md`: Product Requirements Document (kept as reference).
+* `docs/useful link/`: Curated external links and assets (kept).

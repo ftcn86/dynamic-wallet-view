@@ -44,7 +44,7 @@ export default function Page() {
               <div className="min-w-0">
                 <div className="font-medium truncate">{t.description}</div>
                 <div className="text-xs text-muted-foreground">
-                  {new Date(t.date).toLocaleDateString()} • {t.type}
+                   {new Date(t.date).toLocaleDateString()} • {t.type}
                 </div>
               </div>
               <div className="font-mono ml-4">{(t.type==='sent'?'-':'+')}{t.amount.toFixed(4)} π</div>

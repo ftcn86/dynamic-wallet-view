@@ -101,14 +101,15 @@ export async function POST(request: NextRequest) {
       const orderRecord = await TransactionService.createTransaction(dbUserId, transactionData);
       console.log(`✅ [STORE] Transaction stored successfully:`, orderRecord);
 
-      // 5. Add notification for successful transaction storage
+      // 5. Create DB-backed notification so the bell updates correctly
       try {
-        const { notifyInfo } = await import('@/services/piNotificationService');
-        await notifyInfo(
-          'Transaction Recorded',
-          `Your payment of ${transactionData.amount} Pi has been recorded in your transaction history.`,
-          '/dashboard/transactions'
-        );
+        const { NotificationService } = await import('@/services/databaseService');
+        await NotificationService.createNotification(dbUserId, {
+          type: 'announcement' as any,
+          title: 'Transaction Recorded',
+          description: `Your payment of ${transactionData.amount} Pi has been recorded in your transaction history.`,
+          link: '/dashboard/transactions'
+        });
         console.log(`✅ [STORE] Notification added successfully`);
       } catch (notificationError) {
         console.warn(`⚠️ [STORE] Failed to add notification:`, notificationError);

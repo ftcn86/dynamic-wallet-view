@@ -71,6 +71,7 @@ function NotificationsDropdown() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [open, setOpen] = useState(false);
 
     useEffect(() => {
         async function fetchNotifications() {
@@ -89,13 +90,29 @@ function NotificationsDropdown() {
         fetchNotifications();
     }, [user]); // Re-fetch when user changes
 
-    const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
+    // Lightweight polling to keep bell fresh without reloads
+    useEffect(() => {
+      if (!user) return;
+      const id = setInterval(async () => {
+        try {
+          const fetchedNotifications = await getNotifications();
+          setNotifications(fetchedNotifications);
+        } catch {}
+      }, 10000);
+      return () => clearInterval(id);
+    }, [user]);
+
+    const [unreadCount, setUnreadCount] = useState<number>(0);
+    useEffect(() => {
+      setUnreadCount(notifications.filter(n => !n.read).length);
+    }, [notifications]);
     
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {
             try {
               await markNotificationAsRead(notification.id);
-              // (refreshData as () => void)(); // Trigger a global refresh - REMOVED
+              const updated = await getNotifications();
+              setNotifications(updated);
             } catch (err) {
               setError('Failed to mark notification as read.');
             }
@@ -109,14 +126,15 @@ function NotificationsDropdown() {
         e.stopPropagation(); // Prevent the dropdown from closing
         try {
           await markAllNotificationsAsRead();
-          // (refreshData as () => void)(); // Trigger a global refresh - REMOVED
+          const updated = await getNotifications();
+          setNotifications(updated);
         } catch (err) {
           setError('Failed to mark all notifications as read.');
         }
     };
 
     return (
-        <DropdownMenu>
+        <DropdownMenu open={open} onOpenChange={(o) => { setOpen(o); if (o) { (async () => { try { const n = await getNotifications(); setNotifications(n); } catch {} })(); } }}>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full">
                     <BellIcon className="h-5 w-5" />
@@ -205,14 +223,18 @@ export function Header({children}: {children?: React.ReactNode}) {
     router.push('/login');
   };
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const handleRefresh = async () => {
-    // Soft refresh without navigation or logout
+    setIsRefreshing(true);
     try {
-      await fetch('/api/notifications', { credentials: 'include', cache: 'no-store' });
-      await fetch('/api/transactions?limit=1', { credentials: 'include', cache: 'no-store' });
-      await fetch('/api/user/me', { credentials: 'include', cache: 'no-store' });
-    } catch {}
-    // Re-render only (no redirect). Avoid full reload which could hit auth guard and bounce.
+      await Promise.all([
+        fetch('/api/notifications', { credentials: 'include', cache: 'no-store' }),
+        fetch('/api/transactions?limit=1', { credentials: 'include', cache: 'no-store' }),
+        fetch('/api/user/me', { credentials: 'include', cache: 'no-store' }),
+      ]);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 300);
+    }
   };
 
   const avatarFallback = user ? (user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : '?') : '';
@@ -254,8 +276,8 @@ export function Header({children}: {children?: React.ReactNode}) {
         <div className="flex items-center gap-2">
           {/* Compact header: notifications + refresh on all; avatar menu only on desktop/tablet */}
           <NotificationsDropdown />
-          <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={handleRefresh}>
-            <RefreshCwIcon className="h-5 w-5" />
+          <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={handleRefresh} aria-busy={isRefreshing} aria-live="polite">
+            <RefreshCwIcon className={cn("h-5 w-5 transition-transform", isRefreshing && "animate-spin") } />
             <span className="sr-only">Refresh Data</span>
           </Button>
           {!isMobile && (

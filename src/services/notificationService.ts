@@ -1,7 +1,8 @@
 import { Notification, NotificationType } from '@/data/schemas';
 import { sendPiNotification } from './piNotificationService';
+import { NotificationService as DBNotificationService } from '@/services/databaseService';
 
-// In-memory storage for notifications (in production, this would be a database)
+// Keep legacy in-memory for dev fallback, but prefer DB-backed API
 let notifications: Notification[] = [];
 
 /**
@@ -14,18 +15,27 @@ export async function addNotification(
   description: string,
   link?: string
 ): Promise<void> {
-  const notification: Notification = {
-    id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    type,
-    title,
-    description,
-    date: new Date().toISOString(),
-    read: false,
-    link,
-  };
-
-  notifications.unshift(notification); // Add to beginning
-  console.log('📢 New notification added:', notification);
+  try {
+    // Create via API to ensure DB persistence and bell updates
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ type, title, description, link })
+    });
+  } catch {
+    // Fallback to in-memory during development
+    const notification: Notification = {
+      id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      title,
+      description,
+      date: new Date().toISOString(),
+      read: false,
+      link,
+    };
+    notifications.unshift(notification);
+  }
 
   // Send native Pi Network notification for Pi Browser compatibility
   try {
@@ -52,20 +62,29 @@ export function getNotifications(): Notification[] {
 /**
  * Mark notification as read
  */
-export function markNotificationAsRead(notificationId: string): void {
-  const notification = notifications.find(n => n.id === notificationId);
-  if (notification) {
-    notification.read = true;
-    console.log('✅ Notification marked as read:', notificationId);
-  }
+export async function markNotificationAsRead(notificationId: string): Promise<void> {
+  try {
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'markAsRead', notificationId })
+    });
+  } catch {}
 }
 
 /**
  * Mark all notifications as read
  */
-export function markAllNotificationsAsRead(): void {
-  notifications.forEach(n => n.read = true);
-  console.log('✅ All notifications marked as read');
+export async function markAllNotificationsAsRead(): Promise<void> {
+  try {
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'markAllAsRead' })
+    });
+  } catch {}
 }
 
 /**

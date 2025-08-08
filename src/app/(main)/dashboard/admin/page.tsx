@@ -24,16 +24,27 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [deviceInfo, setDeviceInfo] = useState<{ enforced: boolean; allowed: boolean; deviceHash: string } | null>(null);
   const [showDevicePrompt, setShowDevicePrompt] = useState(false);
+  const [confirmEnableDevice, setConfirmEnableDevice] = useState(false);
 
   useEffect(() => {
-    // Preload device info as soon as page loads so admins see prompt even before password step
+    // Determine if admin-session is already active to show dashboard immediately
+    (async () => {
+      try {
+        const sess = await fetch('/api/admin/session', { credentials: 'include' });
+        if (sess.ok) {
+          const j = await sess.json();
+          if (j.authed) setAuthed(true);
+        }
+      } catch {}
+    })();
+    // Also preload device info for optional device auth enabling
     (async () => {
       try {
         const res = await fetch('/api/admin/device', { credentials: 'include' });
         if (!res.ok) return;
         const data = await res.json();
         setDeviceInfo({ enforced: data.enforced, allowed: data.allowed, deviceHash: data.deviceHash });
-        if ((data.enforced && !data.allowed) || !data.enforced) setShowDevicePrompt(true);
+        if (!data.enforced) setShowDevicePrompt(true); // propose enabling
       } catch {}
     })();
   }, []);
@@ -85,25 +96,35 @@ export default function AdminDashboard() {
         <AlertDialog open={showDevicePrompt} onOpenChange={setShowDevicePrompt}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Secure your admin with device authentication?</AlertDialogTitle>
+              <AlertDialogTitle>Enable device authentication for Admin?</AlertDialogTitle>
               <AlertDialogDescription>
-                {deviceInfo.enforced
-                  ? 'Your deployment enforces device allowlist, but this device is not yet added.'
-                  : 'You can optionally enable device allowlisting for admins by setting ADMIN_DEVICE_HASHES.'}
+                This adds an extra security layer by allowing admin access only from approved devices. Do you want to enable device authentication for this device?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="rounded-md bg-muted p-3 text-xs break-all">
               <div className="font-mono">{deviceInfo.deviceHash}</div>
-              <div className="mt-2 opacity-70">Copy this hash and add it to the ADMIN_DEVICE_HASHES environment variable.</div>
+              <div className="mt-2 opacity-70">Copy this device hash and add it to the ADMIN_DEVICE_HASHES environment variable to approve this device.</div>
             </div>
             <AlertDialogFooter>
-              <AlertDialogCancel>Close</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  navigator.clipboard.writeText(deviceInfo.deviceHash);
-                  setShowDevicePrompt(false);
-                }}
-              >Copy hash</AlertDialogAction>
+              <AlertDialogCancel>Not now</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { navigator.clipboard.writeText(deviceInfo.deviceHash); setConfirmEnableDevice(true); setShowDevicePrompt(false); }}>Copy hash</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* Follow-up confirmation explaining env update step */}
+      {confirmEnableDevice && (
+        <AlertDialog open={confirmEnableDevice} onOpenChange={setConfirmEnableDevice}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Device hash copied</AlertDialogTitle>
+              <AlertDialogDescription>
+                Paste the copied hash into your deployment’s ADMIN_DEVICE_HASHES environment variable and redeploy. After redeploy, this device will be allowed for admin access.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setConfirmEnableDevice(false)}>Done</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

@@ -29,7 +29,7 @@ export default function AdminFeedbackPage() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Admin • Feedback</h1>
-        <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/admin')}>Return to Admin</Button>
+        <Button variant="outline" size="sm" onClick={() => router.replace('/dashboard/admin')}>Return to Admin</Button>
       </div>
       {error && <div className="text-sm text-red-500">{error}</div>}
       {items.length === 0 ? (

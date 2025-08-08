@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
-import { requireSessionAndPiUser } from '@/lib/server-auth';
+import { getUserFromSession } from '@/lib/session';
 import { FeedbackService, NotificationService } from '@/services/databaseService';
 import { isUidWhitelisted } from '@/lib/admin';
 
 export async function POST(request: NextRequest) {
   try {
     await rateLimit(request as unknown as Request, 'feedback:post', 5, 60_000);
-    let userId: string | null = null;
-    try {
-      const { dbUserId } = await requireSessionAndPiUser(request);
-      userId = dbUserId;
-    } catch {}
+    const sessionUser = await getUserFromSession(request);
+    const userId: string | null = sessionUser?.id || null;
 
     const { type, message, pagePath } = await request.json();
     if (!type || typeof type !== 'string') return NextResponse.json({ error: 'type required' }, { status: 400 });
@@ -51,14 +48,10 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     await rateLimit(request as unknown as Request, 'feedback:get', 30, 60_000);
-    // Admin-only listing
-    let piUser;
-    try {
-      ({ piUser } = await requireSessionAndPiUser(request));
-    } catch {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (!isUidWhitelisted(piUser.uid)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // Admin-only listing via session (no Pi API call)
+    const sessionUser = await getUserFromSession(request);
+    if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isUidWhitelisted(sessionUser.uid)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     const url = new URL(request.url);
     const status = url.searchParams.get('status') || undefined;
     const items = await FeedbackService.listFeedback(status || undefined);

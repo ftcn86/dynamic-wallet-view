@@ -9,6 +9,7 @@ import { Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/data/schemas';
 import { notifyWalletAddressViewed } from '@/services/notificationService';
+import { NotificationService } from '@/services/databaseService';
 import { InfoBanner } from '@/components/shared/InfoBanner';
 
 interface WalletAddressCardProps {
@@ -29,7 +30,17 @@ export default function WalletAddressCard({ user }: WalletAddressCardProps) {
         title: "Wallet address copied!",
         description: "Your Pi Network wallet address has been copied to clipboard.",
       });
-      notifyWalletAddressViewed();
+      try {
+        await NotificationService.createNotification(user.id, {
+          type: 'announcement' as any,
+          title: 'Wallet Address Accessed',
+          description: 'You viewed your Pi Network wallet address. Keep it safe and share it only with trusted sources.',
+          link: '/dashboard?tab=portfolio'
+        });
+      } catch {
+        // fallback to legacy
+        notifyWalletAddressViewed();
+      }
       setTimeout(() => setCopied(false), 2000);
     } catch (error: unknown) {
       toast({

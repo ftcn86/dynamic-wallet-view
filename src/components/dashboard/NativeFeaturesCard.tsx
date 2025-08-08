@@ -8,6 +8,8 @@ import { InfoBanner } from '@/components/shared/InfoBanner';
 import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { getPiSDKInstance } from '@/lib/pi-network';
 import { notifyNativeFeaturesUnavailable, notifyPiBrowserUpdateRecommended } from '@/services/notificationService';
+import { NotificationService } from '@/services/databaseService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NativeFeature {
   name: string;
@@ -31,6 +33,7 @@ const FEATURE_DEFINITIONS = {
 };
 
 export default function NativeFeaturesCard() {
+  const { user } = useAuth();
   const [features, setFeatures] = useState<NativeFeature[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +59,33 @@ export default function NativeFeaturesCard() {
       // Check for missing features and notify
       const missingFeatures = featureList.filter(f => !f.available).map(f => f.name);
       if (missingFeatures.length > 0) {
-        notifyNativeFeaturesUnavailable(missingFeatures);
+        try {
+          if (user) {
+            await NotificationService.createNotification(user.id, {
+              type: 'announcement' as any,
+              title: 'Pi Browser Features Unavailable',
+              description: `Some features are not available: ${missingFeatures.join(', ')}. Consider updating your Pi Browser.`,
+              link: '/dashboard?tab=analysis'
+            });
+          } else {
+            await notifyNativeFeaturesUnavailable(missingFeatures);
+          }
+        } catch {}
       }
     } catch (err) {
       console.error('❌ Native features detection failed:', err);
       setError('Failed to detect native features. Please ensure you are using the Pi Browser.');
-      notifyPiBrowserUpdateRecommended();
+      try {
+        if (user) {
+          await NotificationService.createNotification(user.id, {
+            type: 'announcement' as any,
+            title: 'Pi Browser Update Recommended',
+            description: 'Some features work better with the latest version of Pi Browser. Consider updating for the best experience.'
+          });
+        } else {
+          await notifyPiBrowserUpdateRecommended();
+        }
+      } catch {}
       
       // Fallback: show all features as unavailable
       const featureList: NativeFeature[] = Object.entries(FEATURE_DEFINITIONS).map(([key, def]) => ({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { Prisma } from '@prisma/client';
-import { getUserFromSession } from '@/lib/session';
+import { requireSessionAndPiUser } from '@/lib/server-auth';
 
 /**
  * Ad Stats API Endpoint
@@ -12,8 +12,11 @@ import { getUserFromSession } from '@/lib/session';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getUserFromSession(request);
-    if (!user) {
+    let userId: string;
+    try {
+      const { dbUserId } = await requireSessionAndPiUser(request);
+      userId = dbUserId;
+    } catch {
       return NextResponse.json({ error: 'No session found' }, { status: 401 });
     }
 
@@ -26,12 +29,12 @@ export async function GET(request: NextRequest) {
 
     try {
       [todayViews, totalViews] = await Promise.all([
-        prisma.adView.count({ where: { userId: user.id, createdAt: { gte: todayStart } } }),
-        prisma.adView.count({ where: { userId: user.id } })
+        prisma.adView.count({ where: { userId, createdAt: { gte: todayStart } } }),
+        prisma.adView.count({ where: { userId } })
       ]);
 
       lastView = await prisma.adView.findFirst({
-        where: { userId: user.id },
+        where: { userId },
         orderBy: { createdAt: 'desc' }
       });
     } catch (err) {
@@ -74,15 +77,18 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = await getUserFromSession(request);
-    if (!user) {
+    let userId: string;
+    try {
+      const { dbUserId } = await requireSessionAndPiUser(request);
+      userId = dbUserId;
+    } catch {
       return NextResponse.json({ error: 'No session found' }, { status: 401 });
     }
 
     const { rewarded } = await request.json();
     try {
       await prisma.adView.create({
-        data: { userId: user.id, rewarded: !!rewarded }
+        data: { userId, rewarded: !!rewarded }
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2021') {

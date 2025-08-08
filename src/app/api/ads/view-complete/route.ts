@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { getUserFromSession } from '@/lib/session';
+import { requireSessionAndPiUser } from '@/lib/server-auth';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 
 const DAILY_CAP = 5;
@@ -11,8 +11,13 @@ export async function POST(request: NextRequest) {
   try {
     const { rateLimit } = await import('@/lib/rate-limit');
     await rateLimit(request as unknown as Request, 'ads:view-complete', 30, 60_000);
-    const user = await getUserFromSession(request);
-    if (!user) {
+    let userId: string;
+    let uid: string;
+    try {
+      const { dbUserId, piUser } = await requireSessionAndPiUser(request);
+      userId = dbUserId;
+      uid = piUser.uid;
+    } catch {
       return NextResponse.json({ error: 'No session found' }, { status: 401 });
     }
 
@@ -22,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     // Enforce daily cap
     const todayCount = await prisma.adView.count({
-      where: { userId: user.id, createdAt: { gte: todayStart } }
+      where: { userId, createdAt: { gte: todayStart } }
     });
     if (todayCount >= DAILY_CAP) {
       return NextResponse.json({ success: false, reason: 'daily_cap' });
@@ -30,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Enforce cooldown
     const lastView = await prisma.adView.findFirst({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { createdAt: 'desc' }
     });
     if (lastView && now.getTime() - lastView.createdAt.getTime() < COOLDOWN_MS) {
@@ -38,13 +43,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Record view
-    await prisma.adView.create({ data: { userId: user.id, rewarded: true } });
+    await prisma.adView.create({ data: { userId, rewarded: true } });
 
     // Optional A2U reward
     try {
       const pi = getPiPlatformAPIClient();
       await pi.createA2UPayment({
-        recipient_uid: user.uid,
+        recipient_uid: uid,
         amount: REWARD_AMOUNT,
         memo: 'Ad reward',
         metadata: { type: 'ad_reward' }
@@ -53,7 +58,7 @@ export async function POST(request: NextRequest) {
       // Log reward to transactions as RECEIVED
       await prisma.transaction.create({
         data: {
-          userId: user.id,
+          userId,
           date: new Date(),
           type: 'RECEIVED',
           amount: REWARD_AMOUNT,

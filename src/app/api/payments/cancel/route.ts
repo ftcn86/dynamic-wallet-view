@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import { config } from '@/lib/config';
+import { getUserFromSession } from '@/lib/session';
+import { NotificationService } from '@/services/databaseService';
 
 /**
  * Payment Cancellation Endpoint (Following Official Demo Pattern)
@@ -46,15 +48,17 @@ export async function POST(request: NextRequest) {
       await piPlatformClient.cancelPayment(paymentId);
       console.log('✅ Payment cancelled successfully');
 
-      // Add cancellation notification
+      // Add cancellation notification (DB-backed)
       try {
-        const { addNotification } = await import('@/services/notificationService');
-        addNotification(
-          'announcement',
-          'Payment Cancelled',
-          `Payment ${paymentId} has been cancelled. ${reason ? `Reason: ${reason}` : ''}`,
-          '/dashboard/transactions'
-        );
+        const user = await getUserFromSession(request);
+        if (user) {
+          await NotificationService.createNotification(user.id, {
+            type: 'announcement' as any,
+            title: 'Payment Cancelled',
+            description: `Payment ${paymentId} has been cancelled. ${reason ? `Reason: ${reason}` : ''}`,
+            link: '/dashboard/transactions'
+          });
+        }
       } catch (notificationError) {
         console.warn('⚠️ Failed to add notification:', notificationError);
       }
@@ -73,15 +77,17 @@ export async function POST(request: NextRequest) {
     } catch (platformError) {
       console.error('❌ Payment cancellation failed:', platformError);
       
-      // Add error notification
+      // Add error notification (DB-backed)
       try {
-        const { addNotification } = await import('@/services/notificationService');
-        addNotification(
-          'announcement',
-          'Payment Cancellation Failed',
-          `Failed to cancel payment ${paymentId}. Please contact support.`,
-          '/dashboard/transactions'
-        );
+        const user = await getUserFromSession(request);
+        if (user) {
+          await NotificationService.createNotification(user.id, {
+            type: 'announcement' as any,
+            title: 'Payment Cancellation Failed',
+            description: `Failed to cancel payment ${paymentId}. Please contact support.`,
+            link: '/dashboard/transactions'
+          });
+        }
       } catch (notificationError) {
         console.warn('⚠️ Failed to add error notification:', notificationError);
       }

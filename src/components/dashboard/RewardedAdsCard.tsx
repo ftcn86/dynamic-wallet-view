@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { User } from '@/data/schemas';
 import { Gift } from 'lucide-react';
 import { notifyAdRewardEarned, notifyAdNotAvailable } from '@/services/notificationService';
+import { NotificationService } from '@/services/databaseService';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { AdPlayer } from './ads/AdPlayer';
 import { AdRewardDisplay } from './ads/AdRewardDisplay';
@@ -70,11 +71,10 @@ export default function RewardedAdsCard() {
         } else {
           setCooldownMs(0);
         }
-      } else {
-        // Fallback to localStorage
+      } else if (process.env.NODE_ENV === 'development') {
+        // Dev-only fallback to localStorage
         const today = new Date().toDateString();
         const stored = localStorage.getItem('rewardedAdsStats');
-        
         if (stored) {
           const stats = JSON.parse(stored);
           if (stats.date === today) {
@@ -117,7 +117,18 @@ export default function RewardedAdsCard() {
           title: "Reward earned!",
           description: `You've earned ${REWARD_AMOUNT} π for watching the ad.`,
         });
-        notifyAdRewardEarned(REWARD_AMOUNT);
+        try {
+          if (user) {
+            await NotificationService.createNotification(user.id, {
+              type: 'badge_earned' as any,
+              title: 'Ad Reward Earned! 🎬',
+              description: `You earned ${REWARD_AMOUNT} Pi for watching an ad. Keep watching to earn more!`,
+              link: '/dashboard?tab=achievements'
+            });
+          } else {
+            await notifyAdRewardEarned(REWARD_AMOUNT);
+          }
+        } catch {}
       } else {
         toast({
           title: "Ad completed",
@@ -144,13 +155,24 @@ export default function RewardedAdsCard() {
     }
   };
 
-  const handleAdError = (error: string) => {
+  const handleAdError = async (error: string) => {
     toast({
       title: "Ad failed",
       description: error,
       variant: "destructive",
     });
-    notifyAdNotAvailable();
+    try {
+      if (user) {
+        await NotificationService.createNotification(user.id, {
+          type: 'announcement' as any,
+          title: 'Ads Not Available',
+          description: 'Rewarded ads are not currently available. Please try again later.',
+          link: '/dashboard?tab=achievements'
+        });
+      } else {
+        await notifyAdNotAvailable();
+      }
+    } catch {}
   };
 
   const grantReward = async () => {
@@ -187,12 +209,14 @@ export default function RewardedAdsCard() {
         })
       });
 
-      // Fallback to localStorage
-      localStorage.setItem('rewardedAdsStats', JSON.stringify({
-        date: today,
-        watches: newWatches,
-        lastRewardTime: rewarded ? new Date().toISOString() : lastRewardTime?.toISOString()
-      }));
+      // Dev-only fallback to localStorage
+      if (process.env.NODE_ENV === 'development') {
+        localStorage.setItem('rewardedAdsStats', JSON.stringify({
+          date: today,
+          watches: newWatches,
+          lastRewardTime: rewarded ? new Date().toISOString() : lastRewardTime?.toISOString()
+        }));
+      }
     } catch (error) {
       console.error('Failed to save daily stats:', error);
     }

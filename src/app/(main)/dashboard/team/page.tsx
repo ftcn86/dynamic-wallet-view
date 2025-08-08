@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getTeamMembers, getTransactions } from '@/services/piService';
 import { addNotification } from '@/services/notificationService';
+import { NotificationService } from '@/services/databaseService';
 import type { TeamMember, Transaction } from '@/data/schemas';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +35,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
     const { t } = useTranslation();
     const { toast } = useToast();
+    const { user } = useAuth();
     const [broadcastMessage, setBroadcastMessage] = useState("");
     const [isPinging, setIsPinging] = useState(false);
     const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -62,12 +64,18 @@ function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
             console.log('Sending broadcast message:', broadcastMessage);
             
             // Create a notification for the current user (simulate broadcast)
-            addNotification(
-                'team_message',
-                'Message from your Team Leader',
-                broadcastMessage,
-                '/dashboard/team'
-            );
+            try {
+              if (user) {
+                await NotificationService.createNotification(user.id, {
+                  type: 'team_message' as any,
+                  title: 'Message from your Team Leader',
+                  description: broadcastMessage,
+                  link: '/dashboard/team'
+                });
+              } else {
+                await addNotification('team_message', 'Message from your Team Leader', broadcastMessage, '/dashboard/team');
+              }
+            } catch {}
                 
             toast({
                 title: t('teamInsights.broadcastSuccessTitle'),

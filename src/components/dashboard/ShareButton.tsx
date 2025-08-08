@@ -6,6 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Share2, Check } from 'lucide-react';
 import { getPiSDKInstance } from '@/lib/pi-network';
 import { notifyAppShared, notifyShareFailed } from '@/services/notificationService';
+import { NotificationService } from '@/services/databaseService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ShareButtonProps {
   title?: string;
@@ -27,6 +29,7 @@ export default function ShareButton({
   const [isSharing, setIsSharing] = useState(false);
   const [shared, setShared] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleShare = async () => {
     setIsSharing(true);
@@ -53,7 +56,17 @@ export default function ShareButton({
         title: "Shared successfully!",
         description: "Your content has been shared.",
       });
-      notifyAppShared();
+      try {
+        if (user) {
+          await NotificationService.createNotification(user.id, {
+            type: 'team_message' as any,
+            title: 'App Shared Successfully',
+            description: 'Thanks for sharing Dynamic Wallet View with your friends!'
+          });
+        } else {
+          await notifyAppShared();
+        }
+      } catch {}
       
       // Reset shared state after 2 seconds
       setTimeout(() => setShared(false), 2000);
@@ -64,7 +77,17 @@ export default function ShareButton({
         description: "Unable to share. Please try again.",
         variant: "destructive",
       });
-      notifyShareFailed();
+      try {
+        if (user) {
+          await NotificationService.createNotification(user.id, {
+            type: 'announcement' as any,
+            title: 'Share Failed',
+            description: 'Unable to share the app. Please try again or copy the link manually.'
+          });
+        } else {
+          await notifyShareFailed();
+        }
+      } catch {}
     } finally {
       setIsSharing(false);
     }

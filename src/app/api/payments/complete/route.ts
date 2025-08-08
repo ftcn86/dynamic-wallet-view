@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import { NotificationService } from '@/services/databaseService';
 import prisma from '@/lib/db';
+import { requireSessionAndPiUser } from '@/lib/server-auth';
 
 // Use Prisma singleton
 
@@ -31,42 +32,13 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [COMPLETE] Request received for paymentId:`, paymentId, 'txid:', txid);
     const piPlatformClient = getPiPlatformAPIClient();
 
-    // 1. Get authenticated user from session (Official Pattern)
-    const sessionToken = request.cookies.get('session-token')?.value;
-    if (!sessionToken) {
-      return NextResponse.json(
-        { error: 'No session found' },
-        { status: 401 }
-      );
-    }
-
-    // 2. Get user from session (Official Pattern)
-    let currentUser;
+    // 1. Unified session + Pi verification
+    let currentUserId: string;
     try {
-      const session = await prisma.userSession.findFirst({
-        where: { 
-          sessionToken,
-          isActive: true,
-          expiresAt: { gt: new Date() }
-        },
-        include: { user: true }
-      });
-
-      if (!session) {
-        return NextResponse.json(
-          { error: 'Invalid session' },
-          { status: 401 }
-        );
-      }
-
-      currentUser = session.user;
-      console.log(`✅ [COMPLETE] User verified:`, currentUser.uid);
-    } catch (error) {
-      console.error(`❌ [COMPLETE] Session verification failed:`, error);
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      );
+      const { dbUserId } = await requireSessionAndPiUser(request);
+      currentUserId = dbUserId;
+    } catch {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
     // 3. Update order record (Official Pattern)
@@ -121,7 +93,7 @@ export async function POST(request: NextRequest) {
 
       // 6. Notify and return success
       try {
-        await NotificationService.createNotification(currentUser.id, {
+        await NotificationService.createNotification(currentUserId, {
           type: 'TEAM_UPDATE' as any,
           title: 'Payment Completed',
           description: `Your payment ${paymentId} was completed.`,

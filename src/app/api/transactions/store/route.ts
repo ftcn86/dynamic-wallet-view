@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
+import { requireSessionAndPiUser } from '@/lib/server-auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,54 +17,17 @@ export async function POST(request: NextRequest) {
     console.log(`💾 [STORE] Storing transaction for paymentId:`, paymentId);
     
     const piPlatformClient = getPiPlatformAPIClient();
-    
-    // 1. Get authenticated user from session (Official Pattern)
-    const sessionToken = request.cookies.get('session-token')?.value;
-    if (!sessionToken) {
-      console.error(`❌ [STORE] No session token found`);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Authentication required' 
-      }, { status: 401 });
-    }
 
-    // 2. Get user from session and access token from database
-    const { prisma } = await import('@/lib/db');
-    
-    let userData;
+    // Unified session + Pi verification
     let dbUserId: string;
+    let userData: { uid: string; username: string };
     try {
-      console.log(`🔍 [STORE] Getting user from session...`);
-      const session = await prisma.userSession.findFirst({
-        where: { 
-          sessionToken,
-          isActive: true,
-          expiresAt: { gt: new Date() }
-        },
-        include: { user: true }
-      });
-
-      if (!session || !session.user.accessToken) {
-        console.error(`❌ [STORE] Invalid session or no access token`);
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Invalid session' 
-        }, { status: 401 });
-      }
-
-      // Keep DB user id for FK references
-      dbUserId = session.user.id as string;
-
-      // 3. Verify user with Pi Platform API using access token from database
-      console.log(`🔍 [STORE] Verifying user with Pi Platform API...`);
-      userData = await piPlatformClient.verifyUser(session.user.accessToken);
-      console.log(`✅ [STORE] User verified:`, userData.uid);
-    } catch (verifyError) {
-      console.error(`❌ [STORE] User verification failed:`, verifyError);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'User verification failed' 
-      }, { status: 401 });
+      const { dbUserId: id, piUser } = await requireSessionAndPiUser(request);
+      dbUserId = id;
+      userData = piUser;
+      console.log(`✅ [STORE] User verified:`, piUser.uid);
+    } catch (e) {
+      return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 });
     }
 
     // 3. Get payment details from Pi Platform API (Official Pattern)

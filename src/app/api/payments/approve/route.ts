@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import prisma from '@/lib/db';
 import { NotificationService } from '@/services/databaseService';
+import { requireSessionAndPiUser } from '@/lib/server-auth';
 
 // Use Prisma singleton
 
@@ -24,37 +25,13 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [APPROVE] Request received for paymentId:`, paymentId);
     const piPlatformClient = getPiPlatformAPIClient();
 
-    // 1. Get authenticated user from session (Official Pattern)
-    const sessionToken = request.cookies.get('session-token')?.value;
-    
-    let currentUser = null;
-
-    if (sessionToken) {
-      // Try session-based authentication first
-      try {
-        const session = await prisma.userSession.findFirst({
-          where: { 
-            sessionToken,
-            isActive: true,
-            expiresAt: { gt: new Date() }
-          },
-          include: { user: true }
-        });
-
-        if (session) {
-          currentUser = session.user;
-          console.log(`✅ [APPROVE] User verified via session:`, currentUser.id);
-        }
-      } catch (error) {
-        console.error(`❌ [APPROVE] Session verification failed:`, error);
-      }
-    }
-
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'No valid authentication found' },
-        { status: 401 }
-      );
+    // 1. Unified session + Pi verification
+    let currentUserId: string;
+    try {
+      const { dbUserId } = await requireSessionAndPiUser(request);
+      currentUserId = dbUserId;
+    } catch {
+      return NextResponse.json({ error: 'No valid authentication found' }, { status: 401 });
     }
 
     // 3. Get payment details from Pi Network (Official Pattern)
@@ -75,7 +52,7 @@ export async function POST(request: NextRequest) {
       await prisma.paymentOrder.create({
         data: {
           paymentId,
-          userId: currentUser.id,
+          userId: currentUserId,
           amount: paymentDetails.amount,
           memo: paymentDetails.memo,
           metadata: metadata || {},
@@ -100,7 +77,7 @@ export async function POST(request: NextRequest) {
 
       // 6. Notify and return success
       try {
-        await NotificationService.createNotification(currentUser.id, {
+        await NotificationService.createNotification(currentUserId, {
           type: 'TEAM_UPDATE' as any,
           title: 'Payment Approved',
           description: `Your payment ${paymentId} was approved.`,

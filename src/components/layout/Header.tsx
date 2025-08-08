@@ -215,7 +215,7 @@ export function Header({children}: {children?: React.ReactNode}) {
   return (
     <header
       className={
-        "sticky top-0 z-40 w-full border-b bg-card/80 backdrop-blur-xl px-3 sm:px-4 md:px-6 lg:px-8 " +
+        "sticky top-0 z-40 w-full border-b bg-card/80 backdrop-blur-xl px-3 sm:px-4 md:px-6 lg:px-8 flex items-center justify-between " +
         (isMobile ? "h-14" : "h-16 sm:h-20")
       }
     >

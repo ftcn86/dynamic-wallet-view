@@ -25,6 +25,18 @@ import {
     UserCircleIcon,
     UploadIcon
 } from '@/components/shared/icons';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from 'next/navigation';
 
 function ProfileCard() {
     const { user: rawUser } = useAuth();
@@ -151,9 +163,10 @@ function ProfileCard() {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user: rawUser } = useAuth();
+  const { user: rawUser, signOut } = useAuth();
   const user = rawUser as User | null;
   const { toast } = useToast();
+  const router = useRouter();
 
   // FIXED: Add fallback for missing settings (moved before usage)
   const defaultSettings = {
@@ -213,6 +226,49 @@ export default function SettingsPage() {
   return (
     <div className="space-y-3 sm:space-y-4 md:space-y-6">
        <h1 className="text-2xl sm:text-3xl font-bold font-headline">Settings & Profile</h1>
+      {/* Account quick actions for mobile: avatar + logout */}
+      {user && (
+        <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg">
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+              <span className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarFallback>{(user.name || '?').slice(0,2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="flex flex-col -space-y-0.5">
+                  <span className="font-medium leading-tight">{user.name}</span>
+                  <span className="text-xs text-muted-foreground leading-tight">@{user.username}</span>
+                </span>
+              </span>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm">Log out</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to log out? You will need to re-authenticate to log back in.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        await signOut();
+                        router.push('/login');
+                      }}
+                    >
+                      Logout
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-8 max-w-4xl mx-auto">
         <div className="lg:col-span-2">
             <ProfileCard />

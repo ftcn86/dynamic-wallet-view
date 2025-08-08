@@ -88,39 +88,86 @@ export function Sidebar() {
                 )}>
                     {state === 'collapsed' ? 'M' : 'Menu'}
                 </p>
-                {/* Keep only unique items not duplicated in bottom nav */}
-                <SidebarMenuItem>
-                    <SidebarNavLink href="/dashboard/donate" icon={<GiftIcon />}>
-                        Donate
-                    </SidebarNavLink>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <AlertDialog>
+
+                {/* Desktop: full navigation; Mobile: minimal unique links */}
+                {isMobile ? (
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/dashboard/donate" icon={<GiftIcon />}>Donate</SidebarNavLink>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <SidebarMenuButton tooltip="Team Chat" className="w-full justify-start">
-                                <MessageSquareIcon />
-                                <span className={cn(state === 'collapsed' && 'hidden')}>Team Chat</span>
-                            </SidebarMenuButton>
+                          <SidebarMenuButton tooltip="Team Chat" className="w-full justify-start">
+                            <MessageSquareIcon />
+                            <span className={cn(state === 'collapsed' && 'hidden')}>Team Chat</span>
+                          </SidebarMenuButton>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
-                            <AlertDialogHeader>
+                          <AlertDialogHeader>
                             <AlertDialogTitle>Open Team Chat?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                You are about to be redirected to an external chat application. Do you want to continue?
+                              You are about to be redirected to an external chat application. Do you want to continue?
                             </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction onClick={handleOpenChat}>Open Chat</AlertDialogAction>
-                            </AlertDialogFooter>
+                          </AlertDialogFooter>
                         </AlertDialogContent>
-                    </AlertDialog>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarNavLink href="/legal/help" icon={<HelpCircleIcon />}>
-                        Help Center
-                    </SidebarNavLink>
-                </SidebarMenuItem>
+                      </AlertDialog>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/legal/help" icon={<HelpCircleIcon />}>Help Center</SidebarNavLink>
+                    </SidebarMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/dashboard" icon={<HomeIcon />}>Dashboard</SidebarNavLink>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/dashboard/team" icon={<UsersIcon />}>Team Insights</SidebarNavLink>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/dashboard/node" icon={<NetworkIcon />}>Node Analysis</SidebarNavLink>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/dashboard/transactions" icon={<CoinsIcon />}>Transactions</SidebarNavLink>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/dashboard/donate" icon={<GiftIcon />}>Donate</SidebarNavLink>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/dashboard/settings" icon={<SettingsIcon />}>Settings</SidebarNavLink>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <SidebarMenuButton tooltip="Team Chat" className="w-full justify-start">
+                            <MessageSquareIcon />
+                            <span className={cn(state === 'collapsed' && 'hidden')}>Team Chat</span>
+                          </SidebarMenuButton>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Open Team Chat?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              You are about to be redirected to an external chat application. Do you want to continue?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleOpenChat}>Open Chat</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarNavLink href="/legal/help" icon={<HelpCircleIcon />}>Help Center</SidebarNavLink>
+                    </SidebarMenuItem>
+                  </>
+                )}
             </SidebarMenu>
         </SidebarContent>
 

@@ -13,15 +13,14 @@ export async function GET(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || '';
     const isPiBrowser = userAgent.includes('PiBrowser') || userAgent.includes('minepi.com');
     
-    // For now, return mock data
-    // In production, this would check actual Pi Network Ad Network availability
+    // Minimal readiness: only allow in Pi Browser; no mock enablement in production
     const adReadiness = {
       canWatch: isPiBrowser,
       network: 'pi_network',
       features: {
         rewarded_ads: isPiBrowser,
-        interstitial_ads: isPiBrowser,
-        banner_ads: isPiBrowser,
+        interstitial_ads: false,
+        banner_ads: false,
       },
       message: isPiBrowser 
         ? 'Pi Network Ad Network is available' 

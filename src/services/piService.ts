@@ -257,7 +257,10 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
     return (data.members || []) as TeamMember[];
   } catch (error) {
     console.error('Error fetching team members:', error);
-    return mockTeam;
+    if (process.env.NODE_ENV === 'development') {
+      return mockTeam;
+    }
+    return [];
   }
 }
 
@@ -286,40 +289,23 @@ export async function getTransactions(): Promise<Transaction[]> {
 export async function addTransaction(transaction: Omit<Transaction, 'id'> & { txid?: string }): Promise<Transaction> {
   console.log("Adding new transaction:", transaction);
   
-  // Use the correct Pi Testnet explorer URL if txid is present
-  const blockExplorerUrl = transaction.txid
-    ? getBlockExplorerTxUrl(transaction.txid)
-    : undefined;
-
-  const newTransaction: Transaction = {
-    ...transaction,
-    id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    blockExplorerUrl,
-    txid: transaction.txid
-  };
-  
-  // Add to mock data (in real app, this would save to database)
-  mockTransactions.unshift(newTransaction);
-  
-  // Add notification for new transaction using Pi Network native notifications
-  const { notifyPaymentEvent, notifyMiningReward } = await import('@/services/piNotificationService');
-  
-  switch (transaction.type) {
-    case 'sent':
-      await notifyPaymentEvent('sent', transaction.amount, transaction.to);
-      break;
-    case 'received':
-      await notifyPaymentEvent('received', transaction.amount, undefined, transaction.from);
-      break;
-    case 'mining_reward':
-      await notifyMiningReward(transaction.amount);
-      break;
-    case 'node_bonus':
-      await notifyMiningReward(transaction.amount); // Treat as mining reward for notifications
-      break;
+  // Persist to server in all environments
+  const res = await fetch('/api/transactions/store', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ paymentId: transaction.txid || `gen_${Date.now()}`, txid: transaction.txid, metadata: { to: transaction.to, description: transaction.description } })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return data.transaction as Transaction;
   }
-  
-  return newTransaction;
+  // Fallback: return minimal local object in dev only
+  if (process.env.NODE_ENV === 'development') {
+    const blockExplorerUrl = transaction.txid ? getBlockExplorerTxUrl(transaction.txid) : undefined;
+    return { ...transaction, id: `tx_${Date.now()}`, blockExplorerUrl } as Transaction;
+  }
+  throw new Error('Failed to store transaction');
 }
 
 /**

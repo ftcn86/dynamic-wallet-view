@@ -94,8 +94,8 @@ export async function GET(request: NextRequest) {
     } catch {
       members = [] as TeamMember[];
     }
-    // Fallback to mocks if DB returns none
-    if (!members || members.length === 0) {
+    // Fallback to mocks only during development
+    if ((!members || members.length === 0) && process.env.NODE_ENV === 'development') {
       members = mockTeamMembers as unknown as typeof members;
     }
 

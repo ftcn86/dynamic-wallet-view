@@ -45,7 +45,7 @@ function ProfileCard() {
 
     const [displayName, setDisplayName] = useState(user?.name || '');
     const [bio, setBio] = useState(user?.bio || '');
-    const [avatarUrl, setAvatarUrl] = useState(user?.avatar || 'https://placehold.co/128x128.png');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'pioneer'}`);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {

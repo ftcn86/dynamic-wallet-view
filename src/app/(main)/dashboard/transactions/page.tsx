@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { getBlockExplorerTxUrl } from '@/lib/config';
 import { InfoBanner } from '@/components/shared/InfoBanner';
 // import PaymentCancellationCard from '@/components/dashboard/PaymentCancellationCard';
 import { 
@@ -63,11 +64,11 @@ function TransactionRow({ tx }: { tx: Transaction }) {
   const StatusIcon = statusInfo.icon;
 
   const handleExplorerRedirect = () => {
-    // In a real app, this would use the tx.blockExplorerUrl
-    if (process.env.NODE_ENV === 'development') {
-      // gate debug log in prod
-      // eslint-disable-next-line no-console
-      console.log(`Redirecting to block explorer for tx: ${tx.id}`);
+    // Prefer computed explorer URL from txid; fallback to provided URL
+    const computedUrl = tx.txid ? getBlockExplorerTxUrl(tx.txid) : undefined;
+    const url = computedUrl || tx.blockExplorerUrl;
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -95,7 +96,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
               <AlertDialogDescription>
                 You are about to be redirected to an external block explorer to view the details of this transaction. Do you want to continue?
                 <br /><br />
-                <span className="text-xs text-muted-foreground break-all">Transaction ID: {tx.id}</span>
+                <span className="text-xs text-muted-foreground break-all">Transaction ID: {tx.txid || tx.id}</span>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

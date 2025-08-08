@@ -31,7 +31,8 @@ import { AIFeatureFeedbackCard } from '@/components/dashboard/AIFeatureFeedbackC
 import WalletAddressCard from '@/components/dashboard/WalletAddressCard';
 import NativeFeaturesCard from '@/components/dashboard/NativeFeaturesCard';
 import RewardedAdsCard from '@/components/dashboard/RewardedAdsCard';
-import { mockTeam } from '@/data/mocks';
+// import { mockTeam } from '@/data/mocks';
+import { getTeamMembers } from '@/services/piService';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { InfoBanner } from '@/components/shared/InfoBanner';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -107,6 +108,24 @@ export default function DashboardPage() {
   const initialTab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(TABS.includes(initialTab as string) ? initialTab as string : 'overview');
 
+  // Team KPIs state must be declared before any conditional return
+  const [activeTeamMembers, setActiveTeamMembers] = useState(0);
+  const [totalTeamMembers, setTotalTeamMembers] = useState(0);
+  useEffect(() => {
+    const loadTeam = async () => {
+      if (!user) return;
+      try {
+        const team = await getTeamMembers();
+        setTotalTeamMembers(team.length);
+        setActiveTeamMembers(team.filter(m => m.status === 'active').length);
+      } catch {
+        setTotalTeamMembers(0);
+        setActiveTeamMembers(0);
+      }
+    };
+    loadTeam();
+  }, [user]);
+
   // Fetch real-time Pi balance from SDK with error handling
   useEffect(() => {
     const fetchPiBalance = async () => {
@@ -160,12 +179,7 @@ export default function DashboardPage() {
   const displayBalance = piBalance !== null ? piBalance : (user.balance || 0);
   const balanceStatus = piBalance !== null ? 'live' : 'fallback';
 
-  // TODO: Replace mockTeam with real API data
-  // const { team, isLoading: teamLoading } = useTeam();
-  // const activeTeamMembers = team?.filter(m => m.status === 'active').length || 0;
-  // const totalTeamMembers = team?.length || 0;
-  const activeTeamMembers = mockTeam.filter(m => m.status === 'active').length;
-  const totalTeamMembers = mockTeam.length;
+  
 
   return (
     <SafeComponent>

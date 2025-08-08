@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         from: userData.uid,
         to: metadata?.to || 'Dynamic Wallet View',
         description: (paymentDetails as { memo?: string }).memo || 'Pi Payment',
-        blockExplorerUrl: txid ? `https://api.minepi.com/blockchain/transactions/${txid}` : undefined,
+        blockExplorerUrl: txid ? (await import('@/lib/config')).getBlockExplorerTxUrl(txid) : undefined,
         txid: txid,
         date: new Date().toISOString(),
       };

@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         amount: 0.5,
         status: 'completed' as const,
         description: 'Mining reward for active participation',
-        blockExplorerUrl: 'https://testnet.minepi.com/block/12345',
+         blockExplorerUrl: 'https://blockexplorer.minepi.com/testnet/transactions/txid_12345',
         txid: 'txid_12345'
       },
       {
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         from: user.username,
         to: 'alice_miner',
         description: 'Payment for services',
-        blockExplorerUrl: 'https://testnet.minepi.com/block/12344',
+         blockExplorerUrl: 'https://blockexplorer.minepi.com/testnet/transactions/txid_12344',
         txid: 'txid_12344'
       },
       {
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
         from: 'bob_validator',
         to: user.username,
         description: 'Team bonus payment',
-        blockExplorerUrl: 'https://testnet.minepi.com/block/12343',
+         blockExplorerUrl: 'https://blockexplorer.minepi.com/testnet/transactions/txid_12343',
         txid: 'txid_12343'
       },
       {
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
         amount: 2.5,
         status: 'completed' as const,
         description: 'Node operation bonus',
-        blockExplorerUrl: 'https://testnet.minepi.com/block/12342',
+         blockExplorerUrl: 'https://blockexplorer.minepi.com/testnet/transactions/txid_12342',
         txid: 'txid_12342'
       },
       {

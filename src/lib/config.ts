@@ -205,6 +205,19 @@ export function getApiUrl(endpoint: string): string {
 }
 
 /**
+ * Build a Pi Block Explorer transaction URL for the current environment.
+ * Uses testnet explorer when platformApiUrl contains 'testnet'.
+ */
+export function getBlockExplorerTxUrl(txid: string, forceTestnet?: boolean): string {
+  const isTestnet = typeof forceTestnet === 'boolean'
+    ? forceTestnet
+    : config.piNetwork.platformApiUrl.includes('testnet');
+  return isTestnet
+    ? `https://blockexplorer.minepi.com/testnet/transactions/${txid}`
+    : `https://blockexplorer.minepi.com/transactions/${txid}`;
+}
+
+/**
  * Get environment-specific settings
  */
 export function getEnvironmentSettings() {

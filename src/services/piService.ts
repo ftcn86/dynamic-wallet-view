@@ -2,6 +2,7 @@
 "use client";
 
 import { mockUser, mockTeam, mockTransactions, mockNotifications } from '@/data/mocks';
+import { getBlockExplorerTxUrl } from '@/lib/config';
 import type { User, TeamMember, Transaction, Notification } from '@/data/schemas';
 import { getPiSDKInstance } from '@/lib/pi-network';
 import type { PiPayment, PiPaymentData } from '@/lib/pi-network';
@@ -287,7 +288,7 @@ export async function addTransaction(transaction: Omit<Transaction, 'id'> & { tx
   
   // Use the correct Pi Testnet explorer URL if txid is present
   const blockExplorerUrl = transaction.txid
-    ? `https://blockexplorer.minepi.com/testnet/transactions/${transaction.txid}`
+    ? getBlockExplorerTxUrl(transaction.txid)
     : undefined;
 
   const newTransaction: Transaction = {

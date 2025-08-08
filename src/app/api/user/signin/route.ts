@@ -54,12 +54,14 @@ export async function POST(request: NextRequest) {
         where: { username: authResult.user.username },
         update: { 
           accessToken: authResult.accessToken,
+          walletAddress: authResult.user.wallet_address || null,
           updatedAt: new Date()
         },
         create: {
           uid: authResult.user.uid,
           username: authResult.user.username,
-          accessToken: authResult.accessToken
+          accessToken: authResult.accessToken,
+          walletAddress: authResult.user.wallet_address || null
         }
       });
       console.log('✅ [SIGNIN] User stored/updated in database:', currentUser.id);

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         username: dbUser?.username ?? sessionUser.username ?? '',
         name: dbUser?.username ?? sessionUser.username ?? '',
         email: '',
-        walletAddress: '',
+        walletAddress: (dbUser as any)?.walletAddress || '',
       },
     });
   } catch (error) {

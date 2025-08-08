@@ -90,9 +90,11 @@ export async function POST(request: NextRequest) {
       link,
     });
 
+    const newUnread = await NotificationService.getUnreadCount(user.id);
     return NextResponse.json({
       success: true,
       notification: created,
+      unreadCount: newUnread,
       message: 'Notification created successfully',
     });
   } catch (error) {

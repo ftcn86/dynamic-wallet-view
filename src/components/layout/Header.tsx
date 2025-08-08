@@ -128,7 +128,7 @@ function NotificationsDropdown() {
                     <span className="sr-only">Notifications</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-80 md:w-96" align="end">
+            <DropdownMenuContent className="w-80 md:w-96" align="end" forceMount>
                 <DropdownMenuLabel className="flex justify-between items-center">
                     <span>Notifications</span>
                     {unreadCount > 0 && <Badge variant="secondary">{unreadCount} New</Badge>}

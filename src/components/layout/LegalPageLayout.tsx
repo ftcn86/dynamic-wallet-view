@@ -44,6 +44,7 @@ export default function LegalPageLayout({ pageTitle, sections, content, displayM
           <CardTitle className="text-xl sm:text-2xl font-headline">{pageTitle}</CardTitle>
         </CardHeader>
         <CardContent className="max-h-[65vh] overflow-y-auto">
+          <div className="mb-3 text-xs text-muted-foreground">Effective date: {new Date().toISOString().slice(0,10)}</div>
           {displayMode === 'accordion' && sections && sections.length > 0 ? (
             <Accordion type="single" collapsible className="w-full">
               {sections.map((section, index) => (

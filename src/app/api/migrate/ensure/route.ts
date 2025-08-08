@@ -8,6 +8,10 @@ import prisma from '@/lib/db';
  */
 export async function POST(_request: NextRequest) {
   try {
+    // Ensure columns on users table that recent code expects
+    await prisma.$executeRawUnsafe(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "walletAddress" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "accessToken" TEXT`);
+
     // Ensure ad_views table
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "ad_views" (

@@ -1,0 +1,46 @@
+/* V2 design language - distinct look from V1 */
+.v2 {
+  --v2-bg: radial-gradient(1200px 800px at 10% -10%, rgba(111,91,255,.25), transparent),
+            radial-gradient(1000px 700px at 100% 0%, rgba(255,162,0,.18), transparent),
+            hsl(var(--background));
+  --v2-card: rgba(255,255,255,.06);
+  --v2-border: rgba(255,255,255,.14);
+  --v2-shadow: 0 10px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.v2-bg {
+  background: var(--v2-bg);
+  background-attachment: fixed;
+}
+
+.v2-card {
+  background: var(--v2-card);
+  border: 1px solid var(--v2-border);
+  box-shadow: var(--v2-shadow);
+  border-radius: 14px;
+}
+
+.v2-tile {
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid var(--v2-border);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  box-shadow: var(--v2-shadow);
+}
+
+.v2-title {
+  letter-spacing: -0.01em;
+}
+
+.v2-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--v2-border);
+  background: rgba(255,255,255,.06);
+  font-size: 12px;
+}
+
+

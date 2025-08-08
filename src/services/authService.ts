@@ -135,10 +135,7 @@ export class AuthService {
    */
   static async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await fetch('/api/user/signin', {
-        method: 'GET',
-        credentials: 'include'
-      });
+      const response = await fetch('/api/user/me', { credentials: 'include' });
 
       if (!response.ok) {
         return null;

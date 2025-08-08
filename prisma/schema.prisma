@@ -34,6 +34,7 @@ model User {
   teamMembers TeamMember[]
   nodeData NodeData?
   balanceHistory BalanceHistory[]
+  donations Donation[]
 
   @@map("users")
 }
@@ -287,6 +288,39 @@ model BalanceHistory {
   @@unique([userId, date])
   @@index([userId, date])
   @@map("balance_history")
+}
+
+// Donations
+model DonationGoal {
+  id           String   @id @default(cuid())
+  targetAmount Float
+  title        String?
+  description  String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  donations Donation[]
+
+  @@map("donation_goals")
+}
+
+model Donation {
+  id         String   @id @default(cuid())
+  userId     String?
+  goalId     String?
+  amount     Float
+  memo       String?
+  donorName  String?
+  txid       String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  goal DonationGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@index([goalId])
+  @@index([userId, createdAt])
+  @@map("donations")
 }
 
 // Enums

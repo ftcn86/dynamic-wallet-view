@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,15 +9,16 @@ import type { User } from '@/data/schemas';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { PaymentForm } from '@/components/payment/PaymentForm';
 import { RecentSupporters } from '@/components/dashboard/donate/RecentSupporters';
-import { MOCK_DONATION_GOAL, MOCK_CURRENT_DONATIONS, MOCK_RECENT_DONATIONS } from '@/data/mocks';
+import { MOCK_RECENT_DONATIONS } from '@/data/mocks';
 
 export default function DonatePage() {
   const { user: rawUser } = useAuth();
   const user = rawUser as User | null;
-  const [currentDonations, setCurrentDonations] = useState(MOCK_CURRENT_DONATIONS);
+  const [goalTarget, setGoalTarget] = useState<number | null>(null);
+  const [currentDonations, setCurrentDonations] = useState<number>(0);
   const [recentSupporters, setRecentSupporters] = useState(MOCK_RECENT_DONATIONS);
 
-  const handlePaymentSuccess = ({ amount, memo }: { amount: number; memo: string }) => {
+  const handlePaymentSuccess = async ({ amount, memo, txid }: { amount: number; memo: string; txid?: string }) => {
     // Update donation statistics
     setCurrentDonations(prev => prev + amount);
     
@@ -27,7 +28,39 @@ export default function DonatePage() {
       amount: amount
     };
     setRecentSupporters(prev => [newSupporter, ...prev.slice(0, 4)]);
+
+    // Persist donation record
+    try {
+      await fetch('/api/donations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ amount, memo, txid })
+      });
+    } catch {}
   };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [goalRes, listRes] = await Promise.all([
+          fetch('/api/donations/goals', { credentials: 'include' }),
+          fetch('/api/donations', { credentials: 'include' })
+        ]);
+        if (goalRes.ok) {
+          const g = await goalRes.json();
+          setGoalTarget(g.goal?.targetAmount ?? 250);
+          setCurrentDonations(g.totalAmount ?? 0);
+        }
+        if (listRes.ok) {
+          const d = await listRes.json();
+          const supporters = (d.recent || []).map((r: any) => ({ name: r.donorName || 'Anonymous', amount: r.amount }));
+          setRecentSupporters(supporters.length ? supporters : MOCK_RECENT_DONATIONS);
+        }
+      } catch {}
+    };
+    load();
+  }, []);
 
   if (!user) {
     return (
@@ -37,7 +70,8 @@ export default function DonatePage() {
     );
   }
 
-  const progressPercentage = (currentDonations / MOCK_DONATION_GOAL) * 100;
+  const target = goalTarget ?? 250;
+  const progressPercentage = (currentDonations / target) * 100;
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-8 max-w-6xl">
@@ -63,7 +97,7 @@ export default function DonatePage() {
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Progress</span>
               <span className="text-sm text-muted-foreground">
-                {currentDonations.toFixed(2)} / {MOCK_DONATION_GOAL} π
+                {currentDonations.toFixed(2)} / {target} π
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
@@ -75,7 +109,7 @@ export default function DonatePage() {
             <p className="text-xs text-muted-foreground text-center">
               {progressPercentage >= 100 
                 ? "🎉 Goal reached! Thank you for your support!" 
-                : `${(MOCK_DONATION_GOAL - currentDonations).toFixed(2)} π needed to reach goal`
+                 : `${(target - currentDonations).toFixed(2)} π needed to reach goal`
               }
             </p>
           </CardContent>

@@ -60,6 +60,53 @@ export async function POST(_request: NextRequest) {
       EXCEPTION WHEN duplicate_object THEN NULL; END $$;
     `);
 
+    // Ensure donation_goals table
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "donation_goals" (
+        "id" TEXT PRIMARY KEY,
+        "targetAmount" DOUBLE PRECISION NOT NULL,
+        "title" TEXT,
+        "description" TEXT,
+        "active" BOOLEAN NOT NULL DEFAULT TRUE,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Ensure donations table
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "donations" (
+        "id" TEXT PRIMARY KEY,
+        "userId" TEXT,
+        "goalId" TEXT,
+        "amount" DOUBLE PRECISION NOT NULL,
+        "memo" TEXT,
+        "donorName" TEXT,
+        "txid" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Indexes
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS donations_goalId_idx ON "donations"("goalId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS donations_userId_createdAt_idx ON "donations"("userId", "createdAt")`);
+
+    // FKs
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        ALTER TABLE "donations"
+          ADD CONSTRAINT donations_userId_fkey
+          FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+    `);
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        ALTER TABLE "donations"
+          ADD CONSTRAINT donations_goalId_fkey
+          FOREIGN KEY ("goalId") REFERENCES "donation_goals"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+    `);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('ensure migrate error:', error);

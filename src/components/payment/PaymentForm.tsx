@@ -16,7 +16,7 @@ interface PaymentFormProps {
   description?: string;
   defaultAmount?: number;
   presetAmounts?: number[];
-  onSuccess?: (result: { amount: number; memo: string }) => void;
+  onSuccess?: (result: { amount: number; memo: string; txid?: string }) => void;
   onError?: (error: string) => void;
 }
 
@@ -72,7 +72,7 @@ export function PaymentForm({
             description: `Successfully sent ${paymentAmount} π`,
           });
 
-          onSuccess?.({ amount: paymentAmount, memo: memo.trim() || title });
+          onSuccess?.({ amount: paymentAmount, memo: memo.trim() || title, txid: paymentResult.txid });
           
           // Reset form
           setAmount(defaultAmount.toString());

@@ -205,16 +205,14 @@ export function Header({children}: {children?: React.ReactNode}) {
     router.push('/login');
   };
 
-  const handleRefresh = () => {
-    // Soft refresh: refetch key data endpoints without signing the user out
+  const handleRefresh = async () => {
+    // Soft refresh without navigation or logout
     try {
-      fetch('/api/user/me', { credentials: 'include' }).finally(() => {
-        // As a fallback, do a client reload that preserves session via cookie
-        window.location.reload();
-      });
-    } catch {
-      window.location.reload();
-    }
+      await fetch('/api/notifications', { credentials: 'include', cache: 'no-store' });
+      await fetch('/api/transactions?limit=1', { credentials: 'include', cache: 'no-store' });
+      await fetch('/api/user/me', { credentials: 'include', cache: 'no-store' });
+    } catch {}
+    // Re-render only (no redirect). Avoid full reload which could hit auth guard and bounce.
   };
 
   const avatarFallback = user ? (user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : '?') : '';

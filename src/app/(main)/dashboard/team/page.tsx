@@ -359,7 +359,10 @@ export default function TeamInsightsPage() {
       
       <TeamManagementCard teamMembers={teamMembers} />
       
-      <RecentTransactionsCard transactions={transactions} />
+      {/* Slightly tighter card to avoid overflow on very small devices */}
+      <div className="max-w-full">
+        <RecentTransactionsCard transactions={transactions} />
+      </div>
       
       <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg w-full max-w-full">
         <CardHeader>

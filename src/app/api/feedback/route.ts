@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { requireSessionAndPiUser } from '@/lib/server-auth';
 import { FeedbackService, NotificationService } from '@/services/databaseService';
+import { isUidWhitelisted } from '@/lib/admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: feedback.id });
   } catch (e) {
     return NextResponse.json({ error: 'Failed to submit feedback' }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Admin-only listing
+    const { piUser } = await requireSessionAndPiUser(request);
+    if (!isUidWhitelisted(piUser.uid)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status') || undefined;
+    const items = await FeedbackService.listFeedback(status || undefined);
+    return NextResponse.json({ success: true, items });
+  } catch {
+    return NextResponse.json({ error: 'Failed to list feedback' }, { status: 500 });
   }
 }
 

@@ -18,4 +18,9 @@ export function isDeviceWhitelisted(hash: string | undefined | null): boolean {
   return list.includes(hash);
 }
 
+export function isDeviceEnforced(): boolean {
+  const raw = process.env.ADMIN_DEVICE_HASHES || '';
+  return raw.trim().length > 0;
+}
+
 

@@ -94,7 +94,7 @@ function TeamManagementCard({ teamMembers }: { teamMembers: TeamMember[] }) {
     };
 
     return (
-        <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg w-full max-w-full">
+        <Card className="bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg w-full max-w-full overflow-hidden">
             <CardHeader className="pb-3 sm:pb-4">
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl break-words">
                     <UsersIcon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0"/> 
@@ -372,7 +372,7 @@ export default function TeamInsightsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="w-full max-w-full">
+           <ScrollArea className="w-full max-w-full overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

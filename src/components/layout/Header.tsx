@@ -160,8 +160,9 @@ function NotificationsDropdown() {
                 ) : notifications.length > 0 ? (
                     <div className="max-h-80 overflow-y-auto">
                     {notifications.map(notification => {
-                        const Icon = notificationIcons[notification.type];
-                        const iconColor = notificationColors[notification.type];
+                        const iconKey = (notification.type as unknown as string).toLowerCase() as keyof typeof notificationIcons;
+                        const Icon = notificationIcons[iconKey] ?? BellIcon;
+                        const iconColor = notificationColors[iconKey] ?? 'text-primary';
                         return (
                              <DropdownMenuItem
                                 key={notification.id}

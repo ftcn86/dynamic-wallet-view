@@ -26,8 +26,16 @@ export default function AdminDashboard() {
   const [showDevicePrompt, setShowDevicePrompt] = useState(false);
 
   useEffect(() => {
-    // naive check: try pinging a protected admin endpoint later; for now, rely on cookie presence
-    // UI will show login form always; after success, show dashboard
+    // Preload device info as soon as page loads so admins see prompt even before password step
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/device', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        setDeviceInfo({ enforced: data.enforced, allowed: data.allowed, deviceHash: data.deviceHash });
+        if ((data.enforced && !data.allowed) || !data.enforced) setShowDevicePrompt(true);
+      } catch {}
+    })();
   }, []);
 
   const login = async () => {

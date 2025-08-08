@@ -23,10 +23,11 @@ function FeedbackCard() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!feedback.trim()) {
+        const text = feedback.trim();
+        if (text.length < 5) {
             toast({
                 title: "Feedback is empty",
-                description: "Please write some feedback before submitting.",
+                description: "Please write at least 5 characters before submitting.",
                 variant: "destructive"
             });
             return;
@@ -35,7 +36,8 @@ function FeedbackCard() {
         try {
             await submitFeedback({
                 type: 'general_help',
-                message: feedback,
+                message: text,
+                pagePath: typeof window !== 'undefined' ? window.location.pathname : '/legal/help',
             });
             toast({
                 title: "Feedback Submitted",

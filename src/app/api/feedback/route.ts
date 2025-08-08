@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const { type, message, pagePath } = await request.json();
     if (!type || typeof type !== 'string') return NextResponse.json({ error: 'type required' }, { status: 400 });
     const text = String(message || '').trim();
-    if (text.length < 10 || text.length > 1000) return NextResponse.json({ error: 'message length 10-1000' }, { status: 400 });
+    if (text.length < 5 || text.length > 1000) return NextResponse.json({ error: 'Message must be between 5 and 1000 characters.' }, { status: 400 });
 
     const ua = request.headers.get('user-agent') || undefined;
     const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
@@ -50,8 +50,14 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    await rateLimit(request as unknown as Request, 'feedback:get', 30, 60_000);
     // Admin-only listing
-    const { piUser } = await requireSessionAndPiUser(request);
+    let piUser;
+    try {
+      ({ piUser } = await requireSessionAndPiUser(request));
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     if (!isUidWhitelisted(piUser.uid)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     const url = new URL(request.url);
     const status = url.searchParams.get('status') || undefined;

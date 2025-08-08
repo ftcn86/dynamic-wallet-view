@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useState } from 'react';
-import { SettingsIcon, LogOutIcon } from '@/components/shared/icons';
+import { SettingsIcon, LogOutIcon, ShieldIcon } from '@/components/shared/icons';
 import { useAuth } from '@/contexts/AuthContext';
 
 const items = [
@@ -66,6 +66,10 @@ export function BottomNav() {
                     <DropdownMenuItem onSelect={() => { setOpen(false); router.push('/dashboard/settings'); }}>
                       <SettingsIcon className="mr-2 h-4 w-4" />
                       Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => { setOpen(false); router.push('/dashboard/admin'); }}>
+                      <ShieldIcon className="mr-2 h-4 w-4" />
+                      Admin
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => { setOpen(false); setConfirmLogout(true); }}>
                       <LogOutIcon className="mr-2 h-4 w-4" />

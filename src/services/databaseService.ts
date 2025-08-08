@@ -244,6 +244,39 @@ export class NotificationService {
   }
 }
 
+// Feedback Management
+export class FeedbackService {
+  static async createFeedback(userId: string | null, data: { type: string; message: string; pagePath?: string; userAgent?: string; appVersion?: string }) {
+    const record = await prisma.feedback.create({
+      data: {
+        userId: userId || null,
+        type: data.type,
+        message: data.message,
+        pagePath: data.pagePath,
+        userAgent: data.userAgent,
+        appVersion: data.appVersion,
+      }
+    });
+    return record;
+  }
+
+  static async listFeedback(status?: string) {
+    return prisma.feedback.findMany({
+      where: status ? { status } : undefined,
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  static async reply(feedbackId: string, adminId: string, message: string) {
+    const reply = await prisma.feedbackReply.create({ data: { feedbackId, adminId, message } });
+    return reply;
+  }
+
+  static async setStatus(feedbackId: string, status: string) {
+    return prisma.feedback.update({ where: { id: feedbackId }, data: { status } });
+  }
+}
+
 // Team Management
 export class TeamService {
   static async createTeamMember(userId: string, memberData: Omit<AppTeamMemberType, 'id'>): Promise<TeamMember> {

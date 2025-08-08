@@ -36,6 +36,8 @@ model User {
   nodeData NodeData?
   balanceHistory BalanceHistory[]
   donations Donation[]
+  // Feedback relations
+  feedback Feedback[]
 
   @@map("users")
 }
@@ -258,6 +260,37 @@ model Notification {
   @@index([userId, read])
   @@index([userId, date])
   @@map("notifications")
+}
+
+// Feedback models
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String?
+  type      String
+  message   String
+  status    String   @default("new")
+  pagePath  String?
+  userAgent String?
+  appVersion String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  replies FeedbackReply[]
+
+  @@index([userId, createdAt])
+  @@map("feedback")
+}
+
+model FeedbackReply {
+  id         String   @id @default(cuid())
+  feedbackId String
+  adminId    String
+  message    String
+  createdAt  DateTime @default(now())
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  @@index([feedbackId, createdAt])
+  @@map("feedback_replies")
 }
 
 // Ad Views for rewarded ads tracking

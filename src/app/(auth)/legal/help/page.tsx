@@ -36,7 +36,6 @@ function FeedbackCard() {
             await submitFeedback({
                 type: 'general_help',
                 message: feedback,
-                userId: user?.id,
             });
             toast({
                 title: "Feedback Submitted",

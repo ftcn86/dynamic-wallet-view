@@ -44,7 +44,6 @@ export function AIFeatureFeedbackCard() {
         await submitFeedback({
             type: 'ai_feature',
             message: feedback,
-            userId: user?.id
         });
         toast({
             title: "Thank You!",

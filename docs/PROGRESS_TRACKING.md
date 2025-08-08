@@ -31,6 +31,12 @@ This file is the single source of truth for remaining work, compliance requireme
 - [ ] Ads safeguards
   - Basic device/IP hashing; per-device daily caps; simple admin report page; env-driven caps
 
+## Admin Area
+
+ - [~] Admin access gate (requires Pi session, ADMIN_UIDS whitelist, and admin password); short-lived cookie
+- [~] Admin dashboard shell with sections: Feedback, Payments (incomplete), Ads report, Donations
+- [~] Feedback pipeline (contactless): POST /api/feedback, Support Inbox page, admin replies
+
 ## P2 – Risk Controls & Observability
 
 - [ ] Rate limiting coverage

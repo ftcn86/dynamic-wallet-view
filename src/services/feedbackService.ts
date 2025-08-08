@@ -1,8 +1,6 @@
 
 "use client";
 
-import { mockApiCall } from '@/lib/api';
-
 /**
  * @fileOverview A centralized service for handling user feedback submissions.
  */
@@ -11,12 +9,13 @@ import { mockApiCall } from '@/lib/api';
  * Simulates submitting user feedback to a backend service.
  * In a real app, this would send an email or save to a database.
  */
-export async function submitFeedback(feedbackData: {
-  type: 'ai_feature' | 'general_help';
-  message: string;
-  userId?: string;
-}): Promise<{ success: boolean }> {
-  console.log("Submitting feedback via centralized service:", feedbackData);
-  // This is where you would add logic to send an email or post to your backend API.
-  return mockApiCall({ data: { success: true } });
+export async function submitFeedback(feedbackData: { type: string; message: string; pagePath?: string }): Promise<{ success: boolean }> {
+  const res = await fetch('/api/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(feedbackData)
+  });
+  if (!res.ok) throw new Error('Failed to submit feedback');
+  return res.json();
 }

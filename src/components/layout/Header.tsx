@@ -281,12 +281,6 @@ export function Header({children}: {children?: React.ReactNode}) {
             <RefreshCwIcon className={cn("h-5 w-5 transition-transform", isRefreshing && "animate-spin") } />
             <span className="sr-only">Refresh Data</span>
           </Button>
-          {/* Admin entry for large screens via avatar menu replacement (simple link) */}
-          {!isMobile && (
-            <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/admin')}>
-              Admin
-            </Button>
-          )}
           {!isMobile && (
             <AlertDialog>
               <DropdownMenu>
@@ -309,6 +303,10 @@ export function Header({children}: {children?: React.ReactNode}) {
                   <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
                     <UserCircleIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/dashboard/admin')}>
+                    <SettingsIcon className="mr-2 h-4 w-4" />
+                    <span>Admin</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <AlertDialogTrigger asChild>

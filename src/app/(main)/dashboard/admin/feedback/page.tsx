@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 type Item = { id: string; type: string; message: string; status: string; createdAt: string };
 
 export default function AdminFeedbackPage() {
+  const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +27,10 @@ export default function AdminFeedbackPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Admin • Feedback</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Admin • Feedback</h1>
+        <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/admin')}>Return to Admin</Button>
+      </div>
       {error && <div className="text-sm text-red-500">{error}</div>}
       {items.length === 0 ? (
         <Card>

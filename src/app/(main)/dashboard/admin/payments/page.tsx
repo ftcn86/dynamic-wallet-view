@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 type Payment = { id: string; paymentId: string; userId: string; amount: number; memo: string; paid: boolean; cancelled: boolean; txid?: string | null; createdAt: string };
 
 export default function AdminPaymentsPage() {
+  const router = useRouter();
   const [items, setItems] = useState<Payment[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +27,10 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Admin • Payments</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Admin • Payments</h1>
+        <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/admin')}>Return to Admin</Button>
+      </div>
       {error && <div className="text-sm text-red-500">{error}</div>}
       {items.length === 0 ? (
         <Card>

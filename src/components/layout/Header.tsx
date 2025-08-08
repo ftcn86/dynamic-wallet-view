@@ -247,8 +247,12 @@ export function Header({children}: {children?: React.ReactNode}) {
           </div>
       ) : (
         <div className="flex items-center gap-2">
-          {/* Keep header minimal: notifications + avatar menu only */}
+          {/* Keep header compact but include refresh */}
           <NotificationsDropdown />
+          <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={handleRefresh}>
+            <RefreshCwIcon className="h-5 w-5" />
+            <span className="sr-only">Refresh Data</span>
+          </Button>
           <AlertDialog>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

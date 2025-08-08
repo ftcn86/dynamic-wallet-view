@@ -23,6 +23,19 @@ export async function GET(request: NextRequest) {
       orderBy: { date: 'desc' },
       take: 200
     });
+    // Normalize DB enums (UPPERCASE) to app schema (lowercase) and ensure shape
+    const normalizedDb = dbTransactions.map((tx) => ({
+      id: tx.id,
+      date: (tx.date as Date).toISOString(),
+      type: String(tx.type).toLowerCase() as 'sent' | 'received' | 'mining_reward' | 'node_bonus',
+      amount: Number(tx.amount),
+      status: String(tx.status).toLowerCase() as 'completed' | 'pending' | 'failed',
+      from: (tx as any).from || undefined,
+      to: (tx as any).to || undefined,
+      description: (tx as any).description || 'Transaction',
+      blockExplorerUrl: (tx as any).blockExplorerUrl || undefined,
+      txid: (tx as any).txid || undefined,
+    }));
 
     const mockTransactions = [
       {
@@ -94,7 +107,7 @@ export async function GET(request: NextRequest) {
     ];
 
     // Choose source: DB first, else mocks
-    const source = dbTransactions.length > 0 ? dbTransactions : mockTransactions;
+    const source = normalizedDb.length > 0 ? normalizedDb : mockTransactions;
 
     // Filter by type if provided
     let filteredTransactions = source as typeof mockTransactions;

@@ -271,30 +271,12 @@ export async function getUserPiBalance(): Promise<unknown> {
  */
 export async function getTeamMembers(): Promise<TeamMember[]> {
   try {
-    const res = await fetch('/api/user/me');
+    const res = await fetch('/api/team/members', { credentials: 'include' });
     if (!res.ok) throw new Error('Failed to fetch team members');
-    const data: { user?: { teamMembers?: unknown[] } } = await res.json();
-    const teamMembers = data.user?.teamMembers || [];
-    
-    // Convert unknown[] to TeamMember[] with proper type checking
-    return teamMembers.map(member => {
-      const m = member as Record<string, unknown>;
-      return {
-        id: typeof m.id === 'string' ? m.id : '',
-        name: typeof m.name === 'string' ? m.name : '',
-        avatarUrl: typeof m.avatarUrl === 'string' ? m.avatarUrl : '',
-        joinDate: typeof m.joinDate === 'string' ? m.joinDate : new Date().toISOString(),
-        status: (typeof m.status === 'string' && ['active', 'inactive', 'pending'].includes(m.status)) ? m.status as 'active' | 'inactive' | 'pending' : 'active',
-        unverifiedPiContribution: typeof m.unverifiedPiContribution === 'number' ? m.unverifiedPiContribution : 0,
-        teamMemberActiveMiningHours_LastWeek: typeof m.teamMemberActiveMiningHours_LastWeek === 'number' ? m.teamMemberActiveMiningHours_LastWeek : 0,
-        teamMemberActiveMiningHours_LastMonth: typeof m.teamMemberActiveMiningHours_LastMonth === 'number' ? m.teamMemberActiveMiningHours_LastMonth : 0,
-        kycStatus: (typeof m.kycStatus === 'string' && ['completed', 'pending', 'not_completed'].includes(m.kycStatus)) ? m.kycStatus as 'completed' | 'pending' | 'not_completed' : 'not_completed',
-        dataAiHint: typeof m.dataAiHint === 'string' ? m.dataAiHint : 'person'
-      } as TeamMember;
-    });
+    const data = await res.json();
+    return (data.members || []) as TeamMember[];
   } catch (error) {
     console.error('Error fetching team members:', error);
-    // Return mock data as fallback
     return mockTeam;
   }
 }
@@ -303,18 +285,16 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
  * Get node data
  */
 export async function getNodeData() {
-  const res = await fetch('/api/user/me');
+  const res = await fetch('/api/node/performance', { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch node data');
-  const data = await res.json();
-  return data.user?.nodeData || null;
+  return await res.json();
 }
 
 /**
  * Get transactions
  */
 export async function getTransactions(): Promise<Transaction[]> {
-  // Fetch from real backend API
-  const res = await fetch('/api/transactions');
+  const res = await fetch('/api/transactions', { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch transactions');
   const data = await res.json();
   return data.transactions || [];

@@ -99,47 +99,21 @@ export function TeamActivityCard() {
     .filter(badge => GAMIFICATION_BADGE_IDS.includes(badge.id) && badge.earned)
     .slice(0, DISPLAY_RECENT_BADGES_COUNT);
 
+  // Dashboard version: show only the Weekly Activity Leaderboard section with link
   return (
     <Card className={cn("shadow-lg")}>
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-          <span>Team Activity</span>
+          <span>Weekly Activity Leaderboard</span>
         </CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
-          {t('teamInsights.description')}
+          Your rank this week among your team.
         </CardDescription>
       </CardHeader>
-      
-      <CardContent className="space-y-6">
-        <TeamStats 
-          team={team}
-          userWeeklyActivity={userWeeklyActivity}
-        />
-
-        <TeamLeaderboard 
-          team={team}
-          userRank={userRankInFullList}
-        />
-
-        {earnedGamificationBadges.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium text-foreground">Recent Team Achievements</h3>
-            <div className="flex flex-wrap gap-2">
-              {earnedGamificationBadges.map((badge) => (
-                <div key={badge.id} className="flex items-center gap-1">
-                  <BadgeIcon
-                    badgeId={badge.id}
-                    earned={badge.earned}
-                    size="sm"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      <CardContent className="space-y-4">
+        <TeamLeaderboard team={team} userRank={userRankInFullList} />
       </CardContent>
-
-      <CardFooter className="pt-4">
+      <CardFooter className="pt-2">
         <Link href="/dashboard/team" className="w-full">
           <Button variant="outline" className="w-full">
             View Full Team

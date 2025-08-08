@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
 import prisma from '@/lib/db';
+import { NotificationService } from '@/services/databaseService';
 
 // Use Prisma singleton
 
@@ -9,6 +10,8 @@ import prisma from '@/lib/db';
  */
 export async function POST(request: NextRequest) {
   try {
+    const { rateLimit } = await import('@/lib/rate-limit');
+    await rateLimit(request as unknown as Request, 'payments:approve', 20, 60_000);
     const { paymentId, metadata } = await request.json();
 
     if (!paymentId) {
@@ -95,10 +98,16 @@ export async function POST(request: NextRequest) {
       await piPlatformClient.approvePayment(paymentId);
       console.log(`✅ [APPROVE] Payment approved successfully`);
 
-      // 6. Return success response (Official Pattern)
-      return NextResponse.json({
-        message: `Approved the payment ${paymentId}`
-      });
+      // 6. Notify and return success
+      try {
+        await NotificationService.createNotification(currentUser.id, {
+          type: 'TEAM_UPDATE' as any,
+          title: 'Payment Approved',
+          description: `Your payment ${paymentId} was approved.`,
+          link: '/dashboard/transactions'
+        });
+      } catch {}
+      return NextResponse.json({ message: `Approved the payment ${paymentId}` });
 
     } catch (approvalError) {
       console.error(`❌ [APPROVE] Payment approval failed:`, approvalError);

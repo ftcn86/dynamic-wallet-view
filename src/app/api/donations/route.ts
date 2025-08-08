@@ -20,6 +20,8 @@ export async function GET() {
 // POST: record a donation after successful payment
 export async function POST(request: NextRequest) {
   try {
+    const { rateLimit } = await import('@/lib/rate-limit');
+    await rateLimit(request as unknown as Request, 'donations:post', 10, 60_000);
     const user = await getUserFromSession(request);
     if (!user) return NextResponse.json({ error: 'No session' }, { status: 401 });
 

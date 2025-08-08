@@ -17,6 +17,8 @@ export async function GET() {
 // POST: upsert active goal (restrict to authenticated session; add admin auth later)
 export async function POST(request: NextRequest) {
   try {
+    const { rateLimit } = await import('@/lib/rate-limit');
+    await rateLimit(request as unknown as Request, 'donations:goals:post', 5, 5 * 60_000);
     const user = await getUserFromSession(request);
     if (!user) return NextResponse.json({ error: 'No session' }, { status: 401 });
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { NotificationType } from '@/data/schemas';
 import { getUserFromSession } from '@/lib/session';
 import { NotificationService } from '@/services/databaseService';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * GET /api/notifications
@@ -9,6 +10,7 @@ import { NotificationService } from '@/services/databaseService';
  */
 export async function GET(request: NextRequest) {
   try {
+    await rateLimit(request, 'notifications:get', 60, 1 * 60 * 1000);
     // Get user from database session (NEW: Proper session management)
     const user = await getUserFromSession(request);
     if (!user) {
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    await rateLimit(request, 'notifications:post', 20, 1 * 60 * 1000);
     // Get user from database session (NEW: Proper session management)
     const user = await getUserFromSession(request);
     if (!user) {

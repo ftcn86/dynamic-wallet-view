@@ -9,6 +9,8 @@ const REWARD_AMOUNT = 0.01;
 
 export async function POST(request: NextRequest) {
   try {
+    const { rateLimit } = await import('@/lib/rate-limit');
+    await rateLimit(request as unknown as Request, 'ads:view-complete', 30, 60_000);
     const user = await getUserFromSession(request);
     if (!user) {
       return NextResponse.json({ error: 'No session found' }, { status: 401 });

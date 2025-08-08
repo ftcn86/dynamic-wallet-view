@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPiPlatformAPIClient } from '@/lib/pi-network';
+import { NotificationService } from '@/services/databaseService';
 import prisma from '@/lib/db';
 
 // Use Prisma singleton
@@ -9,6 +10,8 @@ import prisma from '@/lib/db';
  */
 export async function POST(request: NextRequest) {
   try {
+    const { rateLimit } = await import('@/lib/rate-limit');
+    await rateLimit(request as unknown as Request, 'payments:complete', 30, 60_000);
     const { paymentId, txid } = await request.json();
 
     if (!paymentId) {
@@ -116,10 +119,16 @@ export async function POST(request: NextRequest) {
         console.warn(`⚠️ [COMPLETE] Transaction storage failed, but payment is complete:`, storageError);
       }
 
-      // 6. Return success response (Official Pattern)
-      return NextResponse.json({
-        message: `Completed the payment ${paymentId}`
-      });
+      // 6. Notify and return success
+      try {
+        await NotificationService.createNotification(currentUser.id, {
+          type: 'TEAM_UPDATE' as any,
+          title: 'Payment Completed',
+          description: `Your payment ${paymentId} was completed.`,
+          link: '/dashboard/transactions'
+        });
+      } catch {}
+      return NextResponse.json({ message: `Completed the payment ${paymentId}` });
 
     } catch (completionError) {
       console.error(`❌ [COMPLETE] Payment completion failed:`, completionError);

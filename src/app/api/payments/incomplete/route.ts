@@ -9,6 +9,9 @@ import prisma from '@/lib/db';
  */
 export async function POST(request: NextRequest) {
   try {
+    // basic rate limit
+    const { rateLimit } = await import('@/lib/rate-limit');
+    await rateLimit(request as unknown as Request, 'payments:incomplete', 10, 60_000);
     const { payment } = await request.json();
     const paymentId = payment.identifier;
     const txid = payment.transaction && payment.transaction.txid;
